@@ -6,6 +6,7 @@ from system import System
 from settings import Settings
 from logger import Logger
 from prepare import Preparation
+from errors import *
 
 def actionRunPrepareOrBuild(action):
   for target in Settings.targets:
@@ -36,24 +37,23 @@ def actionUpdatePublishedSample():
   pass
 
 def main():
-  #Determine host OS, checks if required tools are installed, checks supported targets, create userdef.py file if missing
-  System.PreInit()
-  Settings.preInit()
-  #Parse input parameters if any
-  Input.parseInput(sys.argv[1:])
-  
-  #Load settings
-  System.SetUp()
-  
-  mainLogger = Logger.getLogger("main logger")
-
-  
-
-
-
 
   #Check if required tools are installed
-  System.Check()
+  errorCode = System.checkTools()
+  if errorCode != 0:
+    System.stopExecution2(errorCode)
+
+  #Determine host OS, checks supported targets, create userdef.py file if missing
+  System.preInit()
+  Settings.preInit()
+
+  #Parse input parameters if any
+  Input.parseInput(sys.argv[1:])
+
+  #Load settings
+  System.setUp()
+  
+  mainLogger = Logger.getLogger("Main")
   mainLogger.info('Checks are passes')
 
 

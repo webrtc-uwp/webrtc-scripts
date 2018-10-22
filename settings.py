@@ -5,12 +5,20 @@ from importlib import import_module
 
 
 class Settings:
-
+  """
+   Interface to variables set in templates or using sommand line.
+  """
+  showSettingsValuesOnError = False
+  showTraceOnError = False
   inputArgs = None
+
   @classmethod
   def preInit(cls):
-    
-    #Determine verious paths of interest
+    """
+      Determine verious paths of interest and creates userdef.py file, 
+      in current working directory, with defaults value, if it is not 
+      already created.
+    """
 
     #User working directory
     cls.userWorkingPath = os.getcwd()

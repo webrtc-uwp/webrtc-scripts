@@ -6,125 +6,161 @@ from utility import Utility
 from settings import Settings
 from logger import Logger
 import traceback
+from errors import *
 #exec 'from %s import *'%(defaults.currentTemplateFile)
 
 
 class System:
 
-    @classmethod
-    def PreInit(cls):
+  systemLogger = None
 
-      #Determine host OS
-      cls.hostOs = platform.system()
-      cls.hostOsVersion = platform.release()
+  @classmethod
+  def preInit(cls):
+    """
+      Determines host OS. Sets supported targets based on present folders. 
+      Initializes Settings and update PATH environment variable.
+    """
+    #Determine host OS
+    cls.hostOs = platform.system()
+    cls.hostOsVersion = platform.release()
 
-      #Set available targets
-      cls.setSupportedTargets()
+    #Set available targets
+    cls.setSupportedTargets()
 
-      #cls.addPath(defaults.webrtcDefaultsPath)
-      #if cls.checkIfTargetIsSupported('ortc'):
-      #   cls.addPath(defaults.ortcDefaultsPath)
 
-      Settings.preInit()
-      #Add templates path in the PATH
-      cls.addPath(Settings.userWorkingPath)
-      cls.addPath(Settings.rootScriptsPath)
-      cls.addPath(Settings.templatesPath)
+    Settings.preInit()
+    #Add templates path in the PATH
+    cls.addPath(Settings.userWorkingPath)
+    cls.addPath(Settings.rootScriptsPath)
+    cls.addPath(Settings.templatesPath)
 
-    @classmethod
-    def Check(cls):
-      #Check if Git and Perl are installed
-      Utility.checkIfGitIsInstalled()
-      Utility.checkIfPerlIsInstalled()
 
-    @classmethod
-    def SetUp(cls):
+  @classmethod
+  def setUp(cls):
 
-      Settings.init()
-      Logger.SetUp()
-      cls.Logger = Logger.getLogger("main logger")
+    Settings.init()
+    Logger.SetUp()
+    cls.systemLogger = Logger.getLogger("System")
 
-      #Set current working directory to SDK root folder
-      os.chdir(Settings.rootSdkPath)
-      
-      #ACTION: Update clang
+    #Set current working directory to SDK root folder
+    os.chdir(Settings.rootSdkPath)
+    
+    #ACTION: Update clang
 
-    @staticmethod
-    def removeDepotToolsFromPath():
-      print('Removing depot_tools from path')
+  @classmethod
+  def checkTools(cls):
+    #Check if Git is installed
+    if not Utility.checkIfToolIsInstalled('git'):
+      return ERROR_SYSTEM_MISSING_GIT
+    
+    #Check if Perl is installed
+    if not Utility.checkIfToolIsInstalled('perl'):
+      return ERROR_SYSTEM_MISSING_GIT
 
-    @staticmethod
-    def addPath(path):
-      #print('Adding ' + path + ' to PATH.')
-      sys.path.append(path)
+    return NO_ERROR
 
-    @classmethod
-    def setSupportedTargets(cls):
-        #ACTION: Performs check if ortc folder is present. If it is add it in the list of supported targets
-        cls.supportedTargets = ['ortc', 'webrtc']
+  @staticmethod
+  def removeDepotToolsFromPath():
+    print('Removing depot_tools from path')
 
-    @classmethod
-    def checkIfTargetIsSupported(cls, target):
-      if target in [item.lower() for item in cls.supportedTargets]:
-        #print('Target ' + target + 'is supported')
-        return True
-      return False
+  @staticmethod
+  def addPath(path):
+    #print('Adding ' + path + ' to PATH.')
+    sys.path.append(path)
 
-    @classmethod
-    def checkIfTargetsAreSupported(cls, targets):
-      for target in targets:
-        if target not in cls.supportedTargets:
-          return False
+  @classmethod
+  def setSupportedTargets(cls):
+      #ACTION: Performs check if ortc folder is present. If it is add it in the list of supported targets
+      cls.supportedTargets = ['ortc', 'webrtc']
+
+  @classmethod
+  def checkIfTargetIsSupported(cls, target):
+    if target in [item.lower() for item in cls.supportedTargets]:
+      #print('Target ' + target + 'is supported')
       return True
+    return False
 
-    @classmethod
-    def checkIfPlatformIsSupportedForHostCPU(cls, platform):
-      if platform in Settings.supportedPlatformsForHostOs[cls.hostOs]:
-        #print('host supports platform ' + cls.hostOs)
-        return True
-      return False
-
-    @classmethod
-    def checkIfPlatformsAreSupported(cls, platforms):
-      for platform in platforms:
-        if platform not in Settings.supportedPlatformsForHostOs[cls.hostOs]:
-          #print('Platform ' + platform + ' is not supported')
-          return False
-      return True
-
-    @classmethod
-    def isWindows(cls):
-      if cls.hostOs.lower() == 'windows':
-        return True
-      return False
-
-    @staticmethod
-    def setWorkingDirectory(path):
-      #cwd = os.getcwd()
-      if os.path.isdir(path):
-        print('setWorkingDirectory 1')
-        os.chdir(path)
-      elif os.path.isdir('../' + path):
-        print('setWorkingDirectory 2')
-        os.chdir('../' + path)
-      else:
-        print('setWorkingDirectory 3')
+  @classmethod
+  def checkIfTargetsAreSupported(cls, targets):
+    for target in targets:
+      if target not in cls.supportedTargets:
         return False
-      return  True
+    return True
 
-    @classmethod
-    def stopExecution(cls, message = "", error = 0):
-      if error:
-        cls.Logger.critical('Script execution has failed')
-        cls.Logger.error(message)
-        if Settings.showSettingsValuesOnError:
-          print ('\n\n\n----------------------- CURRENT SETTINGS -----------------------')
-          attrs = vars(Settings)
-          print ('\n '.join("%s: %s" % item for item in attrs.items()))
-          print ('------------------- CURRENT SETTINGS END -----------------------')
-        if Settings.showTraceOnError:
-          print ('\n\n\n----------------------- TRACE -----------------------')
-          traceback.print_stack()
-          print ('----------------------- TRACE END -----------------------')
-        
-      sys.exit(error)
+  @classmethod
+  def checkIfPlatformIsSupportedForHostCPU(cls, platform):
+    if platform in Settings.supportedPlatformsForHostOs[cls.hostOs]:
+      #print('host supports platform ' + cls.hostOs)
+      return True
+    return False
+
+  @classmethod
+  def checkIfPlatformsAreSupported(cls, platforms):
+    for platform in platforms:
+      if platform not in Settings.supportedPlatformsForHostOs[cls.hostOs]:
+        #print('Platform ' + platform + ' is not supported')
+        return False
+    return True
+
+  @classmethod
+  def isWindows(cls):
+    if cls.hostOs.lower() == 'windows':
+      return True
+    return False
+
+  @staticmethod
+  def setWorkingDirectory(path):
+    #cwd = os.getcwd()
+    if os.path.isdir(path):
+      print('setWorkingDirectory 1')
+      os.chdir(path)
+    elif os.path.isdir('../' + path):
+      print('setWorkingDirectory 2')
+      os.chdir('../' + path)
+    else:
+      print('setWorkingDirectory 3')
+      return False
+    return  True
+
+  @classmethod
+  def stopExecution(cls, message = "", error = 0):
+    if error:
+      if cls.systemLogger:
+        cls.systemLogger.critical('Script execution has failed')
+        cls.systemLogger.error(message)
+      else:
+        Logger.printColorMessage('E'+error + ': ' + message)
+      if Settings.showSettingsValuesOnError:
+        print ('\n\n\n----------------------- CURRENT SETTINGS -----------------------')
+        attrs = vars(Settings)
+        print ('\n '.join("%s: %s" % item for item in attrs.items()))
+        print ('------------------- CURRENT SETTINGS END -----------------------')
+      if Settings.showTraceOnError:
+        print ('\n\n\n----------------------- TRACE -----------------------')
+        traceback.print_stack()
+        print ('----------------------- TRACE END -----------------------')
+      
+  @classmethod
+  def stopExecution2(cls, error, message=""):
+    if error:
+      if message != "":
+        errorMessage = message
+      else:
+        errorMessage = error_codes[error]
+      if cls.systemLogger != None:
+        cls.systemLogger.critical('Script execution has failed')
+        cls.systemLogger.error(message)
+      else:
+        Logger.printColorMessage('Script execution has failed')
+        Logger.printColorMessage('Error E'+ str(error) + ': ' + errorMessage)
+      if Settings.showSettingsValuesOnError:
+        print ('\n\n\n----------------------- CURRENT SETTINGS -----------------------')
+        attrs = vars(Settings)
+        print ('\n '.join("%s: %s" % item for item in attrs.items()))
+        print ('------------------- CURRENT SETTINGS END -----------------------')
+      if Settings.showTraceOnError:
+        print ('\n\n\n----------------------- TRACE -----------------------')
+        traceback.print_stack()
+        print ('----------------------- TRACE END -----------------------')
+
+    sys.exit(error)

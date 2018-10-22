@@ -74,8 +74,6 @@ class Logger:
         cls.formatter = logging.Formatter(Settings.logFormat)
       cls.loggerHandle.setFormatter(cls.formatter)
 
-    
-
   @classmethod
   def getLogger(cls,name):
     logger=logging.getLogger(name)
@@ -85,6 +83,11 @@ class Logger:
       logger.addHandler(cls.loggerHandle)
     return logger
 
+  @staticmethod
+  def printColorMessage(message,textColor = ColoredFormatter.RED, background = None):
+    coloredMessage = ''.join((ColoredFormatter.CSI_SEQUENCE, (str(textColor + 30)),
+                            'm', message, ColoredFormatter.RESET_SEQUECE))
+    print(coloredMessage)
 
 """
 logger=logging.getLogger('testr')

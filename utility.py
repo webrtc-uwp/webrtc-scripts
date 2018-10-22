@@ -10,12 +10,19 @@ class Utility:
     return os.path.join(*listOfString)
 
   @staticmethod 
-  def checkIfGitIsInstalled():
-    print("IMPLEMENT: GIT CHECK - SHOW MESSAGE IF NOT ISTALLED - BREAK THE APP")
+  def checkIfToolIsInstalled(toolName):
+    executablePath = None
+    if sys.version_info[0] < 3.3:
+      import distutils.spawn
+      executablePath = distutils.spawn.find_executable(toolName)
+    else:
+      import shutil 
+      executablePath = shutil.which(toolName)
 
-  @staticmethod 
-  def checkIfPerlIsInstalled():
-    print("IMPLEMENT: Perl CHECK - SHOW MESSAGE IF NOT ISTALLED - BREAK THE APP")
+    if executablePath != None:
+      return True
+
+    return False
 
   @staticmethod
   def addPath(path):
