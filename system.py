@@ -1,6 +1,7 @@
 import os
 import platform
 import sys
+import subprocess
 import defaults
 from utility import Utility
 from settings import Settings
@@ -27,13 +28,15 @@ class System:
     #Set available targets
     cls.setSupportedTargets()
 
-
     Settings.preInit()
-    #Add templates path in the PATH
-    cls.addPath(Settings.userWorkingPath)
-    cls.addPath(Settings.rootScriptsPath)
-    cls.addPath(Settings.templatesPath)
 
+    #Add templates path in the PATH
+    Utility.addModulePath(Settings.userWorkingPath)
+    Utility.addModulePath(Settings.rootScriptsPath)
+    Utility.addModulePath(Settings.templatesPath)
+
+    cls.updateDepotToolsPath()
+    Utility.addPath(Settings.localBuildToolsPath)
 
   @classmethod
   def setUp(cls):
@@ -41,6 +44,12 @@ class System:
     Settings.init()
     Logger.SetUp()
     cls.systemLogger = Logger.getLogger("System")
+
+    if not Utility.checkIfToolIsInstalled(defaults.BUILD_TOOL_GN):
+      cls.downloadBuildTool(defaults.BUILD_TOOL_GN)
+
+    if not Utility.checkIfToolIsInstalled(defaults.BUILD_TOOL_CLANG_FORMAT):
+      cls.downloadBuildTool(defaults.BUILD_TOOL_CLANG_FORMAT)
 
     #Set current working directory to SDK root folder
     os.chdir(Settings.rootSdkPath)
@@ -63,10 +72,6 @@ class System:
   def removeDepotToolsFromPath():
     print('Removing depot_tools from path')
 
-  @staticmethod
-  def addPath(path):
-    #print('Adding ' + path + ' to PATH.')
-    sys.path.append(path)
 
   @classmethod
   def setSupportedTargets(cls):
@@ -123,25 +128,32 @@ class System:
     return  True
 
   @classmethod
-  def stopExecution(cls, message = "", error = 0):
-    if error:
-      if cls.systemLogger:
-        cls.systemLogger.critical('Script execution has failed')
-        cls.systemLogger.error(message)
-      else:
-        Logger.printColorMessage('E'+error + ': ' + message)
-      if Settings.showSettingsValuesOnError:
-        print ('\n\n\n----------------------- CURRENT SETTINGS -----------------------')
-        attrs = vars(Settings)
-        print ('\n '.join("%s: %s" % item for item in attrs.items()))
-        print ('------------------- CURRENT SETTINGS END -----------------------')
-      if Settings.showTraceOnError:
-        print ('\n\n\n----------------------- TRACE -----------------------')
-        traceback.print_stack()
-        print ('----------------------- TRACE END -----------------------')
-      
+  def updateDepotToolsPath(cls):
+    depotToolPath = Utility.searchFileInPATH('gclient')
+    if depotToolPath != None:
+      Utility.removePath(depotToolPath)
+      Utility.addPath(Settings.localDepotToolsPath)
+
   @classmethod
-  def stopExecution2(cls, error, message=""):
+  def downloadBuildTool(cls, toolName):
+
+    oldCurrent = os.getcwd()
+    os.chdir(Settings.localDepotToolsPath)
+    ret = subprocess.call([
+      'python',
+      'download_from_google_storage.py',
+      '--bucket', 'chromium-' + toolName,
+      '-s',
+      os.path.join(Settings.localBuildToolsPath,toolName + '.exe.sha1')])
+
+    if ret != 0:
+      cls.systemLogger.warning('Failed downloading gn.exe')
+
+    os.chdir(oldCurrent)
+
+      #os.path.join('src', 'buildtools', 'android', 'doclava.tar.gz.sha1')])
+  @classmethod
+  def stopExecution(cls, error, message=""):
     if error:
       if message != "":
         errorMessage = message

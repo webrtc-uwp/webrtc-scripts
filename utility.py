@@ -11,23 +11,49 @@ class Utility:
 
   @staticmethod 
   def checkIfToolIsInstalled(toolName):
-    executablePath = None
-    if sys.version_info[0] < 3.3:
-      import distutils.spawn
-      executablePath = distutils.spawn.find_executable(toolName)
-    else:
-      import shutil 
-      executablePath = shutil.which(toolName)
-
+    executablePath = Utility.getExecutablePath(toolName)
     if executablePath != None:
       return True
 
     return False
 
   @staticmethod
-  def addPath(path):
+  def getExecutablePath(executable):
+    executablePath = None
+    if sys.version_info[0] < 3.3:
+      import distutils.spawn
+      executablePath = distutils.spawn.find_executable(executable)
+    else:
+      import shutil 
+      executablePath = shutil.which(executable)
+    
+    return executablePath
+
+  @staticmethod
+  def searchFileInPATH(fileName):
+    for dirname in os.environ['PATH'].split(os.pathsep):
+        filePath = os.path.join(dirname, fileName)
+        if os.path.isfile(filePath):
+            return dirname
+    return None
+
+  @staticmethod
+  def addModulePath(path):
     print('Adding ' + path + ' to PATH.')
     sys.path.append(path)
+
+  @staticmethod
+  def addPath(path):
+    newPath = os.environ['PATH']
+    if newPath.endswith(';'):
+      newPath = newPath[:-1]
+    newPath += ';' + path
+    os.environ['PATH'] = newPath
+
+  @staticmethod
+  def removePath(path):
+    newPath = os.environ['PATH'].replace(path + os.pathsep,'').replace(path,'')
+    os.environ['PATH'] = newPath
 
 @staticmethod
 def makeLink(source,destination):

@@ -30,6 +30,10 @@ class Settings:
     cls.templatesPath = os.path.join(cls.rootScriptsPath, defaults.templatesPath)
     #Sdk root path
     cls.rootSdkPath = os.path.join(cls.rootScriptsPath, '..')
+    #Local depot tools path
+    cls.localDepotToolsPath = os.path.join(Settings.rootSdkPath, Utility.convertToPlatformPath(defaults.relativeDepotToolsPath))
+    #Local buildtools path
+    cls.localBuildToolsPath = os.path.join(Settings.rootSdkPath, Utility.convertToPlatformPath(defaults.relativeBuildToolsPath),'win')
 
     if not os.path.isfile(cls.userDefFilePath):
       defaultFilePath = os.path.join(os.path.dirname(defaults.__file__),'defaults.py')

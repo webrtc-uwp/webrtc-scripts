@@ -9,6 +9,11 @@ webrtcTemplateFile = "webrtc_defaults"
 templatesPath = Utility.convertToPlatformPath("./templates")
 ortcDefaultsPath = Utility.convertToPlatformPath("./ortc")
 webrtcDefaultsPath = Utility.convertToPlatformPath("./webrtc")
+relativeDepotToolsPath = Utility.convertToPlatformPath('./webrtc/xplatform/depot_tools')
+relativeBuildToolsPath = Utility.convertToPlatformPath('./webrtc/xplatform/buildtools')
+
+BUILD_TOOL_GN = 'gn'
+BUILD_TOOL_CLANG_FORMAT = 'clang-format'
 
 testValue = "default value"
 

@@ -7,25 +7,22 @@ from settings import Settings
 from logger import Logger
 from prepare import Preparation
 from errors import *
+from prepare import Preparation
 
-def actionRunPrepareOrBuild(action):
+def actionPrepare():
+  Preparation.setUp()
   for target in Settings.targets:
     for platform in Settings.targetPlatforms:
       for cpu in Settings.targetCPUs:
         for configuration in Settings.targetConfigurations:
-          #os.system("$action $target $platform $cpu $configuration")
-          print('Start performing action: ' + action + ' for target ' + target)
+          Preparation.run()
 
-def actionPrepare():
-  Preparation.run()
+def actionBuild():
   for target in Settings.targets:
     for platform in Settings.targetPlatforms:
       for cpu in Settings.targetCPUs:
         for configuration in Settings.targetConfigurations:
           pass
-
-def actionBuild():
-  pass
 
 def actionCreateNuget():
   pass
@@ -41,7 +38,7 @@ def main():
   #Check if required tools are installed
   errorCode = System.checkTools()
   if errorCode != 0:
-    System.stopExecution2(errorCode)
+    System.stopExecution(errorCode)
 
   #Determine host OS, checks supported targets, create userdef.py file if missing
   System.preInit()
