@@ -55,6 +55,8 @@ class Utility:
     newPath = os.environ['PATH'].replace(path + os.pathsep,'').replace(path,'')
     os.environ['PATH'] = newPath
 
-@staticmethod
-def makeLink(source,destination):
-  subprocess.call('cmd', '/c', 'mklink', '/J', destination, source)
+  @staticmethod
+  def makeLink(source,destination):
+    if not os.path.exists(destination):
+      print(source + '------------>' + destination)
+      subprocess.call(['cmd', '/c', 'mklink', '/J', Utility.convertToPlatformPath(destination), Utility.convertToPlatformPath(source)])

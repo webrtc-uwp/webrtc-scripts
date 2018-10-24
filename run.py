@@ -7,7 +7,7 @@ from settings import Settings
 from logger import Logger
 from prepare import Preparation
 from errors import *
-from prepare import Preparation
+
 
 def actionPrepare():
   Preparation.setUp()
@@ -15,7 +15,7 @@ def actionPrepare():
     for platform in Settings.targetPlatforms:
       for cpu in Settings.targetCPUs:
         for configuration in Settings.targetConfigurations:
-          Preparation.run()
+          Preparation.run(target, platform, cpu, configuration)
 
 def actionBuild():
   for target in Settings.targets:
@@ -52,10 +52,6 @@ def main():
   
   mainLogger = Logger.getLogger("Main")
   mainLogger.info('Checks are passes')
-
-
-  
-
 
   #Import template file
   #exec 'from %s import *'%(defaults.currentTemplateFile)
@@ -102,4 +98,4 @@ def main():
     actionUpdatePublishedSample()
 
 
-if  __name__ =='__main__':main()
+if  __name__ =='__main__': main()

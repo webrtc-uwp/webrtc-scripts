@@ -14,6 +14,9 @@ relativeBuildToolsPath = Utility.convertToPlatformPath('./webrtc/xplatform/build
 
 BUILD_TOOL_GN = 'gn'
 BUILD_TOOL_CLANG_FORMAT = 'clang-format'
+VISUAL_STUDIO_VERSION = 'vs2017'
+
+webRTCGnArgsTemplatePath='../../../webrtc/windows/templates/gns/args.gn'
 
 testValue = "default value"
 
@@ -35,9 +38,9 @@ supportedPlatformsForHostOs = { 'Windows' : ['win32', 'winuwp'],
 #linuxSupportedPlatforms = ['android', 'linux']
 #windowsSupportedPlatforms = ['win32', 'winuwp']
 
-targets = [ 'ortc' ]
+targets = [ 'webrtc' ]
 targetCPUs = [ 'arm', 'x86', 'x64' ]
-targetPlatforms = ['win32', 'winuwp' ]
+targetPlatforms = [ 'winuwp' ]
 targetConfigurations = [ 'Release', 'Debug' ]
 
 #Supported actions: prepare, build, createNuget, publishNuget, updatePublishedSample 
