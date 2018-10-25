@@ -11,14 +11,20 @@ class Preparation:
 
   PREPRATARION_WORKING_PATH = './webrtc/xplatform/webrtc'
   
-  foldersToGenerate =  [  './chromium/src', 
+  foldersToGenerate =  [  
+                          './chromium/src', 
                           './chromium/src/tools',
                           './chromium/src/third_party',
                           './chromium/src/third_party/winsdk_samples',
                           './chromium/src/third_party/libjingle/source/talk/media/testdata',
                           './third_party',
-                          './tools'
+                          './third_party/idl',
+                          './tools',
                         ]
+
+  foldersToGenerate_ortc =  [  
+                              './third_party/ortc',
+                            ]
 
   foldersToLink = [
                    {'../buildtools' : './buildtools'},
@@ -70,24 +76,45 @@ class Preparation:
                    {'../chromium/third_party/zlib' : './third_party/zlib'},
                    {'../chromium/third_party/libpng' : './third_party/libpng'},
                    {'../icu' : './third_party/icu'},
-  ]
-  
+                   {'../cryptopp' : './third_party/idl/cryptopp'},
+                   {'../zsLib' : './third_party/idl/zsLib'},
+                   {'../zsLib-eventing' : './third_party/idl/zsLib-eventing'},
+                   {'../webrtc-apis/windows' : './sdk/windows'},
+                   {'../webrtc-apis/idl' : './sdk/idl'},
+                  ]
+
+  foldersToLink_ortc = [
+                          {'../../../ortc/xplatform/udns' : './third_party/ortc/udns'},
+                          {'../../../ortc/xplatform/idnkit' : './third_party/ortc/idnkit'},
+                          {'../../../ortc/xplatform/ortclib-cpp' : './third_party/ortc/ortclib'},
+                          {'../../../ortc/xplatform/ortclib-services-cpp' : './third_party/ortc/ortclib-services-cpp'},
+                        ]
+
+  filesToCopy = [
+                  {'../chromium/third_party/BUILD.gn' : './third_party/BUILD.gn'},
+                  {'../chromium/third_party/DEPS' : './third_party/DEPS'},
+                  {'../chromium/third_party/OWNERS' : './third_party/OWNERS'},
+                  {'../chromium/third_party/PRESUBMIT.py' : './third_party/PRESUBMIT.py'},
+                ]
   @classmethod
-  def setUp(cls):
+  def setUp(cls, ortc):
     cls.logger = Logger.getLogger('Prepare')
 
     if not System.setWorkingDirectory(Utility.convertToPlatformPath(cls.PREPRATARION_WORKING_PATH)):
       System.stopExecution('Unable to set preparation working directory', 1)
     
-    cls.createWebRtcChromiumFolders()
-    cls.createFolderLinks()
+    try:
+      Utility.createFolders(cls.foldersToGenerate)
+      Utility.createFolderLinks(cls.foldersToLink)
 
-    copyfile(Utility.convertToPlatformPath('../chromium/third_party/BUILD.gn'), Utility.convertToPlatformPath('third_party/BUILD.gn'))
-    copyfile(Utility.convertToPlatformPath('../chromium/third_party/DEPS'), Utility.convertToPlatformPath('third_party/DEPS'))
-    copyfile(Utility.convertToPlatformPath('../chromium/third_party/OWNERS'), Utility.convertToPlatformPath('third_party/OWNERS'))
-    copyfile(Utility.convertToPlatformPath('../chromium/third_party/PRESUBMIT.py'), Utility.convertToPlatformPath('third_party/PRESUBMIT.py'))
+      if (ortc):
+        Utility.createFolders(cls.foldersToGenerate_ortc)
+        Utility.createFolderLinks(cls.foldersToLink_ortc)
+
+      Utility.copyFiles(cls.filesToCopy)
+    except Exception, errorMessage:
+      cls.logger.error(errorMessage)
     
-
   @classmethod
   def run(cls, target, platform, cpu, configuration):
     gnOutputPath = os.path.join('out', target + '_' + platform + '_' + cpu + '_' + configuration)
@@ -103,17 +130,23 @@ class Preparation:
 
     with open(argsPath, "w") as argsFile:
       argsFile.write(newArgs)
+    
+    try:
+      os.environ['DEPOT_TOOLS_WIN_TOOLCHAIN'] = '0'
+      result = subprocess.call([
+        'gn',
+        'gen',
+        gnOutputPath,
+        '--ide=' + defaults.VISUAL_STUDIO_VERSION,
+      ])
 
-    os.environ['DEPOT_TOOLS_WIN_TOOLCHAIN'] = '0'
-    result = subprocess.call([
-      'gn',
-      'gen',
-      gnOutputPath,
-      '--ide=' + defaults.VISUAL_STUDIO_VERSION,
-    ])
-
-    if result != 0:
-      cls.logger.error('Projects generation has failed! ($target, $platform, $cpu, $configuration)')
+      if result != 0:
+        cls.logger.error('Projects generation has failed! ($target, $platform, $cpu, $configuration)')
+    except Exception, errorMessage:
+      cls.logger.error(errorMessage)
+    
+    cls.updateNinjaPathinProjects(gnOutputPath)
+  
     """    
     :generateProjectsForPlatform
 
@@ -123,14 +156,13 @@ class Preparation:
     GOTO:EOF
     """
   @classmethod
-  def createWebRtcChromiumFolders(cls):
-    for path in cls.foldersToGenerate:
-      dirPath = Utility.convertToPlatformPath(path)
-      if not os.path.exists(dirPath):
-        os.makedirs(dirPath)
+  def updateNinjaPathinProjects(cls,folder):
+    for root, dirs, files in os.walk(folder):
+      for file in files:
+          if file.endswith(".vcxproj"):
+            with open(os.path.join(root,file)) as projectFile:
+              updatedProject=projectFile.read().replace('call ninja.exe', 'call ' + os.path.join(Settings.localDepotToolsPath,'ninja.exe'))
+            with open(os.path.join(root,file), "w") as projectFile:
+              projectFile.write(updatedProject)
 
-  @classmethod
-  def createFolderLinks(cls):
-    for dict in cls.foldersToLink:
-      for source, destination in dict.items():
-        Utility.makeLink(source, destination)
+  

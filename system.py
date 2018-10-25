@@ -63,8 +63,8 @@ class System:
       return ERROR_SYSTEM_MISSING_GIT
     
     #Check if Perl is installed
-    if not Utility.checkIfToolIsInstalled('perl'):
-      return ERROR_SYSTEM_MISSING_GIT
+    #if not Utility.checkIfToolIsInstalled('perl'):
+    #  return ERROR_SYSTEM_MISSING_PERL
 
     return NO_ERROR
 

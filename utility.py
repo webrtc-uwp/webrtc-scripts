@@ -2,6 +2,8 @@ import os
 import sys
 import logging
 import subprocess
+from shutil import copyfile
+
 class Utility:
 
   @staticmethod
@@ -60,3 +62,23 @@ class Utility:
     if not os.path.exists(destination):
       print(source + '------------>' + destination)
       subprocess.call(['cmd', '/c', 'mklink', '/J', Utility.convertToPlatformPath(destination), Utility.convertToPlatformPath(source)])
+
+  @staticmethod
+  def createFolders(foldersList):
+    for path in foldersList:
+      dirPath = Utility.convertToPlatformPath(path)
+      if not os.path.exists(dirPath):
+        os.makedirs(dirPath)
+
+  @staticmethod
+  def createFolderLinks(foldersToLink):
+    for dict in foldersToLink:
+      for source, destination in dict.items():
+        Utility.makeLink(Utility.convertToPlatformPath(source), Utility.convertToPlatformPath(destination))
+
+  @staticmethod
+  def copyFiles(filesToCopy):
+    for dict in filesToCopy:
+      for source, destination in dict.items():
+        copyfile(Utility.convertToPlatformPath(source), Utility.convertToPlatformPath(destination))
+

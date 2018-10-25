@@ -10,7 +10,7 @@ from errors import *
 
 
 def actionPrepare():
-  Preparation.setUp()
+  Preparation.setUp('ortc' in Settings.targets)
   for target in Settings.targets:
     for platform in Settings.targetPlatforms:
       for cpu in Settings.targetCPUs:
