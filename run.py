@@ -1,15 +1,22 @@
 import sys
 import os
+
 import defaults
 from inputHandler import Input
 from system import System
 from settings import Settings
 from logger import Logger
 from prepare import Preparation
+from builder import Builder
 from errors import *
 
 
 def actionPrepare():
+  """
+    Prepare dev environment for all specified targets and platforms.
+  """
+
+  #Do preparation that is common for all platforms. Pass true if ortc is one of targets
   Preparation.setUp('ortc' in Settings.targets)
   for target in Settings.targets:
     for platform in Settings.targetPlatforms:
@@ -18,11 +25,14 @@ def actionPrepare():
           Preparation.run(target, platform, cpu, configuration)
 
 def actionBuild():
+  """
+    Build all specified targets for all specified platforms.
+  """
   for target in Settings.targets:
     for platform in Settings.targetPlatforms:
       for cpu in Settings.targetCPUs:
         for configuration in Settings.targetConfigurations:
-          pass
+          Builder.build(target, platform, cpu, configuration)
 
 def actionCreateNuget():
   pass
@@ -35,51 +45,34 @@ def actionUpdatePublishedSample():
 
 def main():
 
-  #Check if required tools are installed
+  #Determine host OS, checks supported targets, update python and system paths.
+  #Create userdef.py file if missing. Create path variables used in preparation process.
+  System.preInit()
+
+  #Parse input parameters if any. This must be call after System.preInit, because it is required to determine host os first. 
+  Input.parseInput(sys.argv[1:])
+
+  #Check if required tools are installed. Currently git (used for downloading iOS binaries) and perl(used in assembly builds)
   errorCode = System.checkTools()
   if errorCode != 0:
     System.stopExecution(errorCode)
-
-  #Determine host OS, checks supported targets, create userdef.py file if missing
-  System.preInit()
-  Settings.preInit()
-
-  #Parse input parameters if any
-  Input.parseInput(sys.argv[1:])
-
-  #Load settings
+  
+  #Load settings. Create system logger. Download depot tools (gn and clang-format). Set working directory to rood sdk folder.
   System.setUp()
   
-  mainLogger = Logger.getLogger("Main")
-  mainLogger.info('Checks are passes')
-
-  #Import template file
-  #exec 'from %s import *'%(defaults.currentTemplateFile)
-  
-  #Options
-  #1. Import file dynamicaly like above
-  #2. DEfault should be class which will be inherited by template, and using same logic like above it should import Template class
-  #2. Create CurrentSetting.py file with init function where all gloabla variable has global decoration, and then append to file default settings and template
-  #3. Use simple-settings 
-  # https://martin-thoma.com/configuration-files-in-python/
-  # https://hackernoon.com/4-ways-to-manage-the-configuration-in-python-4623049e841b
-  
-  print(Settings.testValue)
-  mainLogger.warning(str(Settings.targets))
-  #attrs = vars(Settings)
-  #print ('\n '.join("%s: %s" % item for item in attrs.items()))
-  
-  #for attr in dir(Settings):
-  #  print("Settings.%s = %r" % (attr, getattr(Settings, attr)))
-  
+  #Create root logger
+  mainLogger = Logger.getLogger('Main')
+  mainLogger.info('Root logger is created')
+   
+  #Check if specified targets are supported
   if not System.checkIfTargetsAreSupported(Settings.targets):
-    System.stopExecution('Target is not supported')
+    mainLogger.error('Target from the list ' + str(Settings.targets) + ' is not supported')
+    System.stopExecution(ERROR_TARGET_NOT_SUPPORTED)
   
+  #Check if specified platforms are supported
   if not System.checkIfPlatformsAreSupported(Settings.targetPlatforms):
-    System.stopExecution('Platform from the list ' + str(Settings.targetPlatforms) + ' is not supported',1)
-    #System.stopExecution('Platform is not supported')
-
-  
+    mainLogger.error('Platform from the list ' + str(Settings.targetPlatforms) + ' is not supported')
+    System.stopExecution(ERROR_PLATFORM_NOT_SUPPORTED)
 
   #Start performing actions. Actions has to be executed in right order and that is the reason why it is handled this way
   if 'prepare' in Settings.actions:

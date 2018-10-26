@@ -1,14 +1,18 @@
 import os
 import subprocess
+from shutil import copyfile
+
 import defaults
 from utility import Utility
 from settings import Settings
 from system import System
 from logger import Logger
-from shutil import copyfile
+
 
 class Preparation:
-
+  """
+    Encapsulats logic for setting up development environemnt for the WebRtc and generating its projects.
+  """
   PREPRATARION_WORKING_PATH = './webrtc/xplatform/webrtc'
   
   foldersToGenerate =  [  
@@ -98,15 +102,24 @@ class Preparation:
                 ]
   @classmethod
   def setUp(cls, ortc):
-    cls.logger = Logger.getLogger('Prepare')
+    """
+      It is invoked only once, and does common stuff for all targets and platfroms. 
+      Creates module logger. Sets working directory. Creates missing folders and links.
+    """
 
-    if not System.setWorkingDirectory(Utility.convertToPlatformPath(cls.PREPRATARION_WORKING_PATH)):
-      System.stopExecution('Unable to set preparation working directory', 1)
+    #Create logger
+    cls.logger = Logger.getLogger('Prepare')
     
+    #Set working directory to ./webrtc/xplatform/webrtc
+    if not Utility.changeWorkingDir(os.path.join(Settings.rootSdkPath, Utility.convertToPlatformPath(cls.PREPRATARION_WORKING_PATH))):
+      System.stopExecution(1, 'Unable to set preparation working directory')
+    
+    #Create missing folders and links
     try:
       Utility.createFolders(cls.foldersToGenerate)
       Utility.createFolderLinks(cls.foldersToLink)
 
+      #In case ortc is one of the targets create specific folders and links
       if (ortc):
         Utility.createFolders(cls.foldersToGenerate_ortc)
         Utility.createFolderLinks(cls.foldersToLink_ortc)
@@ -117,6 +130,9 @@ class Preparation:
     
   @classmethod
   def run(cls, target, platform, cpu, configuration):
+
+    cls.logger.info('Runnning preparation for target: ' + target + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration)
+
     gnOutputPath = os.path.join('out', target + '_' + platform + '_' + cpu + '_' + configuration)
     if not os.path.exists(gnOutputPath):
       os.makedirs(gnOutputPath)
@@ -128,7 +144,7 @@ class Preparation:
     with open(argsPath) as argsFile:
       newArgs=argsFile.read().replace('-target_os-', platform).replace('-target_cpu-', cpu).replace('-is_debug-',str(configuration.lower() == 'debug').lower())
 
-    with open(argsPath, "w") as argsFile:
+    with open(argsPath, 'w') as argsFile:
       argsFile.write(newArgs)
     
     try:
@@ -142,27 +158,22 @@ class Preparation:
 
       if result != 0:
         cls.logger.error('Projects generation has failed! ($target, $platform, $cpu, $configuration)')
+      else:
+        cls.updateNinjaPathinProjects(gnOutputPath)
+        cls.logger.info('Successfully finished preparation for target: ' + target + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration)
     except Exception, errorMessage:
       cls.logger.error(errorMessage)
     
-    cls.updateNinjaPathinProjects(gnOutputPath)
+    
   
-    """    
-    :generateProjectsForPlatform
-
-    %powershell_path% -ExecutionPolicy ByPass -File ..\..\..\bin\RecurseReplaceInFiles.ps1 !outputPath! *.vcxproj "call ninja.exe" "call %DepotToolsPath%\ninja.exe"
-
-    IF EXIST ..\..\..\%webRtcLibsTemplatePath%\WebRtc.%~2.sln CALL:copyTemplates ..\..\..\%webRtcLibsTemplatePath%\WebRtc.%~2.sln !outputPath!\WebRtc.sln
-    GOTO:EOF
-    """
   @classmethod
   def updateNinjaPathinProjects(cls,folder):
     for root, dirs, files in os.walk(folder):
       for file in files:
-          if file.endswith(".vcxproj"):
+          if file.endswith('.vcxproj'):
             with open(os.path.join(root,file)) as projectFile:
               updatedProject=projectFile.read().replace('call ninja.exe', 'call ' + os.path.join(Settings.localDepotToolsPath,'ninja.exe'))
-            with open(os.path.join(root,file), "w") as projectFile:
+            with open(os.path.join(root,file), 'w') as projectFile:
               projectFile.write(updatedProject)
 
   

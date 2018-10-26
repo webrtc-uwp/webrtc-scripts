@@ -8,7 +8,7 @@ class Utility:
 
   @staticmethod
   def convertToPlatformPath(relativePath):
-    listOfString = relativePath.split("/")
+    listOfString = relativePath.split('/')
     return os.path.join(*listOfString)
 
   @staticmethod 
@@ -81,4 +81,12 @@ class Utility:
     for dict in filesToCopy:
       for source, destination in dict.items():
         copyfile(Utility.convertToPlatformPath(source), Utility.convertToPlatformPath(destination))
+
+  @staticmethod
+  def changeWorkingDir(path):
+    if os.path.isdir(path):
+      os.chdir(path)
+    else:
+      return False
+    return True 
 
