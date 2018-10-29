@@ -2,16 +2,10 @@ import os
 import sys
 import argparse
 
-import defaults
 from system import System
 from settings import Settings
 
 class Input:
-
-  @staticmethod
-  def checkIsTemplate(templateName):
-    relativeTemplatePath = os.path.join(defaults.templatesPath,templateName+'.py')
-    return os.path.isfile(relativeTemplatePath)
 
   @classmethod
   def parseInput(cls,inputArgs):

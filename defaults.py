@@ -1,45 +1,40 @@
-from utility import *
+"""
+  This file holds default settings value and it is used like template for creation userdef.py file.
+  If you want to change any variable listed below do that in generated userdef.py file.
+"""
 
-userDefaultsFile = 'userdef'
-
-currentTemplateFile = 'defaults'
-ortcTemplateFile = 'ortc_defaults'
-webrtcTemplateFile = 'webrtc_defaults'
-
-templatesPath = Utility.convertToPlatformPath('./templates')
-ortcDefaultsPath = Utility.convertToPlatformPath('./ortc')
-webrtcDefaultsPath = Utility.convertToPlatformPath('./webrtc')
-relativeDepotToolsPath = Utility.convertToPlatformPath('./webrtc/xplatform/depot_tools')
-relativeBuildToolsPath = Utility.convertToPlatformPath('./webrtc/xplatform/buildtools')
-
-BUILD_TOOL_GN = 'gn'
-BUILD_TOOL_CLANG_FORMAT = 'clang-format'
-VISUAL_STUDIO_VERSION = 'vs2017'
-
+#args.gn template path
 webRTCGnArgsTemplatePath='../../../webrtc/windows/templates/gns/args.gn'
 
-testValue = 'default value'
-
-runPrepare = True
-runBuild = True
-createNuget = False
-
-#TODO: Add language target cx, cppwinrt, c, python, dotnet
+#Output path wher will be stored nuget package as well as libs and pdbs
 #TODO: Copy output files, dll, pdbs etc to cwd
+releaseOutputPath = '.'
 
-#Supported platforms for specific host OS are not changeable
-supportedPlatformsForHostOs = { 'windows' : ['win', 'winuwp'],
+#Supported platforms for specific host OS 
+supportedPlatformsForHostOs = { 
+                                'windows' : ['win', 'winuwp'],
                                 'darwin' : ['ios', 'mac'],
                                 'linux' : ['android', 'linux']
                               }
+
+#Supported cpus for specific target
+supportedCPUsForPlatform = { 
+                              'winuwp'  : ['arm', 'x86', 'x64'],
+                              'win'     : ['arm', 'x86', 'x64'],
+                              'ios'     : ['arm'],
+                              'mac'     : [ 'x86', 'x64'],
+                              'android' : ['arm'],
+                              'linux'   : [ 'x86', 'x64'],
+                          }
 
 #TODO: Add dictionary with supported cpus for targetPlatform
 targets = [ 'webrtc' ]
 targetCPUs = [ 'arm', 'x86', 'x64' ]
 targetPlatforms = [ 'win', 'winuwp' ]
 targetConfigurations = [ 'Release', 'Debug' ]
+targetProgrammingLanguage = [ 'cx', 'cppwinrt', 'c', 'dotnet', 'python' ]
 
-#Supported actions: prepare, build, createNuget, publishNuget, updatePublishedSample 
+#Supported actions: clean, prepare, build, createNuget, publishNuget, updatePublishedSample 
 actions = [ 'prepare', 'build']
 
 """

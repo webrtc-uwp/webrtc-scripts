@@ -1,3 +1,7 @@
+"""
+  Declared error codes and error messages.
+"""
+
 NO_ERROR, \
 ERROR_SYSTEM_ERROR, \
 ERROR_SYSTEM_MISSING_GIT, \

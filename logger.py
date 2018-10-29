@@ -1,10 +1,10 @@
 import logging
 import subprocess
 import platform
-from settings import Settings
 import os.path
 from datetime import datetime
 
+from settings import Settings
 
 if  platform.system().lower() == 'windows':
   import winutility
@@ -78,7 +78,6 @@ class Logger:
   def getLogger(cls,name):
     logger=logging.getLogger(name)
     if logger.handlers == []:
-      print(Settings.logLevel)
       logger.setLevel(logging.getLevelName(Settings.logLevel))
       logger.addHandler(cls.loggerHandle)
     return logger
@@ -89,24 +88,4 @@ class Logger:
                             'm', message, ColoredFormatter.RESET_SEQUECE))
     print(coloredMessage)
 
-"""
-logger=logging.getLogger('testr')
-logger.setLevel(logging.DEBUG)
-formatter = ColoredFormatter(FORMAT)
-loggerHandle=logging.StreamHandler()
-loggerHandle.setFormatter(formatter)
-logger.addHandler(loggerHandle)
-
-logger.info('evo me ovo je pravi test. ehehehehe totototot')
-logger.debug('e pravi test. ehehe pravi test. ehehehehe totevo me ovo je pravi test. ehehehehe totototote pravi test. ehehehehe totevo me ovo je pravi test. ehehehehe totototote pravi test. ehehehehe totevo me ovo je pravi test. ehehehehe tototototehehe totevo me ovo je pravi test. ehehehehe totototot')
-logger.debug('evo me ovo je pravi test. ehehehehe totototot')
-logger.debug('e pravi test. ehehehehe totevo me ovo je pravi test. ehehehehe totototot')
-logger.debug('evo me ovo je pravi test. ehehehehe totototot')
-logger.debug('evo me ovo je pravi test. ehehehehe totototot')
-logger.warning('e pravi test. ehehehehe totevo me ovo je pravi test. ehehehehe totototot')
-logger.debug('evo me ovo je pravi test. ehehehehe totototot')
-logger.debug('evo me ovo je pravi test. ehehehehe totototot')
-logger.critical('evo me ovo je pravi test. ehehehehe totototot')
-logger.error('evo me ovo je pravi test. ehehehehe totototot')
-"""
 

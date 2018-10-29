@@ -2,6 +2,7 @@ import os
 import subprocess
 from shutil import copyfile
 
+import config
 import defaults
 from utility import Utility
 from settings import Settings
@@ -13,93 +14,6 @@ class Preparation:
   """
     Encapsulats logic for setting up development environemnt for the WebRtc and generating its projects.
   """
-  PREPRATARION_WORKING_PATH = './webrtc/xplatform/webrtc'
-  
-  foldersToGenerate =  [  
-                          './chromium/src', 
-                          './chromium/src/tools',
-                          './chromium/src/third_party',
-                          './chromium/src/third_party/winsdk_samples',
-                          './chromium/src/third_party/libjingle/source/talk/media/testdata',
-                          './third_party',
-                          './third_party/idl',
-                          './tools',
-                        ]
-
-  foldersToGenerate_ortc =  [  
-                              './third_party/ortc',
-                            ]
-
-  foldersToLink = [
-                   {'../buildtools' : './buildtools'},
-                   {'../chromium/build' : './build'},
-                   {'../chromium/third_party/jsoncpp' : './chromium/src/third_party/jsoncpp'},
-                   {'../chromium/third_party/jsoncpp' : './third_party/jsoncpp'},
-                   {'../jsoncpp' : './chromium/src/third_party/jsoncpp/source'},
-                   {'../chromium/tools/protoc_wrapper' : './chromium/src/tools/protoc_wrapper'},
-                   {'../chromium/tools/protoc_wrapper' : './tools/protoc_wrapper'},
-                   {'../chromium/third_party/protobuf' : './chromium/src/third_party/protobuf'},
-                   {'../chromium/third_party/yasm' : './chromium/src/third_party/yasm'},
-                   {'../chromium/third_party/yasm' : './third_party/yasm'},
-                   {'../chromium/third_party/opus' : './chromium/src/third_party/opus'},
-                   {'../chromium/third_party/opus' : './third_party/opus'},
-                   {'../chromium/third_party/boringssl' : './chromium/src/third_party/boringssl'},
-                   {'../chromium/third_party/boringssl' : './third_party/boringssl'},
-                   {'../boringssl' : './third_party/boringssl/src'},
-                   {'../chromium/third_party/usrsctp' : './chromium/src/third_party/usrsctp'},
-                   {'../chromium/third_party/usrsctp' : './third_party/usrsctp'},
-                   {'../usrsctp' : './third_party/usrsctp/usrsctplib'},
-                   {'../chromium/third_party/libvpx' : './chromium/src/third_party/libvpx'},
-                   {'../libvpx' : './chromium/src/third_party/libvpx/source/libvpx'},
-                   {'../chromium/testing' : './chromium/src/testing'},
-                   {'../chromium/testing' : './testing'},
-                   {'../chromium/base' : './base'},
-                   {'../yasm/binaries' : './third_party/yasm/binaries'},
-                   {'../yasm/patched-yasm' : './third_party/yasm/source/patched-yasm'},
-                   {'../opus' : './third_party/opus/src'},
-                   {'../chromium/third_party/protobuf' : './third_party/protobuf'},
-                   {'../chromium/third_party/expat' : './chromium/src/third_party/expat'},
-                   {'../chromium/third_party/expat' : './third_party/expat'},
-                   {'../chromium/third_party/googletest' : './chromium/src/third_party/googletest'},
-                   {'../chromium/third_party/googletest' : './third_party/googletest'},
-                   {'../googletest' : './third_party/googletest/src'},
-                   {'../libsrtp' : './third_party/libsrtp'},
-                   {'../chromium/third_party/libvpx' : './third_party/libvpx'},
-                   {'../libyuv' : './third_party/libyuv'},
-                   {'../openmax' : './third_party/openmax_dl'},
-                   {'../libjpeg_turbo' : './third_party/libjpeg_turbo'},
-                   {'../../windows/third_party/winuwp_compat' : './third_party/winuwp_compat'},
-                   {'../../windows/third_party/winuwp_h264' : './third_party/winuwp_h264'},
-                   {'../gflags-build' : './third_party/gflags'},
-                   {'../gflags' : './third_party/gflags/src'},
-                   {'../winsdk_samples_v71' : './third_party/winsdk_samples'},
-                   {'../gyp' : './tools/gyp'},
-                   {'../chromium/tools/clang' : './tools/clang'},
-                   {'../chromium/third_party/harfbuzz-ng' : './third_party/harfbuzz-ng'},
-                   {'../chromium/third_party/freetype' : './third_party/freetype'},
-                   {'../chromium/third_party/zlib' : './third_party/zlib'},
-                   {'../chromium/third_party/libpng' : './third_party/libpng'},
-                   {'../icu' : './third_party/icu'},
-                   {'../cryptopp' : './third_party/idl/cryptopp'},
-                   {'../zsLib' : './third_party/idl/zsLib'},
-                   {'../zsLib-eventing' : './third_party/idl/zsLib-eventing'},
-                   {'../webrtc-apis/windows' : './sdk/windows'},
-                   {'../webrtc-apis/idl' : './sdk/idl'},
-                  ]
-
-  foldersToLink_ortc = [
-                          {'../../../ortc/xplatform/udns' : './third_party/ortc/udns'},
-                          {'../../../ortc/xplatform/idnkit' : './third_party/ortc/idnkit'},
-                          {'../../../ortc/xplatform/ortclib-cpp' : './third_party/ortc/ortclib'},
-                          {'../../../ortc/xplatform/ortclib-services-cpp' : './third_party/ortc/ortclib-services-cpp'},
-                        ]
-
-  filesToCopy = [
-                  {'../chromium/third_party/BUILD.gn' : './third_party/BUILD.gn'},
-                  {'../chromium/third_party/DEPS' : './third_party/DEPS'},
-                  {'../chromium/third_party/OWNERS' : './third_party/OWNERS'},
-                  {'../chromium/third_party/PRESUBMIT.py' : './third_party/PRESUBMIT.py'},
-                ]
   @classmethod
   def setUp(cls, ortc):
     """
@@ -111,20 +25,20 @@ class Preparation:
     cls.logger = Logger.getLogger('Prepare')
     
     #Set working directory to ./webrtc/xplatform/webrtc
-    if not Utility.changeWorkingDir(os.path.join(Settings.rootSdkPath, Utility.convertToPlatformPath(cls.PREPRATARION_WORKING_PATH))):
+    if not Utility.changeWorkingDir(os.path.join(Settings.rootSdkPath, Utility.convertToPlatformPath(config.PREPRATARION_WORKING_PATH))):
       System.stopExecution(1, 'Unable to set preparation working directory')
     
     #Create missing folders and links
     try:
-      Utility.createFolders(cls.foldersToGenerate)
-      Utility.createFolderLinks(cls.foldersToLink)
+      Utility.createFolders(config.FOLDERS_TO_GENERATE)
+      Utility.createFolderLinks(config.FOLDERS_TO_LINK)
 
       #In case ortc is one of the targets create specific folders and links
       if (ortc):
-        Utility.createFolders(cls.foldersToGenerate_ortc)
-        Utility.createFolderLinks(cls.foldersToLink_ortc)
+        Utility.createFolders(config.FOLDERS_TO_GENERATE_ORTC)
+        Utility.createFolderLinks(config.FOLDERS_TO_LINK_ORTC)
 
-      Utility.copyFiles(cls.filesToCopy)
+      Utility.copyFiles(config.FILES_TO_COPY)
     except Exception, errorMessage:
       cls.logger.error(errorMessage)
     
@@ -133,44 +47,47 @@ class Preparation:
 
     cls.logger.info('Runnning preparation for target: ' + target + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration)
 
+    #Create output folder where will be saved webrtc generated projects
     gnOutputPath = os.path.join('out', target + '_' + platform + '_' + cpu + '_' + configuration)
     if not os.path.exists(gnOutputPath):
       os.makedirs(gnOutputPath)
 
+    #Copy args.gn template file to output folder
     argsPath = os.path.join(gnOutputPath, 'args.gn')
-
     copyfile(defaults.webRTCGnArgsTemplatePath, argsPath)
 
+    #Update target os and cpu in copied args,gn file
     with open(argsPath) as argsFile:
       newArgs=argsFile.read().replace('-target_os-', platform).replace('-target_cpu-', cpu).replace('-is_debug-',str(configuration.lower() == 'debug').lower())
-
     with open(argsPath, 'w') as argsFile:
       argsFile.write(newArgs)
     
+    #Generate Webrtc projects
     try:
       os.environ['DEPOT_TOOLS_WIN_TOOLCHAIN'] = '0'
       result = subprocess.call([
         'gn',
         'gen',
         gnOutputPath,
-        '--ide=' + defaults.VISUAL_STUDIO_VERSION,
+        '--ide=' + config.VISUAL_STUDIO_VERSION,
       ])
 
       if result != 0:
         cls.logger.error('Projects generation has failed! ($target, $platform, $cpu, $configuration)')
       else:
+        #Update ninja path in VS project files to point to ninja.exe in local depot_tools folder
         cls.updateNinjaPathinProjects(gnOutputPath)
         cls.logger.info('Successfully finished preparation for target: ' + target + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration)
     except Exception, errorMessage:
       cls.logger.error(errorMessage)
     
-    
-  
   @classmethod
   def updateNinjaPathinProjects(cls,folder):
     for root, dirs, files in os.walk(folder):
       for file in files:
           if file.endswith('.vcxproj'):
+            cls.logger.debug('Updating ninja path in VS project file ' + file)
+            #Replace 'call ninja.exe' with 'call local_depot_tools_path\ninja.exe'
             with open(os.path.join(root,file)) as projectFile:
               updatedProject=projectFile.read().replace('call ninja.exe', 'call ' + os.path.join(Settings.localDepotToolsPath,'ninja.exe'))
             with open(os.path.join(root,file), 'w') as projectFile:

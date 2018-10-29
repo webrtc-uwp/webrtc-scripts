@@ -4,12 +4,9 @@ import logging
 import subprocess
 from shutil import copyfile
 
-class Utility:
+from logger import Logger
 
-  @staticmethod
-  def convertToPlatformPath(relativePath):
-    listOfString = relativePath.split('/')
-    return os.path.join(*listOfString)
+class Utility:
 
   @staticmethod 
   def checkIfToolIsInstalled(toolName):
@@ -41,7 +38,6 @@ class Utility:
 
   @staticmethod
   def addModulePath(path):
-    print('Adding ' + path + ' to PATH.')
     sys.path.append(path)
 
   @staticmethod

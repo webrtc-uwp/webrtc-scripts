@@ -4,7 +4,7 @@ import sys
 import subprocess
 import traceback
 
-import defaults
+import config
 from utility import Utility
 from settings import Settings
 from logger import Logger
@@ -51,11 +51,11 @@ class System:
     Logger.SetUp()
     cls.systemLogger = Logger.getLogger('System')
 
-    if not Utility.checkIfToolIsInstalled(defaults.BUILD_TOOL_GN):
-      cls.downloadBuildTool(defaults.BUILD_TOOL_GN)
+    if not Utility.checkIfToolIsInstalled(config.BUILD_TOOL_GN):
+      cls.downloadBuildTool(config.BUILD_TOOL_GN)
 
-    if not Utility.checkIfToolIsInstalled(defaults.BUILD_TOOL_CLANG_FORMAT):
-      cls.downloadBuildTool(defaults.BUILD_TOOL_CLANG_FORMAT)
+    if not Utility.checkIfToolIsInstalled(config.BUILD_TOOL_CLANG_FORMAT):
+      cls.downloadBuildTool(config.BUILD_TOOL_CLANG_FORMAT)
 
     #Set current working directory to SDK root folder
     os.chdir(Settings.rootSdkPath)
