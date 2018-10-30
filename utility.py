@@ -5,8 +5,13 @@ import subprocess
 from shutil import copyfile
 
 from logger import Logger
+from helper import convertToPlatformPath
 
 class Utility:
+
+  @classmethod
+  def setUp(cls):
+    cls.logger = Logger.getLogger('Utility')
 
   @staticmethod 
   def checkIfToolIsInstalled(toolName):
@@ -56,13 +61,12 @@ class Utility:
   @staticmethod
   def makeLink(source,destination):
     if not os.path.exists(destination):
-      print(source + '------------>' + destination)
-      subprocess.call(['cmd', '/c', 'mklink', '/J', Utility.convertToPlatformPath(destination), Utility.convertToPlatformPath(source)])
+      subprocess.call(['cmd', '/c', 'mklink', '/J', convertToPlatformPath(destination), convertToPlatformPath(source)])
 
   @staticmethod
   def createFolders(foldersList):
     for path in foldersList:
-      dirPath = Utility.convertToPlatformPath(path)
+      dirPath = convertToPlatformPath(path)
       if not os.path.exists(dirPath):
         os.makedirs(dirPath)
 
@@ -70,13 +74,13 @@ class Utility:
   def createFolderLinks(foldersToLink):
     for dict in foldersToLink:
       for source, destination in dict.items():
-        Utility.makeLink(Utility.convertToPlatformPath(source), Utility.convertToPlatformPath(destination))
+        Utility.makeLink(convertToPlatformPath(source), convertToPlatformPath(destination))
 
   @staticmethod
   def copyFiles(filesToCopy):
     for dict in filesToCopy:
       for source, destination in dict.items():
-        copyfile(Utility.convertToPlatformPath(source), Utility.convertToPlatformPath(destination))
+        copyfile(convertToPlatformPath(source), convertToPlatformPath(destination))
 
   @staticmethod
   def changeWorkingDir(path):
@@ -86,3 +90,21 @@ class Utility:
       return False
     return True 
 
+  pushstack = list()
+
+  @classmethod
+  def pushd(cls, path):
+    try:
+      cls.logger.debug('pushd ' + path)
+      cls.pushstack.append(os.getcwd())
+      os.chdir(path)
+    except Exception, errorMessage:
+      cls.logger.error(errorMessage)
+
+  @classmethod
+  def popd(cls):
+    try:
+      cls.logger.debug('popd ' + cls.pushstack[-1])
+      os.chdir(cls.pushstack.pop())
+    except Exception, errorMessage:
+      cls.logger.error(errorMessage)

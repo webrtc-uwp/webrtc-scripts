@@ -20,7 +20,7 @@ supportedPlatformsForHostOs = {
 #Supported cpus for specific target
 supportedCPUsForPlatform = { 
                               'winuwp'  : ['arm', 'x86', 'x64'],
-                              'win'     : ['arm', 'x86', 'x64'],
+                              'win'     : ['x86', 'x64'],
                               'ios'     : ['arm'],
                               'mac'     : [ 'x86', 'x64'],
                               'android' : ['arm'],
@@ -35,7 +35,7 @@ targetConfigurations = [ 'Release', 'Debug' ]
 targetProgrammingLanguage = [ 'cx', 'cppwinrt', 'c', 'dotnet', 'python' ]
 
 #Supported actions: clean, prepare, build, createNuget, publishNuget, updatePublishedSample 
-actions = [ 'prepare', 'build']
+actions = [ 'prepare' ]
 
 """
 Supported formats: %(funcName)s - function name, %(levelname)s - log level name, %(asctime)s - time, %(message)s - log message, %(filename)s - curremt python filename, %(lineno)d - log message line no, %(name)d - module name
@@ -43,12 +43,13 @@ For the rest of available attributes you can check on https://docs.python.org/3/
 
 """
 #logFormat = '[%(levelname)-17s] - %(asctime)s - %(message)s (%(filename)s:%(lineno)d)'
-logFormat = '[%(levelname)-17s] - %(funcName)s - %(message)s (%(filename)s:%(lineno)d)'
+logFormat = '[%(levelname)-17s] - [%(name)-15s] - %(funcName)-30s - %(message)s (%(filename)s:%(lineno)d)'
 
 #Supported log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL (case sensitive)
 logLevel = 'DEBUG'
 logToFile = ''
 overwriteLogFile = False
 
-showTraceOnError = False
-showSettingsValuesOnError = False
+showTraceOnError = True
+showSettingsValuesOnError = True
+showPATHOnError = True

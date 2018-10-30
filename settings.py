@@ -39,18 +39,8 @@ class Settings:
     #Local buildtools path
     #TODO: Make platform dependent - check host os and add proper subfolder name
     cls.localBuildToolsPath = os.path.join(Settings.rootSdkPath, convertToPlatformPath(config.RELATIVE_BUILD_TOOLS_PATH),'win')
-
-    #Checks if in user working directory exists files userdefs.py and if not creates it from default.py
-    if not os.path.isfile(cls.userDefFilePath):
-      defaultFilePath = os.path.join(os.path.dirname(defaults.__file__),'defaults.py')
-      with open(defaultFilePath, 'r') as defaultsFile:
-        tempFileContent = defaultsFile.readlines()
-        tempFileContent = tempFileContent[4:]
-        tempFileContent.insert(0,'# ' + config.USERDEF_DESCRIPTION_MESSAGE + '\n')
-        tempFileContent = "".join(tempFileContent)
-        with open(cls.userDefFilePath, 'w') as userDefFile:
-          userDefFile.write(tempFileContent)
-
+    #defaults.py path
+    cls.defaultFilePath = os.path.join(os.path.dirname(defaults.__file__),'defaults.py')
 
   @classmethod
   def init(cls):
@@ -68,6 +58,7 @@ class Settings:
         globals().update(import_module(cls.inputArgs.template).__dict__)
 
     cls.supportedPlatformsForHostOs = supportedPlatformsForHostOs
+    cls.supportedCPUsForPlatform = supportedCPUsForPlatform
 
     #If targets are passed like input arguments use them, instead of one loaded from template
     if cls.inputArgs.targets:
@@ -101,3 +92,6 @@ class Settings:
 
     cls.showTraceOnError = showTraceOnError
     cls.showSettingsValuesOnError = showSettingsValuesOnError
+    cls.showPATHOnError = showPATHOnError
+
+    cls.webRTCGnArgsTemplatePath = webRTCGnArgsTemplatePath

@@ -56,7 +56,7 @@ class Logger:
   loggerHandle = None #logging.StreamHandler()
   #loggerHandle.setFormatter(formatter)
   @classmethod
-  def SetUp(cls):
+  def setUp(cls):
 
     if cls.loggerHandle == None:
       if Settings.logToFile == "":
