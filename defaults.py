@@ -53,3 +53,6 @@ overwriteLogFile = False
 showTraceOnError = True
 showSettingsValuesOnError = True
 showPATHOnError = True
+
+#Windows specific variables
+msvsPath = ""

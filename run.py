@@ -28,14 +28,17 @@ def actionBuild():
   """
     Build all specified targets for all specified platforms.
   """
+  Builder.init()
+
   for target in Settings.targets:
+    targetsToBuild, combineLibs = Builder.getTargetGnPath(target)
     for platform in Settings.targetPlatforms:
       for cpu in Settings.targetCPUs:
         for configuration in Settings.targetConfigurations:
-          Builder.build(target, platform, cpu, configuration)
+          Builder.run(target, targetsToBuild, platform, cpu, configuration, combineLibs)
 
 def actionCreateNuget():
-  pass
+    pass
 
 def actionPublishNuget():
   pass
@@ -81,7 +84,7 @@ def main():
     actionPrepare()
 
   if 'build' in Settings.actions:
-    actionBuild
+    actionBuild()
 
   if 'createNuget' in Settings.actions:
     actionCreateNuget()

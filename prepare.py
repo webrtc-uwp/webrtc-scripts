@@ -23,11 +23,13 @@ class Preparation:
     cls.logger = Logger.getLogger('Prepare')
     
     #Set working directory to ./webrtc/xplatform/webrtc
-    if not Utility.changeWorkingDir(os.path.join(Settings.rootSdkPath, convertToPlatformPath(config.PREPRATARION_WORKING_PATH))):
+    if not os.path(Settings.preparationWorkingPath):
       System.stopExecution(1, 'Unable to set preparation working directory')
-    
+
     #Create missing folders and links
     try:
+      Utility.pushd(Settings.preparationWorkingPath)
+
       Utility.createFolders(config.FOLDERS_TO_GENERATE)
       Utility.createFolderLinks(config.FOLDERS_TO_LINK)
 
@@ -39,11 +41,15 @@ class Preparation:
       Utility.copyFiles(config.FILES_TO_COPY)
     except Exception, errorMessage:
       cls.logger.error(errorMessage)
+    finally:
+      Utility.popd()
     
   @classmethod
   def run(cls, target, platform, cpu, configuration):
 
     cls.logger.info('Runnning preparation for target: ' + target + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration)
+
+    Utility.pushd(Settings.preparationWorkingPath)
 
     #Create output folder where will be saved webrtc generated projects
     gnOutputPath = os.path.join('out', target + '_' + platform + '_' + cpu + '_' + configuration)
@@ -84,6 +90,8 @@ class Preparation:
     except Exception, errorMessage:
       cls.logger.error(str(errorMessage))
       System.stopExecution(ERROR_PREPARE_GN_GENERATION_FAILED)
+    finally:
+      Utility.popd()
     
   #---------------------------------- Private methods --------------------------------------------
   @classmethod
@@ -94,7 +102,8 @@ class Preparation:
             #cls.logger.debug('Updating ninja path in VS project file ' + file)
             #Replace 'call ninja.exe' with 'call local_depot_tools_path\ninja.exe'
             with open(os.path.join(root,file)) as projectFile:
-              updatedProject=projectFile.read().replace('call ninja.exe', 'call ' + os.path.join(Settings.localDepotToolsPath,'ninja.exe'))
+              updatedProject=projectFile.read().replace('call ninja.exe', 'call ' + Settings.localNinjaPath)
+              #updatedProject=projectFile.read().replace('call ninja.exe', 'call ' + os.path.join(Settings.localDepotToolsPath,'ninja.exe'))
             with open(os.path.join(root,file), 'w') as projectFile:
               projectFile.write(updatedProject)
 

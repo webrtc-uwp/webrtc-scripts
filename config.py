@@ -25,6 +25,8 @@ VISUAL_STUDIO_VERSION = 'vs2017'
 USERDEF_DESCRIPTION_MESSAGE = 'This file is generated from defaults.py. Be free to change any variable listed below.'
 
 #Paths are relative to root webrtc folder (webrtc/xplatform/webrtc)
+
+#List of folders to create during preparation process
 FOLDERS_TO_GENERATE =  [  
                           './chromium/src', 
                           './chromium/src/tools',
@@ -36,10 +38,12 @@ FOLDERS_TO_GENERATE =  [
                           './tools',
                         ]
 
+#List of folders, specific to ortc, to create during preparation process
 FOLDERS_TO_GENERATE_ORTC =  [  
                             './third_party/ortc',
                           ]
 
+#List of folders and its links to create
 FOLDERS_TO_LINK = [
                    {'../buildtools' : './buildtools'},
                    {'../chromium/build' : './build'},
@@ -97,6 +101,7 @@ FOLDERS_TO_LINK = [
                    {'../webrtc-apis/idl' : './sdk/idl'},
                   ]
 
+#List of folders and its links to create, specific for ortc
 FOLDERS_TO_LINK_ORTC = [
                         {'../../../ortc/xplatform/udns' : './third_party/ortc/udns'},
                         {'../../../ortc/xplatform/idnkit' : './third_party/ortc/idnkit'},
@@ -104,9 +109,70 @@ FOLDERS_TO_LINK_ORTC = [
                         {'../../../ortc/xplatform/ortclib-services-cpp' : './third_party/ortc/ortclib-services-cpp'},
                       ]
 
+#List of filse and its destinations for copying during preparation process
 FILES_TO_COPY = [
                   {'../chromium/third_party/BUILD.gn' : './third_party/BUILD.gn'},
                   {'../chromium/third_party/DEPS' : './third_party/DEPS'},
                   {'../chromium/third_party/OWNERS' : './third_party/OWNERS'},
                   {'../chromium/third_party/PRESUBMIT.py' : './third_party/PRESUBMIT.py'},
                 ]
+
+
+#VS2017 folders name to append to Program files or Program Files (x86) parent folder
+MSVS_FOLDER_NAME = '/Microsoft Visual Studio/2017'
+
+#List of VS2017 supported versions
+MSVS_VERSIONS = (
+                  'Community',
+                  'Professional',
+                  'Enterprise',
+                )
+
+#MSVC tools path relative to VS path
+MSVC_TOOLS_PATH = '/VC/Tools/MSVC'
+
+#Compiler otions combinations for host CPU and target CPU
+WINDOWS_COMPILER_OPTIONS = {
+                              'x64' : {
+                                        'x64' : 'amd64',
+                                        'x86' : 'amd64_x86',
+                                        'arm' : 'amd64_arm'
+                                      },
+                              'x86' : {
+                                        'x64' : 'x86_amd64',
+                                        'x86' : 'x86',
+                                        'arm' : 'x86_arm'
+                                      }
+                            }
+
+#Additional libs to build for webrtc and ortc targets
+TARGETS_TO_BUILD = {
+                                'webrtc'  : (
+                                              [ 
+                                                'webrtc',
+                                                'third_party/jsoncpp:jsoncpp',
+                                                'rtc_base:rtc_json'
+                                              ],1
+                                             ),                                            
+                                'ortc'    : (
+                                              [ 
+                                                'third_party/ortc:ortc',
+                                                'third_party/jsoncpp:jsoncpp',
+                                                'rtc_base:rtc_json'
+                                              ],1
+                                            )
+                              }
+
+
+COMBINE_LIB_FOLDERS = (
+                        '/obj',
+                        '/gn'
+                      )
+
+COMBINE_LIB_IGNORE_SUBFOLDERS = (
+                                  'libOrtc',
+                                  'zslib-eventing-tool',
+                                  'test',
+                                  'testing',
+                                  'examples'
+                                )

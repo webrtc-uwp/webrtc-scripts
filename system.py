@@ -9,6 +9,7 @@ from utility import Utility
 from settings import Settings
 from logger import Logger
 from errors import *
+from helper import convertToPlatformPath
 
 
 class System:
@@ -62,6 +63,8 @@ class System:
 
     cls.__updateDepotToolsPath()
 
+    if cls.isWindows:
+      cls.__determineVisualStudioPath()
     #Set current working directory to SDK root folder
     #os.chdir(Settings.rootSdkPath)
     
@@ -284,3 +287,59 @@ class System:
 
     if ret != 0:
       cls.logger.error('Failed downloading ' + toolName)
+
+  @classmethod
+  def __determineVisualStudioPath(cls):
+    """
+      Determines Visual Studio and MSVC tools paths if they are installed in
+      Program Files or Program Files (x86). If VS is installed but it is not found
+      in these folders, it is required to set msvsPath variable in userdef.py file
+      to point to proper folder. 
+      (e.g. msvsPath = E:\\Development\\Microsoft Visual Studio\\2017\\Community)
+    """
+    if Settings.msvsPath == '' or not os.path.exists(Settings.msvsPath):
+      vsPath = ''
+      if os.environ['ProgramFiles(x86)'] == '':
+        vsPath = os.environ['ProgramFiles']
+      else:
+        vsPath = os.environ['ProgramFiles(x86)']
+       
+      vsPath = os.path.join(vsPath,convertToPlatformPath(config.MSVS_FOLDER_NAME))
+
+      if os.path.exists(vsPath):
+        for version in config.MSVS_VERSIONS:
+          versionPath = os.path.join(vsPath,version)
+          if os.path.exists(version):
+            Settings.msvsPath = versionPath
+            break
+      else:
+        cls.logger.warning('Visual studio 2017 is not found at ' + vsPath + '. Please install it, or if it is installed, set msvsPath variable in userdef.py to point to correct path.')
+
+      if Settings.msvsPath != '':
+        Settings.msvcToolsPath = os.path.join(Settings.msvsPath,convertToPlatformPath(config.MSVC_TOOLS_PATH))
+        cls.logger.info('Visual studio path is ' + Settings.msvsPath)
+        cls.logger.debug('MSVC tools path is ' + Settings.msvcToolsPath)
+
+    """
+    SET progfiles=%ProgramFiles%
+IF NOT "%ProgramFiles(x86)%" == "" SET progfiles=%ProgramFiles(x86)%
+
+REM Check if Visual Studio 2017 is installed
+SET msVS_Path="%progfiles%\Microsoft Visual Studio\2017"
+SET msVS_Version=14
+
+IF EXIST !msVS_Path! (
+	SET msVS_Path=!msVS_Path:"=!
+	IF EXIST "!msVS_Path!\Community" SET msVS_Path="!msVS_Path!\Community"
+	IF EXIST "!msVS_Path!\Professional" SET msVS_Path="!msVS_Path!\Professional"
+	IF EXIST "!msVS_Path!\Enterprise" SET msVS_Path="!msVS_Path!\Enterprise"
+	IF EXIST "!msVS_Path!\VC\Tools\MSVC" SET tools_MSVC_Path=!msVS_Path!\VC\Tools\MSVC
+)
+
+IF NOT EXIST !msVS_Path! CALL:error 1 "Visual Studio 2017 is not installed"
+
+for /f %%i in ('dir /b %tools_MSVC_Path%') do set tools_MSVC_Version=%%i
+
+CALL:print %debug% "Visual Studio path is !msVS_Path!"
+CALL:print %debug% "Visual Studio 2017 Tools MSVC Version is !tools_MSVC_Version!"
+"""

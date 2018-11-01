@@ -41,6 +41,11 @@ class Settings:
     cls.localBuildToolsPath = os.path.join(Settings.rootSdkPath, convertToPlatformPath(config.RELATIVE_BUILD_TOOLS_PATH),'win')
     #defaults.py path
     cls.defaultFilePath = os.path.join(os.path.dirname(defaults.__file__),'defaults.py')
+    #Root path for preparation
+    cls.preparationWorkingPath = os.path.join(cls.rootSdkPath, convertToPlatformPath(config.PREPRATARION_WORKING_PATH))
+
+    #local ninja path
+    cls.localNinjaPath = os.path.join(cls.localDepotToolsPath,'ninja')
 
   @classmethod
   def init(cls):
@@ -95,3 +100,8 @@ class Settings:
     cls.showPATHOnError = showPATHOnError
 
     cls.webRTCGnArgsTemplatePath = webRTCGnArgsTemplatePath
+
+    cls.msvsPath = msvsPath
+
+    #This value will be set during VS path check
+    cls.msvcToolsPath = ''
