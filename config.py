@@ -130,6 +130,7 @@ MSVS_VERSIONS = (
 
 #MSVC tools path relative to VS path
 MSVC_TOOLS_PATH = '/VC/Tools/MSVC'
+VCVARSALL_PATH = '/VC/Auxiliary/Build/vcvarsall.bat'
 
 #Compiler otions combinations for host CPU and target CPU
 WINDOWS_COMPILER_OPTIONS = {
@@ -166,7 +167,7 @@ TARGETS_TO_BUILD = {
 
 COMBINE_LIB_FOLDERS = (
                         '/obj',
-                        '/gn'
+                        '/gen'
                       )
 
 COMBINE_LIB_IGNORE_SUBFOLDERS = (
@@ -176,3 +177,5 @@ COMBINE_LIB_IGNORE_SUBFOLDERS = (
                                   'testing',
                                   'examples'
                                 )
+
+WINDOWS_IGNORE_WARNINGS = ( 4264, 4221, 4006 )

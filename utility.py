@@ -108,3 +108,21 @@ class Utility:
       os.chdir(cls.pushstack.pop())
     except Exception, errorMessage:
       cls.logger.error(errorMessage)
+
+  @classmethod
+  def getFilesWithextensionsInFolder(cls, folders, extensions, stringLimit = 7000):
+    listOfFiles = ''
+    listOfPaths = []
+    for folder in folders:
+      if os.path.exists(convertToPlatformPath(folder)):
+        for root, dirs, files in os.walk(convertToPlatformPath(folder)):
+          for file in files:
+            if file.endswith(extensions):
+              listOfFiles += os.path.join(root, file) + ' '
+              if len(listOfFiles) > stringLimit:
+                listOfPaths.append(listOfFiles)
+                listOfFiles = ''
+      else:
+        cls.logger.warning('Folder ' + folder + ' doesn\'t exist!')
+
+    return listOfPaths

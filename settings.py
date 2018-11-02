@@ -105,3 +105,5 @@ class Settings:
 
     #This value will be set during VS path check
     cls.msvcToolsPath = ''
+    cls.msvcToolsBinPath = ''
+    cls.vcvarsallPath = ''

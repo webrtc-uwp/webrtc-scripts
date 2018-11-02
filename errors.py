@@ -11,7 +11,8 @@ ERROR_PLATFORM_NOT_SUPPORTED,\
 ERROR_PREPARE_GN_GENERATION_FAILED,\
 ERROR_NUGET_CREATION_MISSING_FILE,\
 ERROR_BUILD_OUTPUT_FOLDER_DEOESNT_EXIST,\
-ERROR_BUILD_FAILED = range(10)
+ERROR_BUILD_FAILED,\
+ERROR_BUILD_MERGE_LIBS_FAILED = range(11)
 
 #TODO: give more details about perl if it is really required
 #TODO: check python version and show error if it is 3.0 or later
@@ -24,5 +25,6 @@ error_codes = {
   ERROR_PREPARE_GN_GENERATION_FAILED : 'Generating WebRtc projects has failed.',
   ERROR_NUGET_CREATION_MISSING_FILE : 'File missing',
   ERROR_BUILD_OUTPUT_FOLDER_DEOESNT_EXIST : 'Output folder doesn\'t exist',
-  ERROR_BUILD_FAILED : 'Build has failed'
+  ERROR_BUILD_FAILED : 'Build has failed',
+  ERROR_BUILD_MERGE_LIBS_FAILED : 'Merging libraries has failed!'
 }
