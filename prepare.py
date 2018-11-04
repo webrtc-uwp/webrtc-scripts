@@ -23,7 +23,7 @@ class Preparation:
     cls.logger = Logger.getLogger('Prepare')
     
     #Set working directory to ./webrtc/xplatform/webrtc
-    if not os.path(Settings.preparationWorkingPath):
+    if not os.path.exists(Settings.preparationWorkingPath):
       System.stopExecution(1, 'Unable to set preparation working directory')
 
     #Create missing folders and links
@@ -38,7 +38,7 @@ class Preparation:
         Utility.createFolders(config.FOLDERS_TO_GENERATE_ORTC)
         Utility.createFolderLinks(config.FOLDERS_TO_LINK_ORTC)
 
-      Utility.copyFiles(config.FILES_TO_COPY)
+      Utility.copyFilesFromDict(config.FILES_TO_COPY)
     except Exception, errorMessage:
       cls.logger.error(errorMessage)
     finally:

@@ -179,3 +179,8 @@ COMBINE_LIB_IGNORE_SUBFOLDERS = (
                                 )
 
 WINDOWS_IGNORE_WARNINGS = ( 4264, 4221, 4006 )
+
+#Path relative to webrtc root folder where will ba saved built libs, referenced by wrapper projects
+BUILT_LIBS_DESTINATION_PATH = '/BUILD_OUTPUT/[TARGET]/[PLATFORM]/[CPU]/[CONFIGURATION]/'
+
+    

@@ -67,8 +67,7 @@ class Utility:
   def createFolders(foldersList):
     for path in foldersList:
       dirPath = convertToPlatformPath(path)
-      if not os.path.exists(dirPath):
-        os.makedirs(dirPath)
+      os.makedirs(dirPath)
 
   @staticmethod
   def createFolderLinks(foldersToLink):
@@ -77,7 +76,7 @@ class Utility:
         Utility.makeLink(convertToPlatformPath(source), convertToPlatformPath(destination))
 
   @staticmethod
-  def copyFiles(filesToCopy):
+  def copyFilesFromDict(filesToCopy):
     for dict in filesToCopy:
       for source, destination in dict.items():
         copyfile(convertToPlatformPath(source), convertToPlatformPath(destination))
@@ -110,7 +109,7 @@ class Utility:
       cls.logger.error(errorMessage)
 
   @classmethod
-  def getFilesWithextensionsInFolder(cls, folders, extensions, stringLimit = 7000):
+  def getFilesWithExtensionsInFolder(cls, folders, extensions, stringLimit = 7000):
     listOfFiles = ''
     listOfPaths = []
     for folder in folders:
@@ -120,9 +119,10 @@ class Utility:
             if file.endswith(extensions):
               listOfFiles += os.path.join(root, file) + ' '
               if len(listOfFiles) > stringLimit:
-                listOfPaths.append(listOfFiles)
+                listOfPaths.append(listOfFiles[:-1])
                 listOfFiles = ''
       else:
         cls.logger.warning('Folder ' + folder + ' doesn\'t exist!')
-
+    if len(listOfFiles) > 0:
+      listOfPaths.append(listOfFiles)
     return listOfPaths

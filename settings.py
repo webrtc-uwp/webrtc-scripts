@@ -103,6 +103,8 @@ class Settings:
 
     cls.msvsPath = msvsPath
 
+    cls.libsBackupPath = libsBackupPath
+    
     #This value will be set during VS path check
     cls.msvcToolsPath = ''
     cls.msvcToolsBinPath = ''

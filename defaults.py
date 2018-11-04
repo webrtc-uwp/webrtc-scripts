@@ -55,4 +55,6 @@ showSettingsValuesOnError = True
 showPATHOnError = True
 
 #Windows specific variables
-msvsPath = ""
+msvsPath = ''
+
+libsBackupPath = 'Backup'

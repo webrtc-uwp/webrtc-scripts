@@ -69,7 +69,59 @@ class System:
     #Set current working directory to SDK root folder
     #os.chdir(Settings.rootSdkPath)
     
+    cls.updatePythonToolsAndModules()
     #TODO: Update clang
+
+  @classmethod
+  def updatePythonToolsAndModules(cls):
+    executablePath = Utility.getExecutablePath('python')
+    if executablePath != None:
+      pythonPath = os.path.dirname(executablePath)
+      pythonScriptsPath = os.path.join(pythonPath,'Scripts')
+
+      Utility.addPath(pythonScriptsPath)
+  
+      try:
+        import win32file
+      except:
+        result = subprocess.call('python.exe -m pip install --upgrade pip')
+        if result != 0:
+          cls.logger.error('Failed to update pip!')
+        
+        result = subprocess.call('pip install pywin32')
+        if result != 0:
+          cls.logger.error('Failed to install module!')
+          
+        
+
+      
+      """
+      SET pywin32VersionFile=C:\Python27\Lib\site-packages\pywin32.version.txt
+
+      ::downloads
+      SET pythonVersion=2.7.15
+      SET pythonDestinationPath=python-%pythonVersion%.msi
+      SET pythonPipDestinationPath=get-pip.py
+
+      IF NOT EXIST %pywin32VersionFile% (
+        CALL:print %trace% "Updating pip ..."
+          python.exe -m pip install --upgrade pip
+          IF !ERRORLEVEL! NEQ 0 (
+          CALL:error 1  "Unable to update Python pip tool."
+          )
+          CALL:print %trace% "Installing pywin32..."
+        pip install pywin32
+          IF !ERRORLEVEL! NEQ 0 (
+          CALL:error 1  "Unable to install pywin32 module."
+          )
+      ) ELSE (
+        CALL:print %trace% "pywin32 already exists"
+      )
+
+      IF EXIST get-pip.py DEL /f /q get-pip.py
+      """
+
+
 
   @classmethod
   def downloadBuildToolsIfNeeded(cls):
@@ -98,7 +150,7 @@ class System:
     #Check if Perl is installed
     if not Utility.checkIfToolIsInstalled('perl'):
       cls.logger.warning('perl' + ' is not installed.')
-      return ERROR_SYSTEM_MISSING_PERL
+      #return ERROR_SYSTEM_MISSING_PERL
 
     return NO_ERROR
 

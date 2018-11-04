@@ -13,32 +13,65 @@ from system import System
 class Builder:
   @classmethod
   def init(cls):
+    """
+      Initiates logger object.
+    """
     cls.logger = Logger.getLogger('Build')
 
   @classmethod
-  def run(cls, targetName, targets, platform, cpu, configuration, combineLibs = False, outputPath = None):
+  def run(cls, targetName, targets, platform, cpu, configuration, combineLibs = False, builderWorkingPath = None):
+    """
+      Start target building process.
+      :param targetName: Name of the main target (ortc or webrtc)
+      :param targets: List of the targets to build
+      :param platform: Platform name
+      :param cpu: Target CPU
+      :param configuration: Configuration to build for
+      :param combineLibs: Should all libs be merged into one library
+      :param builderWorkingPath: Path where generated projects for specified target.
+      :return: NO_ERROR if build was successfull. Otherwise returns error code
+    """
     cls.logger.info('Running build for target: ' + targetName + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration)
 
-    if outputPath == None:
-      outputPath = os.path.join('out', targetName + '_' + platform + '_' + cpu + '_' + configuration)
+    #If path with generated projects is not specified generate path from input arguments
+    if builderWorkingPath == None:
+      builderWorkingPath = os.path.join('out', targetName + '_' + platform + '_' + cpu + '_' + configuration)
 
-    workingDir = os.path.join(Settings.preparationWorkingPath,outputPath)
+    workingDir = os.path.join(Settings.preparationWorkingPath,builderWorkingPath)
 
+    #If folder for specified target and platform doesn't exist, stop further execution
     if not os.path.exists(workingDir):
       cls.logger.error('Output folder at ' + workingDir + ' doesn\'t exist. It looks like prepare is not executed. Please run prepare action.')
       return ERROR_BUILD_OUTPUT_FOLDER_DEOESNT_EXIST
     
+    #Change current working directory to one with generated projects
     Utility.pushd(workingDir)
 
-    if not cls.buildTarget(targets, cpu, combineLibs):
+    #Start building and merging libraries
+    if not cls.buildTargets(targets, cpu):
       return ERROR_BUILD_FAILED
     
+    #Merge libraries if it is required
+    if combineLibs:
+      cls.mergeLibs(cpu)
+
+    destinationPath = convertToPlatformPath(config.BUILT_LIBS_DESTINATION_PATH.replace('[TARGET]',targetName).replace('[PLATFORM]',platform).replace('[CPU]',cpu).replace('[CONFIGURATION]',configuration))
+    destinationPathLib = os.path.join(Settings.preparationWorkingPath, destinationPath)
+
+    cls.copyLibsToOutput(targetName, platform, cpu, configuration, destinationPathLib)
+
+    if Settings.libsBackupPath != '':
+      backupPath = os.path.join(Settings.userWorkingPath,Settings.libsBackupPath)
+      if os.path.exists(backupPath):
+        shutil.rmtree(backupPath) 
+      shutil.copytree(destinationPathLib,backupPath)
+    #Switch to previously working directory
     Utility.popd()
 
     return NO_ERROR
 
   @classmethod
-  def buildTarget(cls, targets, targetCPU, combineLibs):
+  def buildTargets(cls, targets, targetCPU):
     for target in targets:
       result = subprocess.call([
           Settings.localNinjaPath + '.exe',
@@ -51,16 +84,14 @@ class Builder:
       
       cls.logger.info('Successfully finished building libs for target ' + target)
 
-    if combineLibs:
-      cls.mergeLibs(targetCPU)
-
     return True
 
   @classmethod
   def mergeLibs(cls, targetCPU):
     cls.libexePath = os.path.join(Settings.msvcToolsBinPath, targetCPU, 'lib.exe')
     
-    listOfObjesToCombine = Utility.getFilesWithextensionsInFolder(config.COMBINE_LIB_FOLDERS, ('.obj','.o'))
+    #
+    listOfObjesToCombine = Utility.getFilesWithExtensionsInFolder(config.COMBINE_LIB_FOLDERS, ('.obj','.o'))
 
     tempCombinePath = 'combine'
     Utility.createFolders([tempCombinePath])
@@ -114,6 +145,30 @@ class Builder:
       ret = ERROR_BUILD_MERGE_LIBS_FAILED
 
     return ret
+
+  @classmethod
+  def copyLibsToOutput(cls, target, platform, cpu, configuration, destinationPathLib):
+    destinationPathPdb = os.path.join(destinationPathLib,'pdbs')
+
+    if not os.path.exists(destinationPathLib):
+      os.makedirs(destinationPathLib)
+
+    if not os.path.exists(destinationPathPdb):
+      os.makedirs(destinationPathPdb)
+
+    listOfLibsToCopy = Utility.getFilesWithExtensionsInFolder(['.'],('.lib','.dll'),0)
+    
+    for lib in listOfLibsToCopy:
+      shutil.copyfile(lib, os.path.join(destinationPathLib,os.path.basename(lib)))
+
+    listOfPdbsToCopy = Utility.getFilesWithExtensionsInFolder(['.'],('.pdb'),0)
+    
+    for pdb in listOfPdbsToCopy:
+      shutil.copyfile(pdb, os.path.join(destinationPathPdb,os.path.basename(pdb)))
+
+  @classmethod
+  def makeBackup(cls):
+    pass
 
   @classmethod
   def getTargetGnPath(cls, target):
