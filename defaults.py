@@ -25,7 +25,7 @@ supportedCPUsForPlatform = {
                               'mac'     : [ 'x86', 'x64'],
                               'android' : ['arm'],
                               'linux'   : [ 'x86', 'x64'],
-                          }
+                            }
 
 #TODO: Add dictionary with supported cpus for targetPlatform
 targets = [ 'webrtc' ]

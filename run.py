@@ -7,8 +7,14 @@ from settings import Settings
 from logger import Logger
 from prepare import Preparation
 from builder import Builder
+from cleanup import Cleanup
 from errors import *
 
+
+def actionCleanup():
+  Cleanup.init()
+
+  Cleanup.run()
 
 def actionPrepare():
   """
@@ -79,6 +85,9 @@ def main():
     mainLogger.error('Platform from the list ' + str(Settings.targetPlatforms) + ' is not supported')
     System.stopExecution(ERROR_PLATFORM_NOT_SUPPORTED)
 
+  if 'cleanup' in Settings.actions:
+    actionCleanup()
+    
   #Start performing actions. Actions has to be executed in right order and that is the reason why it is handled this way
   if 'prepare' in Settings.actions:
     actionPrepare()
