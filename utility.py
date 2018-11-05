@@ -1,5 +1,6 @@
 import os
 import sys
+import re
 import logging
 import subprocess
 from shutil import copyfile
@@ -67,7 +68,8 @@ class Utility:
   def createFolders(foldersList):
     for path in foldersList:
       dirPath = convertToPlatformPath(path)
-      os.makedirs(dirPath)
+      if not os.path.exists(dirPath):
+        os.makedirs(dirPath)
 
   @staticmethod
   def createFolderLinks(foldersToLink):
@@ -109,20 +111,44 @@ class Utility:
       cls.logger.error(errorMessage)
 
   @classmethod
-  def getFilesWithExtensionsInFolder(cls, folders, extensions, stringLimit = 7000):
+  def getFilesWithExtensionsInFolder(cls, folders, extensions, folderToIgnore = (), stringLimit = 7000):
     listOfFiles = ''
     listOfPaths = []
     for folder in folders:
       if os.path.exists(convertToPlatformPath(folder)):
         for root, dirs, files in os.walk(convertToPlatformPath(folder)):
-          for file in files:
-            if file.endswith(extensions):
-              listOfFiles += os.path.join(root, file) + ' '
-              if len(listOfFiles) > stringLimit:
-                listOfPaths.append(listOfFiles[:-1])
-                listOfFiles = ''
+          if not root.endswith(folderToIgnore):
+            for file in files:
+              if file.endswith(extensions):
+                listOfFiles += os.path.join(root, file) + ' '
+                if len(listOfFiles) > stringLimit:
+                  listOfPaths.append(listOfFiles[:-1])
+                  listOfFiles = ''
       else:
         cls.logger.warning('Folder ' + folder + ' doesn\'t exist!')
     if len(listOfFiles) > 0:
       listOfPaths.append(listOfFiles)
     return listOfPaths
+
+  @classmethod
+  def importDependencyForTarget(cls, gnFile, target, dependency):
+    if os.path.exists(gnFile):
+      targetMark = '(\"' + target + '\")'
+      depsRegex = r'\s*deps\s*=\s*\[*'
+      depsFlag = False
+      insertFlag = False
+      with open(gnFile, 'r') as gnReadFile:
+        gnContent = gnReadFile.readlines()
+      with open(gnFile,'w') as gnWriteFile:
+        for line in gnContent:
+          gnWriteFile.write(line)
+          if targetMark in line:
+            depsFlag = True
+          else:
+            if depsFlag:
+              if re.findall(depsRegex,line) != []:
+                insertFlag = True
+                depsFlag = False
+            elif insertFlag:
+              gnWriteFile.write('"' + dependency + '",')
+              insertFlag = False

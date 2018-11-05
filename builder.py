@@ -91,7 +91,7 @@ class Builder:
     cls.libexePath = os.path.join(Settings.msvcToolsBinPath, targetCPU, 'lib.exe')
     
     #
-    listOfObjesToCombine = Utility.getFilesWithExtensionsInFolder(config.COMBINE_LIB_FOLDERS, ('.obj','.o'))
+    listOfObjesToCombine = Utility.getFilesWithExtensionsInFolder(config.COMBINE_LIB_FOLDERS, ('.obj','.o'), config.COMBINE_LIB_IGNORE_SUBFOLDERS)
 
     tempCombinePath = 'combine'
     Utility.createFolders([tempCombinePath])
@@ -156,12 +156,12 @@ class Builder:
     if not os.path.exists(destinationPathPdb):
       os.makedirs(destinationPathPdb)
 
-    listOfLibsToCopy = Utility.getFilesWithExtensionsInFolder(['.'],('.lib','.dll'),0)
+    listOfLibsToCopy = Utility.getFilesWithExtensionsInFolder(['.'],('.lib','.dll'),config.COMBINE_LIB_IGNORE_SUBFOLDERS,0)
     
     for lib in listOfLibsToCopy:
       shutil.copyfile(lib, os.path.join(destinationPathLib,os.path.basename(lib)))
 
-    listOfPdbsToCopy = Utility.getFilesWithExtensionsInFolder(['.'],('.pdb'),0)
+    listOfPdbsToCopy = Utility.getFilesWithExtensionsInFolder(['.'],('.pdb'),config.COMBINE_LIB_IGNORE_SUBFOLDERS,0)
     
     for pdb in listOfPdbsToCopy:
       shutil.copyfile(pdb, os.path.join(destinationPathPdb,os.path.basename(pdb)))

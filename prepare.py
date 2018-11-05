@@ -69,6 +69,7 @@ class Preparation:
     with open(argsPath, 'w') as argsFile:
       argsFile.write(newArgs)
     
+    Utility.importDependencyForTarget('BUILD.gn','webrtc','//third_party/idl:idl')
     #Generate Webrtc projects
     try:
       os.environ['DEPOT_TOOLS_WIN_TOOLCHAIN'] = '0'

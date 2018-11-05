@@ -65,6 +65,11 @@ class Settings:
     cls.supportedPlatformsForHostOs = supportedPlatformsForHostOs
     cls.supportedCPUsForPlatform = supportedCPUsForPlatform
 
+    if cls.inputArgs.actions:
+      cls.actions = cls.inputArgs.actions
+    else:
+      cls.actions = actions
+
     #If targets are passed like input arguments use them, instead of one loaded from template
     if cls.inputArgs.targets:
       cls.targets = cls.inputArgs.targets
@@ -89,7 +94,7 @@ class Settings:
     else:
       cls.targetConfigurations = targetConfigurations
 
-    cls.actions = actions
+    
     cls.logFormat = logFormat
     cls.logLevel = logLevel
     cls.logToFile = logToFile
