@@ -11,7 +11,7 @@ TEMPLATES_PATH = './templates'
 ORTC_DEFAULTS_PATH = './ortc'
 WEBRTC_DEFAULTS_PATH = './webrtc'
 RELATIVE_DEPOT_TOOLS_PATH = './webrtc/xplatform/depot_tools'
-RELATIVE_BUILD_TOOLS_PATH = './webrtc/xplatform/buildtools'
+RELATIVE_BUILD_TOOLS_PATH = './webrtc/xplatform/webrtc/buildtools'
 PREPRATARION_WORKING_PATH = './webrtc/xplatform/webrtc'
 
 #WebRtc build tools
@@ -35,6 +35,7 @@ FOLDERS_TO_GENERATE =  [
                           './chromium/src/third_party/libjingle/source/talk/media/testdata',
                           './third_party',
                           './third_party/idl',
+                          './third_party/llvm',
                           './tools',
                         ]
 
@@ -109,12 +110,18 @@ FOLDERS_TO_LINK_ORTC = [
                         {'../../../ortc/xplatform/ortclib-services-cpp' : './third_party/ortc/ortclib-services-cpp'},
                       ]
 
+FOLDERS_TO_LINK_LLVM = [
+                        {'./chromium/src/third_party/llvm' : './third_party/llvm'},
+                        {'./chromium/src/third_party/llvm-build' : './third_party/llvm-build'},
+                      ]
+
 #List of filse and its destinations for copying during preparation process
 FILES_TO_COPY = [
                   {'../chromium/third_party/BUILD.gn' : './third_party/BUILD.gn'},
                   {'../chromium/third_party/DEPS' : './third_party/DEPS'},
                   {'../chromium/third_party/OWNERS' : './third_party/OWNERS'},
                   {'../chromium/third_party/PRESUBMIT.py' : './third_party/PRESUBMIT.py'},
+                  {'../templates/gn/idl_BUILD.gn' : './third_party\idl\BUILD.gn'},
                 ]
 
 
@@ -183,4 +190,9 @@ WINDOWS_IGNORE_WARNINGS = ( 4264, 4221, 4006 )
 #Path relative to webrtc root folder where will ba saved built libs, referenced by wrapper projects
 BUILT_LIBS_DESTINATION_PATH = '/BUILD_OUTPUT/[TARGET]/[PLATFORM]/[CPU]/[CONFIGURATION]/'
 
+CLANG_CL_PATH = '/third_party/llvm-build/Release+Asserts/bin/clang-cl.exe'
+CLANG_UPDATE_SCRIPT_PATH = '/tools/clang/scripts/update.py'
     
+PYTHON_PACKAGES_TO_INSTALL = {
+                              'win32file' : 'pywin32'
+                            }

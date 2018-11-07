@@ -14,7 +14,7 @@ class Cleanup:
 
   @classmethod
   def run(cls):
-    Utility.pushd(Settings.preparationWorkingPath)
+    Utility.pushd(Settings.webrtcPath)
     if os.path.exists('out'):
         shutil.rmtree('out')
 

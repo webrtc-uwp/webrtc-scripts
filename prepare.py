@@ -23,12 +23,13 @@ class Preparation:
     cls.logger = Logger.getLogger('Prepare')
     
     #Set working directory to ./webrtc/xplatform/webrtc
-    if not os.path.exists(Settings.preparationWorkingPath):
+    if not os.path.exists(Settings.webrtcPath):
       System.stopExecution(1, 'Unable to set preparation working directory')
 
     #Create missing folders and links
     try:
-      Utility.pushd(Settings.preparationWorkingPath)
+      #Change working directory
+      Utility.pushd(Settings.webrtcPath)
 
       Utility.createFolders(config.FOLDERS_TO_GENERATE)
       Utility.createFolderLinks(config.FOLDERS_TO_LINK)
@@ -46,12 +47,13 @@ class Preparation:
     
   @classmethod
   def run(cls, target, platform, cpu, configuration):
-
+    isError = False
     cls.logger.info('Runnning preparation for target: ' + target + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration)
 
-    Utility.pushd(Settings.preparationWorkingPath)
+    #Change working directory
+    Utility.pushd(Settings.webrtcPath)
 
-    #Create output folder where will be saved webrtc generated projects
+    #Create output folder where webrtc generated projects will be saved 
     gnOutputPath = os.path.join('out', target + '_' + platform + '_' + cpu + '_' + configuration)
     if not os.path.exists(gnOutputPath):
       cls.logger.debug('Making ' + gnOutputPath + ' directory.')
@@ -62,14 +64,16 @@ class Preparation:
     cls.logger.debug('Copying ' + argsPath + ' file' + ' to ' + Settings.webRTCGnArgsTemplatePath )
     copyfile(Settings.webRTCGnArgsTemplatePath, argsPath)
 
-    #Update target os and cpu in copied args,gn file
+    #Update target os and cpu in copied args.gn file
     with open(argsPath) as argsFile:
       cls.logger.debug('Updating args.gn file. Target OS: ' + platform + '; Target CPU: ' + cpu)
       newArgs=argsFile.read().replace('-target_os-', platform).replace('-target_cpu-', cpu).replace('-is_debug-',str(configuration.lower() == 'debug').lower())
     with open(argsPath, 'w') as argsFile:
       argsFile.write(newArgs)
     
-    Utility.importDependencyForTarget('BUILD.gn','webrtc','//third_party/idl:idl')
+    #Backup original BUILD.gn from webrtc root folder and add additional dependecies to webrtc target
+    cls.__backUpAndUpdateGnFile('BUILD.gn','webrtc',['//third_party/idl:idl'])
+
     #Generate Webrtc projects
     try:
       os.environ['DEPOT_TOOLS_WIN_TOOLCHAIN'] = '0'
@@ -88,11 +92,18 @@ class Preparation:
         #Update ninja path in VS project files to point to ninja.exe in local depot_tools folder
         cls.__updateNinjaPathinProjects(gnOutputPath)
         cls.logger.info('Successfully finished preparation for target: ' + target + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration)
-    except Exception, errorMessage:
+    except Exception as errorMessage:
       cls.logger.error(str(errorMessage))
-      System.stopExecution(ERROR_PREPARE_GN_GENERATION_FAILED)
+      isError = True
     finally:
+      #Delete updated BUILD.gn from webrtc root folder and recover original file
+      cls.__returnOriginalFile('BUILD.gn')
       Utility.popd()
+    
+    if isError:
+      return ERROR_PREPARE_GN_GENERATION_FAILED
+      
+    return NO_ERROR
     
   #---------------------------------- Private methods --------------------------------------------
   @classmethod
@@ -107,5 +118,17 @@ class Preparation:
               #updatedProject=projectFile.read().replace('call ninja.exe', 'call ' + os.path.join(Settings.localDepotToolsPath,'ninja.exe'))
             with open(os.path.join(root,file), 'w') as projectFile:
               projectFile.write(updatedProject)
+      
+  @classmethod
+  def __backUpAndUpdateGnFile(cls, filePath, targetToUpdate, dependencyToAdd):
+    if os.path.isfile(filePath):
+      copyfile(filePath, filePath + '.bak')
+      for dependecy in dependencyToAdd:
+        Utility.importDependencyForTarget(filePath, targetToUpdate, dependecy)
 
-  
+  @classmethod
+  def __returnOriginalFile(cls, filePath):
+    backupFilePath = filePath + '.bak'
+    if os.path.isfile(backupFilePath):
+      copyfile(backupFilePath, filePath)
+      os.remove(backupFilePath) 

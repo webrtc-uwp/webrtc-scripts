@@ -28,12 +28,16 @@ def actionPrepare():
       for cpu in Settings.targetCPUs:
         if System.checkIfCPUIsSupportedForPlatform(cpu,platform):
           for configuration in Settings.targetConfigurations:
-            Preparation.run(target, platform, cpu, configuration)
+            result = Preparation.run(target, platform, cpu, configuration)
+            if result != NO_ERROR:
+              System.stopExecution(result)
 
 def actionBuild():
   """
     Build all specified targets for all specified platforms.
   """
+
+  #Init builder logger
   Builder.init()
 
   for target in Settings.targets:
@@ -85,10 +89,10 @@ def main():
     mainLogger.error('Platform from the list ' + str(Settings.targetPlatforms) + ' is not supported')
     System.stopExecution(ERROR_PLATFORM_NOT_SUPPORTED)
 
+  #Start performing actions. Actions has to be executed in right order and that is the reason why it is handled this way
   if 'cleanup' in Settings.actions:
     actionCleanup()
     
-  #Start performing actions. Actions has to be executed in right order and that is the reason why it is handled this way
   if 'prepare' in Settings.actions:
     actionPrepare()
 

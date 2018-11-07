@@ -37,7 +37,7 @@ class Builder:
     if builderWorkingPath == None:
       builderWorkingPath = os.path.join('out', targetName + '_' + platform + '_' + cpu + '_' + configuration)
 
-    workingDir = os.path.join(Settings.preparationWorkingPath,builderWorkingPath)
+    workingDir = os.path.join(Settings.webrtcPath,builderWorkingPath)
 
     #If folder for specified target and platform doesn't exist, stop further execution
     if not os.path.exists(workingDir):
@@ -51,12 +51,12 @@ class Builder:
     if not cls.buildTargets(targets, cpu):
       return ERROR_BUILD_FAILED
     
+    destinationPath = convertToPlatformPath(config.BUILT_LIBS_DESTINATION_PATH.replace('[TARGET]',targetName).replace('[PLATFORM]',platform).replace('[CPU]',cpu).replace('[CONFIGURATION]',configuration))
+    destinationPathLib = os.path.join(Settings.webrtcPath, destinationPath)
+
     #Merge libraries if it is required
     if combineLibs:
-      cls.mergeLibs(cpu)
-
-    destinationPath = convertToPlatformPath(config.BUILT_LIBS_DESTINATION_PATH.replace('[TARGET]',targetName).replace('[PLATFORM]',platform).replace('[CPU]',cpu).replace('[CONFIGURATION]',configuration))
-    destinationPathLib = os.path.join(Settings.preparationWorkingPath, destinationPath)
+      cls.mergeLibs(cpu,destinationPathLib)
 
     cls.copyLibsToOutput(targetName, platform, cpu, configuration, destinationPathLib)
 
@@ -68,54 +68,84 @@ class Builder:
     #Switch to previously working directory
     Utility.popd()
 
+    cls.logger.info('Running build for target: ' + targetName + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration + ', finished successfully!')
     return NO_ERROR
 
   @classmethod
   def buildTargets(cls, targets, targetCPU):
-    for target in targets:
-      result = subprocess.call([
-          Settings.localNinjaPath + '.exe',
-          target,
-        ])
+    """
+      Build list of targets for specified cpu.
+    """
+    cls.logger.info('Following targets ' + str(targets) + ' will be built for cpu '+ targetCPU)
 
-      if result != 0:
-          cls.logger.error('Building ' + target + ' target libraries has failed!')
-          return False
-      
-      cls.logger.info('Successfully finished building libs for target ' + target)
+    try:
+      for target in targets:
+        cls.logger.debug('Building target ' + target)
+        #Run ninja to build targets
+        result = subprocess.call([
+            Settings.localNinjaPath + '.exe',
+            target,
+          ])
+
+        if result != 0:
+            cls.logger.error('Building ' + target + ' target has failed!')
+            return False
+
+    except Exception as error:
+      cls.logger.error(str(error))
+      cls.logger.error('Build failed for following targets ' + str(targets) + ' for cpu '+ targetCPU)
+      return False
+
+    cls.logger.info('Successfully finished building libs for target ' + target)
 
     return True
 
   @classmethod
-  def mergeLibs(cls, targetCPU):
+  def mergeLibs(cls, targetCPU, destinationPath):
+    """
+      Merges obj files and creates fat webrtc library.
+      TODO: Make it returns error, instead of to terminate execution on error
+    """
+    cls.logger.info('Merging libs for cpu '+ targetCPU)
+
+    #Determine lib.exe path
     cls.libexePath = os.path.join(Settings.msvcToolsBinPath, targetCPU, 'lib.exe')
     
-    #
+    #Get list of strings, with file paths total length less than 7000,,
     listOfObjesToCombine = Utility.getFilesWithExtensionsInFolder(config.COMBINE_LIB_FOLDERS, ('.obj','.o'), config.COMBINE_LIB_IGNORE_SUBFOLDERS)
 
+    #Create temporary folder where will be save libs created from the obj files ^^^
     tempCombinePath = 'combine'
     Utility.createFolders([tempCombinePath])
 
     counter = 0
     libsToMerge = ''
 
+    #Create webrtc libs from specified obj files and name it like webrtc0..n.lib
     for objs in listOfObjesToCombine:
       output = 'webrtc' + str(counter) + '.lib'
+      cls.logger.debug('Creating ' + output + ' library')
       ret = cls.combineLibs(targetCPU, objs, tempCombinePath, output)
       if ret == NO_ERROR:
+        #Generated lib add to the list, which will be used for creation one fat webrtc lib
         libsToMerge += (os.path.join(tempCombinePath, output)) + ' '
         counter += 1
       else:
+        cls.logger.error('Creating ' + output + ' library has failed!')
         System.stopExecution(ret)
 
+     #Create webrtc lib from specified lib files
     if len(libsToMerge) > 0:
-      ret = cls.combineLibs(targetCPU, libsToMerge, '.', 'webrtc.lib')
+      ret = cls.combineLibs(targetCPU, libsToMerge, destinationPath, 'webrtc.lib')
       if ret != NO_ERROR:
+        cls.logger.error('Creating webrtc library has failed!')
         System.stopExecution(ret)
     else:
       cls.logger.warning('There is no libs to merge for target CPU ' + targetCPU)
 
     shutil.rmtree(tempCombinePath) 
+
+    cls.logger.info('Merging libs is finished')
 
   @classmethod
   def combineLibs(cls, targetCPU, inputFiles, outputFolder, outputFile):
@@ -124,6 +154,8 @@ class Builder:
       #Set the PATH and environment variables for command-line builds (e.g. vcvarsall.bat x64_x86)
       cmdVcVarsAll = '\"' +  Settings.vcvarsallPath + '\" ' + config.WINDOWS_COMPILER_OPTIONS[System.hostCPU][targetCPU]
 
+      if not os.path.exists(outputFolder):
+        os.makedirs(outputFolder)
       output = os.path.join(outputFolder, outputFile)
 
       #Call lib.exe to mergeobj files to webrtc[counter].lib files, which will be later merged to webrtc.lib
@@ -156,7 +188,7 @@ class Builder:
     if not os.path.exists(destinationPathPdb):
       os.makedirs(destinationPathPdb)
 
-    listOfLibsToCopy = Utility.getFilesWithExtensionsInFolder(['.'],('.lib','.dll'),config.COMBINE_LIB_IGNORE_SUBFOLDERS,0)
+    listOfLibsToCopy = Utility.getFilesWithExtensionsInFolder(['.'],('.dll'),config.COMBINE_LIB_IGNORE_SUBFOLDERS,0)
     
     for lib in listOfLibsToCopy:
       shutil.copyfile(lib, os.path.join(destinationPathLib,os.path.basename(lib)))

@@ -3,6 +3,7 @@ import platform
 import sys
 import subprocess
 import traceback
+from importlib import import_module
 
 import config
 from utility import Utility
@@ -44,6 +45,14 @@ class System:
 
     Utility.addPath(Settings.localBuildToolsPath)
 
+    #Determine python executable path and add python's Scripts folder in the system PATH
+    executablePath = Utility.getExecutablePath('python')
+    if executablePath != None:
+      pythonPath = os.path.dirname(executablePath)
+      pythonScriptsPath = os.path.join(pythonPath,'Scripts')
+      #Add python's Scripts folder in the PATH
+      Utility.addPath(pythonScriptsPath)
+
   @classmethod
   def setUp(cls):
     """
@@ -62,66 +71,50 @@ class System:
     #Set utility logger
     Utility.setUp()
 
+    #Remove Google's depot tools from the PATH and add local depot tool path.
     cls.__updateDepotToolsPath()
 
     if cls.isWindows:
+      #Determine Visual Studio and MSVC tools paths
       cls.__determineVisualStudioPath()
+
     #Set current working directory to SDK root folder
     #os.chdir(Settings.rootSdkPath)
     
-    cls.updatePythonToolsAndModules()
-    #TODO: Update clang
+    #Install missing python packages
+    cls.installPythonModules(config.PYTHON_PACKAGES_TO_INSTALL)
+   
+   #If win is one of the selected platforms it is required to have clang-cl.
+    if 'win' in Settings.targetPlatforms:
+      cls.__installClangClIfMissing()
 
   @classmethod
-  def updatePythonToolsAndModules(cls):
-    executablePath = Utility.getExecutablePath('python')
-    if executablePath != None:
-      pythonPath = os.path.dirname(executablePath)
-      pythonScriptsPath = os.path.join(pythonPath,'Scripts')
+  def updatePythonTools(cls):
+    """
+      Update python's pip tool. In future maybe it would be required to update other tools as well.
+    """
+    #Update pip tool.
+    result = subprocess.call('python.exe -m pip install --upgrade pip')
+    if result != 0:
+      cls.logger.error('Failed to update pip!')
 
-      Utility.addPath(pythonScriptsPath)
-  
+  @classmethod
+  def installPythonModules(cls, modulesDict):
+    """
+      Checks if win32file module is installed, and if it is not, install pywin32 python package.
+    """
+
+    for module in modulesDict.keys():
       try:
-        import win32file
+        #Provoke exception if module is not available 
+        globals().update(import_module(module).__dict__)
       except:
-        result = subprocess.call('python.exe -m pip install --upgrade pip')
+         #Install python package
+        cmd = 'pip install ' + modulesDict[module]
+        cls.logger.debug('Running subprocess ' + cmd)
+        result = subprocess.call(cmd)
         if result != 0:
-          cls.logger.error('Failed to update pip!')
-        
-        result = subprocess.call('pip install pywin32')
-        if result != 0:
-          cls.logger.error('Failed to install module!')
-          
-        
-
-      
-      """
-      SET pywin32VersionFile=C:\Python27\Lib\site-packages\pywin32.version.txt
-
-      ::downloads
-      SET pythonVersion=2.7.15
-      SET pythonDestinationPath=python-%pythonVersion%.msi
-      SET pythonPipDestinationPath=get-pip.py
-
-      IF NOT EXIST %pywin32VersionFile% (
-        CALL:print %trace% "Updating pip ..."
-          python.exe -m pip install --upgrade pip
-          IF !ERRORLEVEL! NEQ 0 (
-          CALL:error 1  "Unable to update Python pip tool."
-          )
-          CALL:print %trace% "Installing pywin32..."
-        pip install pywin32
-          IF !ERRORLEVEL! NEQ 0 (
-          CALL:error 1  "Unable to install pywin32 module."
-          )
-      ) ELSE (
-        CALL:print %trace% "pywin32 already exists"
-      )
-
-      IF EXIST get-pip.py DEL /f /q get-pip.py
-      """
-
-
+          cls.logger.error('Failed to install package ' + modulesDict[module] + ' required for module ' + module)
 
   @classmethod
   def downloadBuildToolsIfNeeded(cls):
@@ -318,9 +311,6 @@ class System:
       :param toolName: tool name (gn, clang-format)
     """
     
-    #oldCurrent = os.getcwd()
-    #os.chdir(Settings.localDepotToolsPath)
-    
     #Temporary change working directory to local depot tools path
     Utility.pushd(Settings.localDepotToolsPath)
     
@@ -351,13 +341,16 @@ class System:
     """
     if Settings.msvsPath == '' or not os.path.exists(Settings.msvsPath):
       vsPath = ''
+      #Get Program File path
       if os.environ['ProgramFiles(x86)'] == '':
         vsPath = os.environ['ProgramFiles']
       else:
         vsPath = os.environ['ProgramFiles(x86)']
        
+      #Create exoected VS2017 path
       vsPath = os.path.join(vsPath,convertToPlatformPath(config.MSVS_FOLDER_NAME))
 
+      #Indetify installed VS2017 version 
       if os.path.exists(vsPath):
         for version in config.MSVS_VERSIONS:
           versionPath = os.path.join(vsPath,version)
@@ -367,6 +360,7 @@ class System:
       else:
         cls.logger.warning('Visual studio 2017 is not found at ' + vsPath + '. Please install it, or if it is installed, set msvsPath variable in userdef.py to point to correct path.')
 
+    #Determine msvc tools and vcvarsall.bat path
     if Settings.msvsPath != '':
       Settings.msvcToolsPath = os.path.join(Settings.msvsPath,convertToPlatformPath(config.MSVC_TOOLS_PATH))
       msvcToolsVersion = next(os.walk(Settings.msvcToolsPath))[1][0]
@@ -377,3 +371,24 @@ class System:
       cls.logger.info('Visual studio path is ' + Settings.msvsPath)
       cls.logger.debug('MSVC tools path is ' + Settings.msvcToolsPath)
       cls.logger.debug('MSVC tools bin path is ' + Settings.msvcToolsBinPath)
+
+  @classmethod
+  def __installClangClIfMissing(cls):
+    #Check if clang-cl is already downloaded
+    clangPath = os.path.join(Settings.webrtcPath,convertToPlatformPath(config.CLANG_CL_PATH))
+    if not os.path.isfile(clangPath):
+      clangUpdateScriptPath =  os.path.join(Settings.webrtcPath,convertToPlatformPath(config.CLANG_UPDATE_SCRIPT_PATH))
+      cls.logger.info('Clang-cl.exe is not found in third_party tools. It will be downloaded.')
+      #Make copy of environment variable
+      my_env = os.environ.copy()
+      #Update environment variable with DEPOT_TOOLS_WIN_TOOLCHAIN set to 0, to prevent requiring https://chrome-internal.googlesource.com
+      my_env["DEPOT_TOOLS_WIN_TOOLCHAIN"] = "0"
+      #Run clangg update script
+      result = subprocess.call(['python', clangUpdateScriptPath], env=my_env)
+      if result == NO_ERROR:
+        cls.logger.info('Clang-cl.exe is downloaded successfully.')
+        Utility.createFolderLinks(config.FOLDERS_TO_LINK_LLVM)
+      else:
+        cls.logger.error('Downloading Clang-cl.exe has failed.')
+    else:
+      cls.logger.debug('Clang-cl.exe is found.')
