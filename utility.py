@@ -3,7 +3,7 @@ import sys
 import re
 import logging
 import subprocess
-from shutil import copyfile
+from shutil import copyfile, rmtree
 
 from logger import Logger
 from helper import convertToPlatformPath
@@ -59,10 +59,19 @@ class Utility:
     newPath = os.environ['PATH'].replace(path + os.pathsep,'').replace(path,'')
     os.environ['PATH'] = newPath
 
-  @staticmethod
-  def makeLink(source,destination):
+  @classmethod
+  def makeLink(cls,source,destination):
     if not os.path.exists(destination):
+      cls.logger.debug('Creating link ' + convertToPlatformPath(destination) + ' to point to ' + convertToPlatformPath(source))
       subprocess.call(['cmd', '/c', 'mklink', '/J', convertToPlatformPath(destination), convertToPlatformPath(source)])
+
+  @staticmethod
+  def deleteLink(linkToDelete):
+    """
+    TODO: Verify this is working correctly
+    """
+    if os.path.exists(linkToDelete):
+      subprocess.call(['cmd', '/c', 'rmdir', convertToPlatformPath(linkToDelete)])
 
   @staticmethod
   def createFolders(foldersList):
@@ -72,10 +81,23 @@ class Utility:
         os.makedirs(dirPath)
 
   @staticmethod
+  def removeFolders(foldersList):
+    for path in foldersList:
+      dirPath = convertToPlatformPath(path)
+      if os.path.exists(dirPath):
+        rmtree(dirPath)
+
+  @staticmethod
   def createFolderLinks(foldersToLink):
     for dict in foldersToLink:
       for source, destination in dict.items():
         Utility.makeLink(convertToPlatformPath(source), convertToPlatformPath(destination))
+
+  @staticmethod
+  def deleteFolderLinks(foldersToLink):
+    for dict in foldersToLink:
+      for source, destination in dict.items():
+        Utility.deleteLink(convertToPlatformPath(destination))
 
   @staticmethod
   def copyFilesFromDict(filesToCopy):
@@ -108,7 +130,7 @@ class Utility:
       cls.logger.debug('popd ' + cls.pushstack[-1])
       os.chdir(cls.pushstack.pop())
     except Exception, errorMessage:
-      cls.logger.error(errorMessage)
+      cls.logger.warning(errorMessage)
 
   @classmethod
   def getFilesWithExtensionsInFolder(cls, folders, extensions, folderToIgnore = (), stringLimit = 7000):

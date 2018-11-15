@@ -13,6 +13,11 @@ WEBRTC_DEFAULTS_PATH = './webrtc'
 RELATIVE_DEPOT_TOOLS_PATH = './webrtc/xplatform/depot_tools'
 RELATIVE_BUILD_TOOLS_PATH = './webrtc/xplatform/webrtc/buildtools'
 PREPRATARION_WORKING_PATH = './webrtc/xplatform/webrtc'
+BUILT_LIBS_DESTINATION_PATH = '/[BUILD_OUTPUT]/[TARGET]/[PLATFORM]/[CPU]/[CONFIGURATION]/'
+
+#Paths are relative to the webrtc root path
+GN_OUTPUT_PATH = './out'
+BUILD_OUTPUT_PATH = './OUTPUT'
 
 #WebRtc build tools
 BUILD_TOOL_GN = 'gn'
@@ -121,7 +126,8 @@ FILES_TO_COPY = [
                   {'../chromium/third_party/DEPS' : './third_party/DEPS'},
                   {'../chromium/third_party/OWNERS' : './third_party/OWNERS'},
                   {'../chromium/third_party/PRESUBMIT.py' : './third_party/PRESUBMIT.py'},
-                  {'../templates/gn/idl_BUILD.gn' : './third_party\idl\BUILD.gn'},
+                  {'../templates/gn/idl_BUILD.gn' : './third_party/idl/BUILD.gn'},
+                  {'../templates/gn/tool_build.gni' : './third_party/idl/tool_build.gni'},
                 ]
 
 
@@ -188,7 +194,8 @@ COMBINE_LIB_IGNORE_SUBFOLDERS = (
 WINDOWS_IGNORE_WARNINGS = ( 4264, 4221, 4006 )
 
 #Path relative to webrtc root folder where will ba saved built libs, referenced by wrapper projects
-BUILT_LIBS_DESTINATION_PATH = '/BUILD_OUTPUT/[TARGET]/[PLATFORM]/[CPU]/[CONFIGURATION]/'
+IDL_FLAG_OUTPUT_PATH = '/third_party/idl/zsLib-eventing'
+IDL_GENERATED_FILES_OUTPUT_PATH = '/sdk/windows/wrapper/generated'
 
 CLANG_CL_PATH = '/third_party/llvm-build/Release+Asserts/bin/clang-cl.exe'
 CLANG_UPDATE_SCRIPT_PATH = '/tools/clang/scripts/update.py'

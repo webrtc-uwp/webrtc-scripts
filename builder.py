@@ -35,7 +35,7 @@ class Builder:
 
     #If path with generated projects is not specified generate path from input arguments
     if builderWorkingPath == None:
-      builderWorkingPath = os.path.join('out', targetName + '_' + platform + '_' + cpu + '_' + configuration)
+      builderWorkingPath = Settings.getGnOutputPath(config.GN_OUTPUT_PATH, targetName, platform, cpu, configuration)#os.path.join('out', targetName + '_' + platform + '_' + cpu + '_' + configuration)
 
     workingDir = os.path.join(Settings.webrtcPath,builderWorkingPath)
 
@@ -51,7 +51,7 @@ class Builder:
     if not cls.buildTargets(targets, cpu):
       return ERROR_BUILD_FAILED
     
-    destinationPath = convertToPlatformPath(config.BUILT_LIBS_DESTINATION_PATH.replace('[TARGET]',targetName).replace('[PLATFORM]',platform).replace('[CPU]',cpu).replace('[CONFIGURATION]',configuration))
+    destinationPath = convertToPlatformPath(config.BUILT_LIBS_DESTINATION_PATH.replace('[BUILD_OUTPUT]',config.BUILD_OUTPUT_PATH).replace('[TARGET]',targetName).replace('[PLATFORM]',platform).replace('[CPU]',cpu).replace('[CONFIGURATION]',configuration))
     destinationPathLib = os.path.join(Settings.webrtcPath, destinationPath)
 
     #Merge libraries if it is required
@@ -81,11 +81,14 @@ class Builder:
     try:
       for target in targets:
         cls.logger.debug('Building target ' + target)
+        my_env = os.environ.copy()
+        my_env["DEPOT_TOOLS_WIN_TOOLCHAIN"] = "0"
+        
         #Run ninja to build targets
         result = subprocess.call([
             Settings.localNinjaPath + '.exe',
             target,
-          ])
+          ],env=my_env)
 
         if result != 0:
             cls.logger.error('Building ' + target + ' target has failed!')
