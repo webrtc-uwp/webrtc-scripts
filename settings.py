@@ -101,10 +101,10 @@ class Settings:
     cls.logLevel = logLevel
     cls.logToFile = logToFile
     cls.overwriteLogFile = overwriteLogFile
-    if cls.inputArgs.color:
-      cls.coloredOutput = True
+    if cls.inputArgs.noColor:
+      cls.noColoredOutput = True
     else:
-      cls.coloredOutput = coloredOutput
+      cls.noColoredOutput = noColoredOutput
 
     cls.showTraceOnError = showTraceOnError
     cls.showSettingsValuesOnError = showSettingsValuesOnError

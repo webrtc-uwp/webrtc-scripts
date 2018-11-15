@@ -56,7 +56,7 @@ class Logger:
   loggerHandle = None #logging.StreamHandler()
   #loggerHandle.setFormatter(formatter)
   @classmethod
-  def setUp(cls, logFormat, coloredOutput = True, logToFile = '', overwriteLogFile = True):
+  def setUp(cls, logFormat, noColoredOutput = False, logToFile = '', overwriteLogFile = True):
 
     if cls.loggerHandle == None:
       if logToFile == '':
@@ -68,7 +68,7 @@ class Logger:
         cls.loggerHandle = logging.FileHandler(filename,'w')
 
     if cls.formatter == None and logFormat != "":
-      if logToFile == "" and coloredOutput:
+      if logToFile == "" and not noColoredOutput:
         cls.formatter = ColoredFormatter(logFormat)
       else:
         cls.formatter = logging.Formatter(logFormat)

@@ -76,9 +76,6 @@ def main():
   errorCode = System.checkTools()
   if errorCode != 0:
     System.stopExecution(errorCode)
-  
-  #Download missing build tools
-  System.downloadBuildToolsIfNeeded()
    
   #Check if specified targets are supported
   if not System.checkIfTargetsAreSupported(Settings.targets):

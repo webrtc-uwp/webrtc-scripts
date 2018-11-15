@@ -31,6 +31,6 @@ class Input:
 
     parser.add_argument('-c','--configurations', nargs='*', choices=['debug', 'release'], type=str.lower, help='Target build configuration')
 
-    parser.add_argument('--color', action='store_true', help='Colored output')
+    parser.add_argument('--noColor', action='store_true', help='Do not colorize output')
     
     Settings.inputArgs = parser.parse_args()

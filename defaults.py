@@ -59,7 +59,7 @@ logFormat = '[%(levelname)-17s] - [%(name)-15s] - %(funcName)-30s - %(message)s 
 logLevel = 'DEBUG'
 logToFile = ''
 overwriteLogFile = False
-coloredOutput = True
+noColoredOutput = False
 
 showTraceOnError = True
 showSettingsValuesOnError = True

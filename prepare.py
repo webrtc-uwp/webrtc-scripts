@@ -47,6 +47,9 @@ class Preparation:
       if 'win' in Settings.targetPlatforms:
         System.installClangClIfMissing()
         
+      #Download missing build tools
+      System.downloadBuildToolsIfNeeded()
+
     except Exception, errorMessage:
       cls.logger.error(errorMessage)
     finally:
