@@ -9,6 +9,7 @@ from system import System
 from logger import Logger
 from helper import convertToPlatformPath
 from errors import *
+
 class Preparation:
   """
     Encapsulats logic for setting up development environemnt for the WebRtc and generating its projects.
@@ -40,6 +41,15 @@ class Preparation:
         Utility.createFolderLinks(config.FOLDERS_TO_LINK_ORTC)
 
       Utility.copyFilesFromDict(config.FILES_TO_COPY)
+
+      #If win is one of the selected platforms it is required to have clang-cl.
+      #It is called here becuae proper folders structure is required to execute update script
+      if 'win' in Settings.targetPlatforms:
+        System.installClangClIfMissing()
+        
+      #Download missing build tools
+      System.downloadBuildToolsIfNeeded()
+
     except Exception, errorMessage:
       cls.logger.error(errorMessage)
     finally:
@@ -50,19 +60,23 @@ class Preparation:
     isError = False
     cls.logger.info('Runnning preparation for target: ' + target + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration)
 
+    #Full path to args.gn template file
+    argsTemplatePath = os.path.join(Settings.rootSdkPath, convertToPlatformPath(Settings.webRTCGnArgsTemplatePath))
+
     #Change working directory
     Utility.pushd(Settings.webrtcPath)
 
     #Create output folder where webrtc generated projects will be saved 
-    gnOutputPath = os.path.join('out', target + '_' + platform + '_' + cpu + '_' + configuration)
+    gnOutputPath = Settings.getGnOutputPath(config.GN_OUTPUT_PATH,target,platform,cpu,configuration)
+
     if not os.path.exists(gnOutputPath):
       cls.logger.debug('Making ' + gnOutputPath + ' directory.')
       os.makedirs(gnOutputPath)
 
     #Copy args.gn template file to output folder
     argsPath = os.path.join(gnOutputPath, 'args.gn')
-    cls.logger.debug('Copying ' + argsPath + ' file' + ' to ' + Settings.webRTCGnArgsTemplatePath )
-    copyfile(Settings.webRTCGnArgsTemplatePath, argsPath)
+    cls.logger.debug('Copying ' + argsPath + ' file' + ' to ' + argsTemplatePath )
+    copyfile(argsTemplatePath, argsPath)
 
     #Update target os and cpu in copied args.gn file
     with open(argsPath) as argsFile:
@@ -70,9 +84,10 @@ class Preparation:
       newArgs=argsFile.read().replace('-target_os-', platform).replace('-target_cpu-', cpu).replace('-is_debug-',str(configuration.lower() == 'debug').lower())
     with open(argsPath, 'w') as argsFile:
       argsFile.write(newArgs)
-    
+
+    mainBuildGnFilePath = os.path.join(Settings.webrtcPath,'BUILD.gn')
     #Backup original BUILD.gn from webrtc root folder and add additional dependecies to webrtc target
-    cls.__backUpAndUpdateGnFile('BUILD.gn','webrtc',['//third_party/idl:idl'])
+    Utility.backUpAndUpdateGnFile(mainBuildGnFilePath,config.WEBRTC_TARGET,config.ADDITIONAL_TARGETS_TO_ADD)
 
     #Generate Webrtc projects
     try:
@@ -97,7 +112,7 @@ class Preparation:
       isError = True
     finally:
       #Delete updated BUILD.gn from webrtc root folder and recover original file
-      cls.__returnOriginalFile('BUILD.gn')
+      Utility.returnOriginalFile(mainBuildGnFilePath)
       Utility.popd()
     
     if isError:
@@ -115,20 +130,5 @@ class Preparation:
             #Replace 'call ninja.exe' with 'call local_depot_tools_path\ninja.exe'
             with open(os.path.join(root,file)) as projectFile:
               updatedProject=projectFile.read().replace('call ninja.exe', 'call ' + Settings.localNinjaPath)
-              #updatedProject=projectFile.read().replace('call ninja.exe', 'call ' + os.path.join(Settings.localDepotToolsPath,'ninja.exe'))
             with open(os.path.join(root,file), 'w') as projectFile:
               projectFile.write(updatedProject)
-      
-  @classmethod
-  def __backUpAndUpdateGnFile(cls, filePath, targetToUpdate, dependencyToAdd):
-    if os.path.isfile(filePath):
-      copyfile(filePath, filePath + '.bak')
-      for dependecy in dependencyToAdd:
-        Utility.importDependencyForTarget(filePath, targetToUpdate, dependecy)
-
-  @classmethod
-  def __returnOriginalFile(cls, filePath):
-    backupFilePath = filePath + '.bak'
-    if os.path.isfile(backupFilePath):
-      copyfile(backupFilePath, filePath)
-      os.remove(backupFilePath) 

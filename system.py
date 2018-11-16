@@ -65,7 +65,7 @@ class System:
     Settings.init()
 
     #After logger settings are loaded (log level, log format, ...), logger can be prepared for usage
-    Logger.setUp()
+    Logger.setUp(Settings.logFormat, Settings.noColoredOutput, Settings.logToFile, Settings.overwriteLogFile)
     cls.logger = Logger.getLogger('System')
     
     #Set utility logger
@@ -83,10 +83,6 @@ class System:
     
     #Install missing python packages
     cls.installPythonModules(config.PYTHON_PACKAGES_TO_INSTALL)
-   
-   #If win is one of the selected platforms it is required to have clang-cl.
-    if 'win' in Settings.targetPlatforms:
-      cls.__installClangClIfMissing()
 
   @classmethod
   def updatePythonTools(cls):
@@ -373,7 +369,7 @@ class System:
       cls.logger.debug('MSVC tools bin path is ' + Settings.msvcToolsBinPath)
 
   @classmethod
-  def __installClangClIfMissing(cls):
+  def installClangClIfMissing(cls):
     #Check if clang-cl is already downloaded
     clangPath = os.path.join(Settings.webrtcPath,convertToPlatformPath(config.CLANG_CL_PATH))
     if not os.path.isfile(clangPath):

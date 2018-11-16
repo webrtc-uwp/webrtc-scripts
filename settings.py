@@ -62,6 +62,8 @@ class Settings:
           os.path.isfile(os.path.join(cls.templatesPath, cls.inputArgs.template + '.py'))): 
         globals().update(import_module(cls.inputArgs.template).__dict__)
 
+    cls.gnOutputPath = gnOutputPath
+
     cls.supportedPlatformsForHostOs = supportedPlatformsForHostOs
     cls.supportedCPUsForPlatform = supportedCPUsForPlatform
 
@@ -99,6 +101,10 @@ class Settings:
     cls.logLevel = logLevel
     cls.logToFile = logToFile
     cls.overwriteLogFile = overwriteLogFile
+    if cls.inputArgs.noColor:
+      cls.noColoredOutput = True
+    else:
+      cls.noColoredOutput = noColoredOutput
 
     cls.showTraceOnError = showTraceOnError
     cls.showSettingsValuesOnError = showSettingsValuesOnError
@@ -114,3 +120,26 @@ class Settings:
     cls.msvcToolsPath = ''
     cls.msvcToolsBinPath = ''
     cls.vcvarsallPath = ''
+
+    #Dictionary with additional configuration for each action and default values
+    cls.__actionOptions = {
+                    'targets' : cls.targets,
+                    'cpus' : cls.targetCPUs,
+                    'platforms' : cls.targetPlatforms,
+                    'configuration' : cls.targetConfigurations
+    }
+    cls.cleanOptions = cleanOptions
+
+    #Set specific clean configuration if specified in userDef.py or use default values from __actionOptions dict
+    for key,value in cls.__actionOptions.iteritems():
+      cls.cleanOptions[key] = cls.cleanOptions.get(key,[])
+      if cls.cleanOptions[key] == []:
+        cls.cleanOptions[key] = value
+
+  @classmethod
+  def getGnOutputPath(cls, path, target, platform, cpu, configuration):
+    """
+      Return gn output path for specified args.
+    """
+    outputPath = cls.gnOutputPath.replace('[GN_OUT]', path).replace('[TARGET]',target).replace('[PLATFORM]',platform).replace('[CPU]',cpu).replace('[CONFIGURATION]',configuration)
+    return convertToPlatformPath(outputPath)

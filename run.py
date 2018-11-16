@@ -11,10 +11,11 @@ from cleanup import Cleanup
 from errors import *
 
 
-def actionCleanup():
+def actionClean():
   Cleanup.init()
 
-  Cleanup.run()
+  for action in Settings.cleanOptions['actions']:
+    Cleanup.run(action)
 
 def actionPrepare():
   """
@@ -75,9 +76,6 @@ def main():
   errorCode = System.checkTools()
   if errorCode != 0:
     System.stopExecution(errorCode)
-  
-  #Download missing build tools
-  System.downloadBuildToolsIfNeeded()
    
   #Check if specified targets are supported
   if not System.checkIfTargetsAreSupported(Settings.targets):
@@ -90,8 +88,8 @@ def main():
     System.stopExecution(ERROR_PLATFORM_NOT_SUPPORTED)
 
   #Start performing actions. Actions has to be executed in right order and that is the reason why it is handled this way
-  if 'cleanup' in Settings.actions:
-    actionCleanup()
+  if 'clean' in Settings.actions:
+    actionClean()
     
   if 'prepare' in Settings.actions:
     actionPrepare()

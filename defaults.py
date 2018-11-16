@@ -4,10 +4,11 @@
 """
 
 #args.gn template path
-webRTCGnArgsTemplatePath='../../../webrtc/windows/templates/gns/args.gn'
+webRTCGnArgsTemplatePath='./webrtc/windows/templates/gns/args.gn'
 
-#Output path wher will be stored nuget package as well as libs and pdbs
-#TODO: Copy output files, dll, pdbs etc to cwd
+gnOutputPath = r'[GN_OUT]/[TARGET]_[PLATFORM]_[CPU]_[CONFIGURATION]'
+
+#Output path where will be stored nuget package as well as libs and pdbs
 releaseOutputPath = '.'
 
 #Supported platforms for specific host OS 
@@ -35,8 +36,17 @@ targetConfigurations = [ 'Release', 'Debug' ]
 targetProgrammingLanguage = [ 'cx', 'cppwinrt', 'c', 'dotnet', 'python' ]
 
 #Supported actions: clean, prepare, build, createNuget, publishNuget, updatePublishedSample 
-actions = [ 'prepare' ]
+actions = [ 'prepare', 'build' ]
 
+#'actions' : ['cleanOutput', 'cleanIdls', 'cleanUserDef','cleanPrepare'],
+cleanOptions = {
+                'actions' : ['cleanOutput'],
+                'targets' : [],
+                'cpus' : [],
+                'platforms' : [],
+                'configuration' : []
+              }
+        
 """
 Supported formats: %(funcName)s - function name, %(levelname)s - log level name, %(asctime)s - time, %(message)s - log message, %(filename)s - curremt python filename, %(lineno)d - log message line no, %(name)d - module name
 For the rest of available attributes you can check on https://docs.python.org/3/library/logging.html#logrecord-attributes
@@ -49,6 +59,7 @@ logFormat = '[%(levelname)-17s] - [%(name)-15s] - %(funcName)-30s - %(message)s 
 logLevel = 'DEBUG'
 logToFile = ''
 overwriteLogFile = False
+noColoredOutput = False
 
 showTraceOnError = True
 showSettingsValuesOnError = True

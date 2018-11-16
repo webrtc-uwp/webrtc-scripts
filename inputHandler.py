@@ -29,6 +29,8 @@ class Input:
 
     parser.add_argument('--cpus', nargs='*', choices=['x64', 'x86', 'arm', 'arm64'], help='Target cpu')
 
-    parser.add_argument('-c','--configurations', nargs='*', choices=['debug', 'release'], help='Target build configuration')
+    parser.add_argument('-c','--configurations', nargs='*', choices=['debug', 'release'], type=str.lower, help='Target build configuration')
+
+    parser.add_argument('--noColor', action='store_true', help='Do not colorize output')
     
     Settings.inputArgs = parser.parse_args()
