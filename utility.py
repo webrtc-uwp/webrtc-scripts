@@ -174,3 +174,17 @@ class Utility:
             elif insertFlag:
               gnWriteFile.write('"' + dependency + '",')
               insertFlag = False
+
+  @classmethod
+  def backUpAndUpdateGnFile(cls, filePath, targetToUpdate, dependencyToAdd):
+    if os.path.isfile(filePath):
+      copyfile(filePath, filePath + '.bak')
+      for dependecy in dependencyToAdd:
+        cls.importDependencyForTarget(filePath, targetToUpdate, dependecy)
+
+  @classmethod
+  def returnOriginalFile(cls, filePath):
+    backupFilePath = filePath + '.bak'
+    if os.path.isfile(backupFilePath):
+      copyfile(backupFilePath, filePath)
+      os.remove(backupFilePath) 

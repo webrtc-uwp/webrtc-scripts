@@ -76,14 +76,21 @@ class Builder:
     """
       Build list of targets for specified cpu.
     """
+    ret = True
     cls.logger.info('Following targets ' + str(targets) + ' will be built for cpu '+ targetCPU)
+
+    mainBuildGnFilePath = os.path.join(Settings.webrtcPath,'BUILD.gn')
 
     try:
       for target in targets:
         cls.logger.debug('Building target ' + target)
         my_env = os.environ.copy()
-        my_env["DEPOT_TOOLS_WIN_TOOLCHAIN"] = "0"
+        my_env["DEPOT_TOOLS_WIN_TOOLCHAIN"] = "0"    
         
+        #Backup original BUILD.gn from webrtc root folder and add additional dependecies to webrtc target
+        if target == config.WEBRTC_TARGET:
+          Utility.backUpAndUpdateGnFile(mainBuildGnFilePath,config.WEBRTC_TARGET,config.ADDITIONAL_TARGETS_TO_ADD)
+
         #Run ninja to build targets
         result = subprocess.call([
             Settings.localNinjaPath + '.exe',
@@ -97,11 +104,14 @@ class Builder:
     except Exception as error:
       cls.logger.error(str(error))
       cls.logger.error('Build failed for following targets ' + str(targets) + ' for cpu '+ targetCPU)
-      return False
+      ret = False
+    finally:
+      Utility.returnOriginalFile(mainBuildGnFilePath)
 
-    cls.logger.info('Successfully finished building libs for target ' + target)
+    if ret:
+      cls.logger.info('Successfully finished building libs for target ' + target)
 
-    return True
+    return ret
 
   @classmethod
   def mergeLibs(cls, targetCPU, destinationPath):

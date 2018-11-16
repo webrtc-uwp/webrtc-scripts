@@ -203,3 +203,8 @@ CLANG_UPDATE_SCRIPT_PATH = '/tools/clang/scripts/update.py'
 PYTHON_PACKAGES_TO_INSTALL = {
                               'win32file' : 'pywin32'
                             }
+
+WEBRTC_TARGET = 'webrtc'
+ADDITIONAL_TARGETS_TO_ADD = [
+                              '//third_party/idl:idl'
+                            ]

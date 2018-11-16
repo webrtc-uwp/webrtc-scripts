@@ -87,7 +87,7 @@ class Preparation:
 
     mainBuildGnFilePath = os.path.join(Settings.webrtcPath,'BUILD.gn')
     #Backup original BUILD.gn from webrtc root folder and add additional dependecies to webrtc target
-    cls.__backUpAndUpdateGnFile(mainBuildGnFilePath,'webrtc',['//third_party/idl:idl'])
+    Utility.backUpAndUpdateGnFile(mainBuildGnFilePath,config.WEBRTC_TARGET,config.ADDITIONAL_TARGETS_TO_ADD)
 
     #Generate Webrtc projects
     try:
@@ -112,7 +112,7 @@ class Preparation:
       isError = True
     finally:
       #Delete updated BUILD.gn from webrtc root folder and recover original file
-      cls.__returnOriginalFile(mainBuildGnFilePath)
+      Utility.returnOriginalFile(mainBuildGnFilePath)
       Utility.popd()
     
     if isError:
@@ -132,17 +132,3 @@ class Preparation:
               updatedProject=projectFile.read().replace('call ninja.exe', 'call ' + Settings.localNinjaPath)
             with open(os.path.join(root,file), 'w') as projectFile:
               projectFile.write(updatedProject)
-      
-  @classmethod
-  def __backUpAndUpdateGnFile(cls, filePath, targetToUpdate, dependencyToAdd):
-    if os.path.isfile(filePath):
-      copyfile(filePath, filePath + '.bak')
-      for dependecy in dependencyToAdd:
-        Utility.importDependencyForTarget(filePath, targetToUpdate, dependecy)
-
-  @classmethod
-  def __returnOriginalFile(cls, filePath):
-    backupFilePath = filePath + '.bak'
-    if os.path.isfile(backupFilePath):
-      copyfile(backupFilePath, filePath)
-      os.remove(backupFilePath) 
