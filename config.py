@@ -208,3 +208,6 @@ WEBRTC_TARGET = 'webrtc'
 ADDITIONAL_TARGETS_TO_ADD = [
                               '//third_party/idl:idl'
                             ]
+
+ACTION_START_MESSAGE = '\n==================================== [ACTION] STARTED ====================================\n'
+ACTION_END_MESSAGE = '\n====================================== [ACTION] ENDED ======================================\n'

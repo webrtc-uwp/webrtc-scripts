@@ -106,6 +106,7 @@ class Settings:
     else:
       cls.noColoredOutput = noColoredOutput
 
+    cls.stopExecutionOnError = stopExecutionOnError
     cls.showTraceOnError = showTraceOnError
     cls.showSettingsValuesOnError = showSettingsValuesOnError
     cls.showPATHOnError = showPATHOnError
