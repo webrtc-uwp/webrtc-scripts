@@ -4,10 +4,12 @@ import shutil
 import itertools
 from xml.etree import ElementTree as ET
 
+import config
 from logger import Logger
+from settings import Settings
 from helper import convertToPlatformPath
 import defaults
-import userdef
+# import userdef
 
 
 class CreateNuget:
@@ -21,17 +23,12 @@ class CreateNuget:
     using nuget_cli method, if you do not have nuget.exe download_nuget method
     will be run, which will download the latest nuget.exe file available
     """
-    NUGET_FOLDER = '../webrtc/windows/nuget'
-    NUSPEC_PATH = NUGET_FOLDER + '/WebRtc.nuspec'
-    TARGETS_PATH = NUGET_FOLDER + '/WebRtc.targets'
-    NUGET_TO_SCRIPTS = '../../../scripts/'
-
-    NUGET_URL = 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe'
-    NUGET_EXE_DST = NUGET_FOLDER + '/nuget.exe'
-
-    NATIVE_LIB_SRC = '../webrtc/windows/solutions/Build/Output/Org.WebRtc/' + \
-        '[CONFIGURATION]/[CPU]/[FILE]'
-    NATIVE_LIB_TARGET = 'runtimes\\win10-[CPU]\\native'
+    @classmethod
+    def init(cls):
+        """
+        Initiates logger object.
+        """
+        cls.logger = Logger.getLogger('createNuget')
 
     @classmethod
     def nuget_cli(cls, nuget_command, *args):
@@ -43,43 +40,45 @@ class CreateNuget:
         :param *args: aditional options and arguments for the nuget cli command
         """
 
-        if os.path.exists(cls.NUGET_EXE_DST):
-            print('nuget.exe already downloaded')
+        if os.path.exists(config.NUGET_EXE_DST):
+            cls.logger.info('nuget.exe already downloaded')
         else:
             cls.download_nuget()
 
+        # allows nuget command to be written with or wihout 'nuget ' prefix
         if 'nuget ' in nuget_command:
             nuget_command = nuget_command.replace('nuget ', '')
-            print(cls.NUGET_EXE_DST + ' ' + nuget_command)
         try:
+            # absolute path to nuget.exe
             exe_path = convertToPlatformPath(
-                os.path.dirname(os.path.abspath(__file__)) + '\\' + cls.NUGET_EXE_DST)
+                os.path.dirname(os.path.abspath(__file__)) + '\\' + config.NUGET_EXE_DST)
             full_command = [exe_path, nuget_command]
+            # add options or other arguments to the nuget command
             for cmd in args:
                 full_command.append(cmd)
             subprocess.call(full_command)
-        except Exception as e:
-            print(e)
+        except Exception as errorMessage:
+            cls.logger.error(errorMessage)
 
-    @staticmethod
-    def download_nuget():
+    @classmethod
+    def download_nuget(cls):
         """
         Download latest nuget.exe file from nuget.org
         """
         # Python 3:
         if CreateNuget.module_exists('urllib.request'):
             import urllib
-            print('Downloading NuGet.exe file with urllib.request...')
-            urllib.request.urlretrieve(CreateNuget.NUGET_URL, CreateNuget.NUGET_EXE_DST)
+            cls.logger.info('Downloading NuGet.exe file with urllib.request...')
+            urllib.request.urlretrieve(config.NUGET_URL, config.NUGET_EXE_DST)
 
         # Python 2:
         if CreateNuget.module_exists('urllib2'):
             import urllib2
-            print('Downloading NuGet.exe file with urllib2...')
-            with open(CreateNuget.NUGET_EXE_DST, 'wb') as f:
-                f.write(urllib2.urlopen(CreateNuget.NUGET_URL).read())
+            cls.logger.info('Downloading NuGet.exe file with urllib2...')
+            with open(config.NUGET_EXE_DST, 'wb') as f:
+                f.write(urllib2.urlopen(config.NUGET_URL).read())
                 f.close()
-        print("Download Complete!")
+        cls.logger.info("Download Complete!")
 
     @staticmethod
     def module_exists(module_name):
@@ -109,36 +108,44 @@ class CreateNuget:
             in order for update to work nuspec must not have   xmlns="..."
             inside the package tag, otherwise files tag will not be found
             """
-            with open(cls.NUSPEC_PATH, 'rb') as nuspec:
+            with open(config.NUSPEC_PATH, 'rb') as nuspec:
                 tree = ET.parse(nuspec)
             files = tree.find('files')
+            # Element is <file> element, ft is each file type
             for element, ft in itertools.product(files, f_type):
                 src_attrib = element.attrib.get('src')
+                # Check if <file> element has a src with given cpu, configuration and file type
                 if all(val in src_attrib for val in [cpu, configuration, ft]):
                     f_name = 'Org.WebRtc' + ft
+                    # New src path to the lib file with required cpu, configuration and file type
                     src_path = convertToPlatformPath(
-                        cls.NATIVE_LIB_SRC
+                        config.NATIVE_LIB_SRC
                         .replace('[CONFIGURATION]', configuration)
                         .replace('[CPU]', cpu)
                         .replace('[FILE]', f_name)
                     )
+                    # New target attribute of the <file> element
+                    # (place where lib file will be placed inside NuGet package)
                     if target_path is False:
-                        target_path = convertToPlatformPath(cls.NATIVE_LIB_TARGET.replace('[CPU]', cpu))
+                        target_path = convertToPlatformPath(config.NATIVE_LIB_TARGET.replace('[CPU]', cpu))
+                    # Check if the file from the new src exists
                     if os.path.exists(src_path):
-                        src_path = convertToPlatformPath(cls.NUGET_TO_SCRIPTS + src_path)
+                        # Once the file check is completed add the path (.nuspec->script) to the new src
+                        src_path = convertToPlatformPath(config.NUGET_TO_SCRIPTS + src_path)
                         element.set('src', src_path)
                         element.set('target', target_path)
-                        tree.write(cls.NUSPEC_PATH)
-                        print('nuspec file updated')
+                        # Save changes to the .nuspec file
+                        tree.write(config.NUSPEC_PATH)
+                        cls.logger.info('Updated nuspec file for configuration: ' + configuration + "; cpu: " + cpu + "; file extention: " + f_name)
                     else:
-                        raise Exception('File does NOT exist! \n' + src_path)
+                        raise Exception('File does NOT exist: ' + src_path)
         except Exception as errorMessage:
-            print(errorMessage)
+            cls.logger.error(errorMessage)
 
     @classmethod
     def check_files(cls, configuration, cpu, f_type=['.dll', '.pri']):
         """
-        Checks if file exists
+        Checks if file exists without changing anything
         :param configuration: Release or Debug.
         :param cpu: target cpu.
         :param f_type: array of file types to be updated (Default ['.dll', '.pri']).
@@ -147,17 +154,17 @@ class CreateNuget:
             for ft in f_type:
                 f_name = 'Org.WebRtc' + ft
                 src_path = convertToPlatformPath(
-                    cls.NATIVE_LIB_SRC
+                    config.NATIVE_LIB_SRC
                     .replace('[CONFIGURATION]', configuration)
                     .replace('[CPU]', cpu)
                     .replace('[FILE]', f_name)
                 )
                 if os.path.exists(src_path):
-                    print('File Exists! \n' + src_path)
+                    cls.logger.info('File Exists! \n' + src_path)
                 else:
-                    print('File does NOT exist! \n' + src_path)
+                    cls.logger.info('File does NOT exist! \n' + src_path)
         except Exception as errorMessage:
-            print(errorMessage)
+            cls.logger.error(errorMessage)
 
     @classmethod
     def delete_nuspec_files(cls, configuration, cpu, f_type=['.dll', '.pri']):
@@ -172,27 +179,29 @@ class CreateNuget:
             in order for update to work nuspec must not have   xmlns="..."
             inside the package tag, otherwise files tag will not be found
             """
-            with open(cls.NUSPEC_PATH, 'rb') as nuspec:
+            with open(config.NUSPEC_PATH, 'rb') as nuspec:
                 tree = ET.parse(nuspec)
             files = tree.find('files')
-            for element, ft in itertools.product(
-                files, f_type
-            ):
+            # Element is <file> element, ft is each file type
+            for element, ft in itertools.product(files, f_type):
                 src_attrib = element.attrib.get('src')
                 target_attrib = element.attrib.get('target')
                 tag = element.tag
+                # Check if <file> element has a src with given cpu, configuration
+                # and file type, then remove it from .nuspec
                 if all(val in src_attrib for val in [cpu, configuration, ft]):
                     files.remove(element)
-                    print(
+                    cls.logger.info(
                         'File deleted: <{} src="{}" target="{}"/>'
                         .format(tag, src_attrib, target_attrib)
                     )
-            tree.write(cls.NUSPEC_PATH)
+            # Save changes to the .nuspec file
+            tree.write(config.NUSPEC_PATH)
         except Exception as errorMessage:
-            print(errorMessage)
+            cls.logger.error(errorMessage)
 
     @classmethod
-    def add_nuspec_files(cls, configuration, cpu, f_type=['.dll', '.pri'], target_path=False):
+    def add_nuspec_files(cls, configuration, cpu, f_type=['.dll', '.pri'], f_name='Org.WebRtc', target_path=False):
         """
         Add file elements to .nuspec file based on config
         Every cpu type that you want to add to NuGet package must be built in
@@ -201,6 +210,7 @@ class CreateNuget:
         :param configuration: Release or Debug.
         :param cpu: target cpu.
         :param f_type: array of file types to be updated (Default ['.dll', '.pri']).
+        :param f_name: name of the lib file that needs to be added(Default: Org.WebRtc)
         :param target_path: path for the target attribute of the file element that
             needs to be provided for all non default file types (.dll, .pri).
         """
@@ -209,31 +219,37 @@ class CreateNuget:
             in order for update to work nuspec must not have   xmlns="..."
             inside the package tag, otherwise files tag will not be found
             """
-            with open(cls.NUSPEC_PATH, 'rb') as nuspec:
+            with open(config.NUSPEC_PATH, 'rb') as nuspec:
                 tree = ET.parse(nuspec)
             files = tree.find('files')
             for ft in f_type:
-                f_name = 'Org.WebRtc' + ft
+                # Add extention to the file name
+                f_name += ft
+                # Src path to the lib file with required cpu, configuration and file type
                 src_path = convertToPlatformPath(
-                    cls.NATIVE_LIB_SRC
+                    config.NATIVE_LIB_SRC
                     .replace('[CONFIGURATION]', configuration)
                     .replace('[CPU]', cpu)
                     .replace('[FILE]', f_name)
                 )
+                # Target attribute of the <file> element (place where lib file will be placed inside NuGet package)
                 if target_path is False:
-                    target_path = convertToPlatformPath(cls.NATIVE_LIB_TARGET.replace('[CPU]', cpu))
+                    target_path = convertToPlatformPath(config.NATIVE_LIB_TARGET.replace('[CPU]', cpu))
+                # Check if the file from the new src exists
                 if os.path.exists(src_path):
-                    src_path = convertToPlatformPath(cls.NUGET_TO_SCRIPTS + src_path)
+                    # Once the file check is completed add the path (.nuspec->script) to the new src
+                    src_path = convertToPlatformPath(config.NUGET_TO_SCRIPTS + src_path)
                     file_attrib = {'src': src_path, 'target': target_path}
+                    # Make a new file element with the attributes from above
                     new_file = ET.SubElement(files, 'file', attrib=file_attrib)
                     new_file.tail = "\n\t\t"
-                    print('File added: ' + str(file_attrib))
+                    cls.logger.info('Added nuspec file for configuration: ' + configuration + "; cpu: " + cpu + "; file extention: " + f_name)
                 else:
                     raise Exception('File does NOT exist! \n' + src_path)
-
-            tree.write(cls.NUSPEC_PATH)
+            # Save changes to the .nuspec file
+            tree.write(config.NUSPEC_PATH)
         except Exception as errorMessage:
-            print(errorMessage)
+            cls.logger.error(errorMessage)
 
     @classmethod
     def add_targets_itemgroup(
@@ -256,30 +272,40 @@ class CreateNuget:
             in order for update to work targets must not have   xmlns="..."
             inside the Project tag, otherwise tag will not be found
             """
-            with open(cls.TARGETS_PATH, 'rb') as targets:
+            with open(config.TARGETS_PATH, 'rb') as targets:
                 tree = ET.parse(targets)
             project = tree.getroot()
+            # Add new ItemGroup element to .targets file
             new_itemgroup = ET.Element('ItemGroup')
+            # Set Contition attribute to the ItemGroup element
             new_itemgroup.set('Condition', items_condition)
             new_itemgroup.text = '\n\t'
+            # Element inside ItemGroup element
             element = ET.Element(sub_elem)
+            # Set Include attribute to that element
             sub_include = '$(MSBuildThisFileDirectory)' + sub_include
             element.set('Include', sub_include)
+            # Check if that element needs sub element
             if sub_sub_elem is not False:
                 element.text = '\n\t'
+                # For each element in provided dictionary
                 for key, val in sub_sub_elem.items():
+                    # Set sub elements attribute(dictionary key)
                     sub_sub = ET.Element(key)
+                    # Set sub elements text(dictionary value)
                     sub_sub.text = val
                     sub_sub.tail = '\n\t'
+                    # Add sub element to its parrent element
                     element.append(sub_sub)
             element.tail = '\n\t'
+            # Add the element to the ItemGroup element
             new_itemgroup.append(element)
             new_itemgroup.tail = '\n\t'
             project.append(new_itemgroup)
-
-            tree.write(cls.TARGETS_PATH)
+            # Save changes to the .targets file
+            tree.write(config.TARGETS_PATH)
         except Exception as errorMessage:
-            print(errorMessage)
+            cls.logger.error(errorMessage)
 
     @classmethod
     def delete_targets_itemgroups(cls):
@@ -287,16 +313,16 @@ class CreateNuget:
         Delete all ItemGroup elements from .targets file
         """
         try:
-            with open(cls.TARGETS_PATH, 'rb') as targets:
+            with open(config.TARGETS_PATH, 'rb') as targets:
                 tree = ET.parse(targets)
             project = tree.getroot()
             for element in project:
                 if 'ItemGroup' in element.tag:
                     project.remove(element)
-            tree.write(cls.TARGETS_PATH)
-            print('ItemGroups deleted')
+            tree.write(config.TARGETS_PATH)
+            cls.logger.info('ItemGroups deleted')
         except Exception as errorMessage:
-            print(errorMessage)
+            cls.logger.error(errorMessage)
 
     @classmethod
     def create_nuspec(cls, version):
@@ -305,25 +331,29 @@ class CreateNuget:
         :param version: version of the nuget package must be specified when
         copying nuspec file
         """
-        with open(cls.NUSPEC_PATH, 'w') as destination:
-            with open(cls.NUGET_FOLDER + '/templates/WebRtc.nuspec', 'r') as source:
+        # .nuspec file that is used to build the NuGet package
+        with open(config.NUSPEC_PATH, 'w') as destination:
+            # Template .nuspec file
+            with open(config.NUGET_FOLDER + '/templates/WebRtc.nuspec', 'r') as source:
                 for line in source:
                     if '<version>' in line:
                         destination.write('\t\t<version>' + version + '</version>\n')
                     else:
                         destination.write(line)
-        print('nuspec created')
+        cls.logger.info('nuspec created')
 
     @classmethod
     def create_targets(cls):
         """
         Create WebRtc.targets file based on a template with default values for WebRtc
         """
-        with open(cls.TARGETS_PATH, 'w') as destination:
-            with open(cls.NUGET_FOLDER + '/templates/WebRtc.targets', 'r') as source:
+        # .targets file that is used to build the NuGet package
+        with open(config.TARGETS_PATH, 'w') as destination:
+            # Template .targets file
+            with open(config.NUGET_FOLDER + '/templates/WebRtc.targets', 'r') as source:
                 for line in source:
                     destination.write(line)
-        print('targets created')
+        cls.logger.info('targets created')
 
     @classmethod
     def check_and_move(cls, version):
@@ -332,9 +362,9 @@ class CreateNuget:
         """
         package = 'WebRtc.' + version + '.nupkg'
         if os.path.isfile(package):
-            shutil.move(package, cls.NUGET_FOLDER + '/' + package)
+            shutil.move(package, config.NUGET_FOLDER + '/' + package)
         else:
-            print('NuGet package does not exist')
+            cls.logger.error('NuGet package does not exist')
 
     @classmethod
     def run(cls, version, cpus, configurations):
@@ -357,7 +387,7 @@ class CreateNuget:
                 configuration, cpu,
                 f_type=['.winmd', '.xml'], target_path=r'lib\uap10.0'
             )
-        cls.nuget_cli('pack', cls.NUGET_FOLDER + '/WebRtc.nuspec')
+        cls.nuget_cli('pack', config.NUGET_FOLDER + '/WebRtc.nuspec')
         cls.check_and_move(version)
         # cls.nuget_cli('help', '-All', '-Markdown')
 
@@ -366,10 +396,6 @@ def main():
     """
     WebRtc must be built for selected CPUs in userdef file before running
     """
-    create_nuget = CreateNuget()
-    create_nuget.run(
-        '1.66.0.2-Alpha', userdef.targetCPUs, userdef.targetConfigurations
-    )
 
 if __name__ == '__main__':
     main()

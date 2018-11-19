@@ -8,6 +8,7 @@ from logger import Logger
 from prepare import Preparation
 from builder import Builder
 from cleanup import Cleanup
+from createNuget import CreateNuget
 from errors import *
 
 
@@ -49,7 +50,11 @@ def actionBuild():
           Builder.run(target, targetsToBuild, platform, cpu, configuration, combineLibs)
 
 def actionCreateNuget():
-    pass
+  CreateNuget.init()
+
+  CreateNuget.run(
+      '1.66.0.2-Alpha', Settings.targetCPUs, Settings.targetConfigurations
+  )
 
 def actionPublishNuget():
   pass
