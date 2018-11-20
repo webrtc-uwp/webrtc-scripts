@@ -1,6 +1,7 @@
 import os
 import subprocess
 import shutil 
+import signal
 
 from errors import *
 import config
@@ -19,7 +20,7 @@ class Builder:
     cls.logger = Logger.getLogger('Build')
 
   @classmethod
-  def run(cls, targetName, targets, platform, cpu, configuration, combineLibs = False, builderWorkingPath = None):
+  def run(cls, targetName, targets, platform, cpu, configuration, shouldCombineLibs = False, builderWorkingPath = None):
     """
       Start target building process.
       :param targetName: Name of the main target (ortc or webrtc)
@@ -27,7 +28,7 @@ class Builder:
       :param platform: Platform name
       :param cpu: Target CPU
       :param configuration: Configuration to build for
-      :param combineLibs: Should all libs be merged into one library
+      :param shouldCombineLibs: Should all libs be merged into one library
       :param builderWorkingPath: Path where generated projects for specified target.
       :return: NO_ERROR if build was successfull. Otherwise returns error code
     """
@@ -44,6 +45,11 @@ class Builder:
       cls.logger.error('Output folder at ' + workingDir + ' doesn\'t exist. It looks like prepare is not executed. Please run prepare action.')
       return ERROR_BUILD_OUTPUT_FOLDER_DEOESNT_EXIST
     
+    #Set the PATH and environment variables for command-line builds (e.g. vcvarsall.bat x64_x86)
+    cls.cmdVcVarsAll = '\"' +  Settings.vcvarsallPath + '\" ' + config.WINDOWS_COMPILER_OPTIONS[System.hostCPU][cpu]
+    cls.cmdVcVarsAllClean = '\"' +  Settings.vcvarsallPath + '\" ' + '/clean_env'
+
+    
     #Change current working directory to one with generated projects
     Utility.pushd(workingDir)
 
@@ -55,7 +61,7 @@ class Builder:
     destinationPathLib = os.path.join(Settings.webrtcPath, destinationPath)
 
     #Merge libraries if it is required
-    if combineLibs:
+    if shouldCombineLibs:
       cls.mergeLibs(cpu,destinationPathLib)
 
     cls.copyLibsToOutput(targetName, platform, cpu, configuration, destinationPathLib)
@@ -67,9 +73,62 @@ class Builder:
       shutil.copytree(destinationPathLib,backupPath)
     #Switch to previously working directory
     Utility.popd()
+  
+    cls.buildWrapper(targetName,cpu,configuration)
 
     cls.logger.info('Running build for target: ' + targetName + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration + ', finished successfully!')
     return NO_ERROR
+
+  @classmethod
+  def buildWrapper(cls, target, targetCPU, configuration):
+    """
+      Builds wrapper projects.
+    """
+    ret = True
+    cls.logger.info('Building ' + target + ' wrapper projects for ' + targetCPU + ' for configuration  '+ configuration)
+
+  #MSBuild %~1 /property:Configuration=%CONFIGURATION% /property:Platform=%~3 /nodeReuse:False
+    try:
+      solutionPath = os.path.join(Settings.webrtcSolutionPaths,'WebRtc.Nuget.Universal.sln')
+      projectName1 = 'Api\Org_WebRtc\Org_WebRtc'
+      projectName2 = 'Api\Org_WebRtc\Org_WebRtc_WrapperGlue'
+      #Call lib.exe to mergeobj files to webrtc[counter].lib files, which will be later merged to webrtc.lib
+      #cmdBuild = 'MSBuild ' + solutionFile + '/property:Configuration=' + configuration + ' /property:Platform=' + targetCPU + ' /nodeReuse:False'
+      cmdBuild = 'msbuild ' + solutionPath + ' /t:' + projectName2 + ',' + projectName1 + ' /p:Configuration=\"' + configuration + '\" /p:Platform=\"' + targetCPU + '\" /p:BuildProjectReferences=false'
+      #cmdBuild = 'msbuild ' + solutionPath + ' /p:Configuration=\"' + configuration + '\" /p:Platform=\"' + targetCPU + '\" /p:BuildProjectReferences=false'
+
+      #Make cmdLibExe command dependent on cmdVcVarsAll
+      commands = cls.cmdVcVarsAll + ' && ' + cmdBuild + ' && ' + cls.cmdVcVarsAllClean
+
+      #FNULL = open(os.devnull, 'w')
+      #result = subprocess.call(commands, stdout=FNULL, stderr=subprocess.STDOUT)
+
+      p = subprocess.Popen(commands, shell=False, stderr=subprocess.PIPE)
+      p.communicate()
+      """
+      ## But do not wait till netstat finish, start displaying output immediately ##
+      while True:
+        out = p.stderr.read(1)
+        if out == '' and p.poll() != None:
+            break
+        if out != '':
+            sys.stdout.write(out)
+            sys.stdout.flush()
+      """
+      result = p.wait()
+      if result != 0:
+        ret = False
+    except KeyboardInterrupt:
+      os.kill(p.pid, signal.SIGTERM)
+    except Exception as error:
+      ret = False
+    finally:
+      pass
+
+    if ret:
+      cls.logger.info('Successfully finished building wrappers for target ' + target)
+
+    return ret
 
   @classmethod
   def buildTargets(cls, targets, targetCPU):
@@ -164,9 +223,6 @@ class Builder:
   def combineLibs(cls, targetCPU, inputFiles, outputFolder, outputFile):
     ret = NO_ERROR
     try:
-      #Set the PATH and environment variables for command-line builds (e.g. vcvarsall.bat x64_x86)
-      cmdVcVarsAll = '\"' +  Settings.vcvarsallPath + '\" ' + config.WINDOWS_COMPILER_OPTIONS[System.hostCPU][targetCPU]
-
       if not os.path.exists(outputFolder):
         os.makedirs(outputFolder)
       output = os.path.join(outputFolder, outputFile)
@@ -175,7 +231,7 @@ class Builder:
       cmdLibExe = '\"' +  cls.libexePath + '\" /IGNORE:' + ','.join(str(i) for i in config.WINDOWS_IGNORE_WARNINGS) +  ' /OUT:' + output + ' ' + inputFiles
 
       #Make cmdLibExe command dependent on cmdVcVarsAll
-      commands = cmdVcVarsAll + ' && ' + cmdLibExe
+      commands = cls.cmdVcVarsAll + ' && ' + cmdLibExe + ' && ' + cls.cmdVcVarsAllClean
 
       #cls.logger.debug('Command line to execute: ' + commands)
       FNULL = open(os.devnull, 'w')
@@ -217,5 +273,5 @@ class Builder:
 
   @classmethod
   def getTargetGnPath(cls, target):
-    targetsToBuild, combineLibs = config.TARGETS_TO_BUILD.get(target,(target,0))
-    return targetsToBuild, combineLibs
+    targetsToBuild, shouldCombineLibs = config.TARGETS_TO_BUILD.get(target,(target,0))
+    return targetsToBuild, shouldCombineLibs

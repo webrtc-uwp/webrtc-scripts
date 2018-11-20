@@ -43,6 +43,8 @@ class Settings:
     cls.defaultFilePath = os.path.join(os.path.dirname(defaults.__file__),'defaults.py')
     #Root path for preparation
     cls.webrtcPath = os.path.join(cls.rootSdkPath, convertToPlatformPath(config.PREPRATARION_WORKING_PATH))
+    #WebRtc solution path
+    cls.webrtcSolutionPaths = os.path.join(cls.rootSdkPath,convertToPlatformPath(config.WEBRTC_SOLUTION_PATH))
 
     #local ninja path
     cls.localNinjaPath = os.path.join(cls.localDepotToolsPath,'ninja')
