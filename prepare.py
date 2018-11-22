@@ -22,7 +22,7 @@ class Preparation:
     """
     #Create logger
     cls.logger = Logger.getLogger('Prepare')
-    
+
     #Set working directory to ./webrtc/xplatform/webrtc
     if not os.path.exists(Settings.webrtcPath):
       System.stopExecution(1, 'Unable to set preparation working directory')
@@ -92,8 +92,8 @@ class Preparation:
     #Generate Webrtc projects
     try:
       os.environ['DEPOT_TOOLS_WIN_TOOLCHAIN'] = '0'
-      cls.logger.info('Generating webrtc projects ...')
       cls.logger.debug('Output path: ' + gnOutputPath)
+      cls.logger.info('Generating webrtc projects ...')
       result = subprocess.call([
         'gn',
         'gen',
@@ -106,9 +106,7 @@ class Preparation:
       else:
         #Update ninja path in VS project files to point to ninja.exe in local depot_tools folder
         cls.__updateNinjaPathinProjects(gnOutputPath)
-        cls.logger.info('Successfully finished preparation for target: ' + target + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration)
     except Exception as errorMessage:
-      cls.logger.error(str(errorMessage))
       isError = True
     finally:
       #Delete updated BUILD.gn from webrtc root folder and recover original file
@@ -116,7 +114,10 @@ class Preparation:
       Utility.popd()
     
     if isError:
+      cls.logger.error(str(errorMessage))
       return ERROR_PREPARE_GN_GENERATION_FAILED
+
+    cls.logger.info('Successfully finished preparation for target: ' + target + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration)
       
     return NO_ERROR
     

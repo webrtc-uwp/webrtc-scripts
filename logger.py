@@ -5,6 +5,7 @@ import os.path
 from datetime import datetime
 
 from settings import Settings
+from config import ACTION_START_MESSAGE, ACTION_END_MESSAGE
 
 if  platform.system().lower() == 'windows':
   import winutility
@@ -88,4 +89,10 @@ class Logger:
                             'm', message, ColoredFormatter.RESET_SEQUECE))
     print(coloredMessage)
 
-
+  @staticmethod
+  def printStartActionMessage(action, textColor = ColoredFormatter.GREEN):
+    Logger.printColorMessage(ACTION_START_MESSAGE.replace('[ACTION]',action),textColor)
+  
+  @staticmethod
+  def printEndActionMessage(action, textColor = ColoredFormatter.GREEN):
+    Logger.printColorMessage(ACTION_END_MESSAGE.replace('[ACTION]',action),textColor)

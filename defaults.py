@@ -61,6 +61,7 @@ logToFile = ''
 overwriteLogFile = False
 noColoredOutput = False
 
+stopExecutionOnError = False
 showTraceOnError = True
 showSettingsValuesOnError = True
 showPATHOnError = True

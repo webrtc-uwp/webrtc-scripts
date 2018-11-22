@@ -4,25 +4,29 @@ import os
 from inputHandler import Input
 from system import System
 from settings import Settings
-from logger import Logger
+from logger import Logger,ColoredFormatter
 from prepare import Preparation
 from builder import Builder
 from cleanup import Cleanup
 from createNuget import CreateNuget
 from errors import *
-
+from summary import Summary
 
 def actionClean():
+  
+  Logger.printStartActionMessage('Cleanup')
   Cleanup.init()
 
   for action in Settings.cleanOptions['actions']:
     Cleanup.run(action)
 
+  Logger.printEndActionMessage('Cleanup')
+
 def actionPrepare():
   """
     Prepare dev environment for all specified targets and platforms.
   """
-
+  
   #Do preparation that is common for all platforms. Pass true if ortc is one of targets
   Preparation.setUp('ortc' in Settings.targets)
   for target in Settings.targets:
@@ -30,9 +34,14 @@ def actionPrepare():
       for cpu in Settings.targetCPUs:
         if System.checkIfCPUIsSupportedForPlatform(cpu,platform):
           for configuration in Settings.targetConfigurations:
+            Logger.printStartActionMessage('Prepare')
             result = Preparation.run(target, platform, cpu, configuration)
+            Summary.addSummary('prepare', target, platform, cpu, configuration, result)
             if result != NO_ERROR:
+              Logger.printEndActionMessage('Prepare',ColoredFormatter.RED)
               System.stopExecution(result)
+            else:
+              Logger.printEndActionMessage('Prepare')
 
 def actionBuild():
   """
@@ -47,7 +56,15 @@ def actionBuild():
     for platform in Settings.targetPlatforms:
       for cpu in Settings.targetCPUs:
         for configuration in Settings.targetConfigurations:
-          Builder.run(target, targetsToBuild, platform, cpu, configuration, combineLibs)
+          Logger.printStartActionMessage('Build')
+          result = Builder.run(target, targetsToBuild, platform, cpu, configuration, combineLibs)
+          Summary.addSummary('build', target, platform, cpu, configuration, result)
+          if result != NO_ERROR:
+              Logger.printEndActionMessage('Build',ColoredFormatter.RED)
+              shouldEndOnError(result)
+              #System.stopExecution(result)
+          else:
+            Logger.printEndActionMessage('Build')
 
 def actionCreateNuget():
   CreateNuget.init()
@@ -61,6 +78,12 @@ def actionPublishNuget():
 
 def actionUpdatePublishedSample():
   pass
+
+def shouldEndOnError(error):
+  if Settings.stopExecutionOnError:
+    Summary.printSummary()
+    System.stopExecution(error)
+
 
 def main():
 
@@ -111,5 +134,6 @@ def main():
   if 'updatePublishedSample' in Settings.actions:
     actionUpdatePublishedSample()
 
+  Summary.printSummary()
 
 if  __name__ =='__main__': main()

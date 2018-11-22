@@ -10,6 +10,7 @@ USER_DEFAULTS_FILE = 'userdef'
 TEMPLATES_PATH = './templates'
 ORTC_DEFAULTS_PATH = './ortc'
 WEBRTC_DEFAULTS_PATH = './webrtc'
+WEBRTC_SOLUTION_PATH = './webrtc/windows/solutions'
 RELATIVE_DEPOT_TOOLS_PATH = './webrtc/xplatform/depot_tools'
 RELATIVE_BUILD_TOOLS_PATH = './webrtc/xplatform/webrtc/buildtools'
 PREPRATARION_WORKING_PATH = './webrtc/xplatform/webrtc'
@@ -219,3 +220,6 @@ WEBRTC_TARGET = 'webrtc'
 ADDITIONAL_TARGETS_TO_ADD = [
                               '//third_party/idl:idl'
                             ]
+
+ACTION_START_MESSAGE = '\n==================================== [ACTION] STARTED ====================================\n'
+ACTION_END_MESSAGE = '\n====================================== [ACTION] ENDED ======================================\n'
