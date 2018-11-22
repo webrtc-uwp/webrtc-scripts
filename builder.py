@@ -74,7 +74,8 @@ class Builder:
     #Switch to previously working directory
     Utility.popd()
   
-    cls.buildWrapper(targetName,cpu,configuration)
+    if Settings.buildWrapper:
+      cls.buildWrapper(targetName,cpu,configuration)
 
     cls.logger.info('Running build for target: ' + targetName + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration + ', finished successfully!')
     return NO_ERROR
@@ -87,44 +88,27 @@ class Builder:
     ret = True
     cls.logger.info('Building ' + target + ' wrapper projects for ' + targetCPU + ' for configuration  '+ configuration)
 
-  #MSBuild %~1 /property:Configuration=%CONFIGURATION% /property:Platform=%~3 /nodeReuse:False
     try:
-      solutionPath = os.path.join(Settings.webrtcSolutionPaths,'WebRtc.Nuget.Universal.sln')
-      projectName1 = 'Api\Org_WebRtc\Org_WebRtc'
-      projectName2 = 'Api\Org_WebRtc\Org_WebRtc_WrapperGlue'
-      #Call lib.exe to mergeobj files to webrtc[counter].lib files, which will be later merged to webrtc.lib
-      #cmdBuild = 'MSBuild ' + solutionFile + '/property:Configuration=' + configuration + ' /property:Platform=' + targetCPU + ' /nodeReuse:False'
-      cmdBuild = 'msbuild ' + solutionPath + ' /t:' + projectName2 + ',' + projectName1 + ' /p:Configuration=\"' + configuration + '\" /p:Platform=\"' + targetCPU + '\" /p:BuildProjectReferences=false'
-      #cmdBuild = 'msbuild ' + solutionPath + ' /p:Configuration=\"' + configuration + '\" /p:Platform=\"' + targetCPU + '\" /p:BuildProjectReferences=false'
+      #Solution template path
+      solutionSourcePath = os.path.join(Settings.rootSdkPath,convertToPlatformPath(config.WEBRTC_SOLUTION_TEMPLATES_PATH),config.NUGET_WINUWP_WEBRTC_SOLUTION)
+      #Path where solution template will be copied
+      solutionDestinationPath = os.path.join(Settings.rootSdkPath,convertToPlatformPath(config.WEBRTC_SOLUTION_PATH),config.NUGET_WINUWP_WEBRTC_SOLUTION)
+      
+      #Copy template solution to solution folder
+      shutil.copyfile(solutionSourcePath,solutionDestinationPath)
 
-      #Make cmdLibExe command dependent on cmdVcVarsAll
-      commands = cls.cmdVcVarsAll + ' && ' + cmdBuild + ' && ' + cls.cmdVcVarsAllClean
+      #MSBuild command for building wrapper projects
+      cmdBuild = 'msbuild ' + solutionDestinationPath + ' /t:Build' + ' /p:Configuration=\"' + configuration + '\" /p:Platform=\"' + targetCPU + '\"'
 
-      #FNULL = open(os.devnull, 'w')
-      #result = subprocess.call(commands, stdout=FNULL, stderr=subprocess.STDOUT)
-
-      p = subprocess.Popen(commands, shell=False, stderr=subprocess.PIPE)
-      p.communicate()
-      """
-      ## But do not wait till netstat finish, start displaying output immediately ##
-      while True:
-        out = p.stderr.read(1)
-        if out == '' and p.poll() != None:
-            break
-        if out != '':
-            sys.stdout.write(out)
-            sys.stdout.flush()
-      """
-      result = p.wait()
+      #EXecute MSBuild command
+      result = Utility.runSubprocess([cls.cmdVcVarsAll, cmdBuild, cls.cmdVcVarsAllClean], Settings.logLevel == 'DEBUG')
       if result != 0:
         ret = False
-    except KeyboardInterrupt:
-      os.kill(p.pid, signal.SIGTERM)
     except Exception as error:
       ret = False
     finally:
-      pass
-
+      #Delete solution used for building wrapper projects.
+      os.remove(solutionDestinationPath) 
     if ret:
       cls.logger.info('Successfully finished building wrappers for target ' + target)
 

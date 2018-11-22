@@ -16,8 +16,15 @@ def actionClean():
   Logger.printStartActionMessage('Cleanup')
   Cleanup.init()
 
-  for action in Settings.cleanOptions['actions']:
-    Cleanup.run(action)
+  for action in Settings.cleanupOptions['actions']:
+    if action == 'cleanOutput':
+      for target in Settings.cleanupOptions['targets']:
+        for platform in Settings.cleanupOptions['platforms']:
+          for cpu in Settings.cleanupOptions['cpus']:
+            for configuration in Settings.cleanupOptions['configurations']:
+              Cleanup.run(action, target, platform, cpu, configuration)
+    else:
+      Cleanup.run(action)
 
   Logger.printEndActionMessage('Cleanup')
 

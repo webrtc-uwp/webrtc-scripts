@@ -15,15 +15,28 @@ class Cleanup:
     cls.logger = Logger.getLogger('Cleanup')
 
   @classmethod
-  def cleanOutput(cls):
+  def cleanOutput(cls, target='*', platform='*', cpu='*', configuration='*'):
     
-    Utility.pushd(Settings.rootSdkPath)
+    if target == '': target = '*'
+    if platform == '': platform = '*'
+    if cpu == '': cpu = '*'
+    if configuration == '': configuration = '*'
 
-    if os.path.exists(config.GN_OUTPUT_PATH):
-      shutil.rmtree(config.GN_OUTPUT_PATH)
+    Utility.pushd(Settings.webrtcPath)
+    foldersToDelete = list()
 
-    if os.path.exists(config.BUILD_OUTPUT_PATH):
-      shutil.rmtree(config.BUILD_OUTPUT_PATH)
+    gnFolderToClean = config.GN_TARGET_OUTPUT_PATH.replace('[GN_OUT]', config.GN_OUTPUT_PATH).replace('[TARGET]',target).replace('[PLATFORM]',platform).replace('[CPU]',cpu).replace('[CONFIGURATION]',configuration)
+    outputFolderToClean = convertToPlatformPath(config.BUILT_LIBS_DESTINATION_PATH.replace('[BUILD_OUTPUT]',config.BUILD_OUTPUT_PATH).replace('[TARGET]',target).replace('[PLATFORM]',platform).replace('[CPU]',cpu).replace('[CONFIGURATION]',configuration))
+    
+    pathForTest = convertToPlatformPath(gnFolderToClean)
+    for folderPath in glob.iglob(pathForTest):
+      foldersToDelete.append(folderPath)
+    
+    for folderPath in glob.iglob(convertToPlatformPath(outputFolderToClean)):
+      foldersToDelete.append(folderPath)
+
+    for folderToDelete in foldersToDelete:
+      shutil.rmtree(folderToDelete)
 
     Utility.popd()
 
@@ -65,10 +78,10 @@ class Cleanup:
 
 
   @classmethod
-  def run(cls, action):
+  def run(cls, action, target='*', platform='*', cpu='*', configuration='*'):
 
     if action == 'cleanOutput':
-      cls.cleanOutput()
+      cls.cleanOutput(target, platform, cpu, configuration)
 
     if action == 'cleanUserDef':
       cls.cleanUserDef()

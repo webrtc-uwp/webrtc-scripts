@@ -64,7 +64,7 @@ class Settings:
           os.path.isfile(os.path.join(cls.templatesPath, cls.inputArgs.template + '.py'))): 
         globals().update(import_module(cls.inputArgs.template).__dict__)
 
-    cls.gnOutputPath = gnOutputPath
+    #cls.gnOutputPath = gnOutputPath
 
     cls.supportedPlatformsForHostOs = supportedPlatformsForHostOs
     cls.supportedCPUsForPlatform = supportedCPUsForPlatform
@@ -98,7 +98,8 @@ class Settings:
     else:
       cls.targetConfigurations = targetConfigurations
 
-    
+    cls.buildWrapper = buildWrapper
+
     cls.logFormat = logFormat
     cls.logLevel = logLevel
     cls.logToFile = logToFile
@@ -107,6 +108,11 @@ class Settings:
       cls.noColoredOutput = True
     else:
       cls.noColoredOutput = noColoredOutput
+
+    if cls.inputArgs.noWrapper:
+      cls.buildWrapper = False
+    else:
+      cls.buildWrapper = buildWrapper
 
     cls.stopExecutionOnError = stopExecutionOnError
     cls.showTraceOnError = showTraceOnError
@@ -129,20 +135,20 @@ class Settings:
                     'targets' : cls.targets,
                     'cpus' : cls.targetCPUs,
                     'platforms' : cls.targetPlatforms,
-                    'configuration' : cls.targetConfigurations
+                    'configurations' : cls.targetConfigurations
     }
-    cls.cleanOptions = cleanOptions
+    cls.cleanupOptions = cleanupOptions
 
     #Set specific clean configuration if specified in userDef.py or use default values from __actionOptions dict
     for key,value in cls.__actionOptions.iteritems():
-      cls.cleanOptions[key] = cls.cleanOptions.get(key,[])
-      if cls.cleanOptions[key] == []:
-        cls.cleanOptions[key] = value
+      cls.cleanupOptions[key] = cls.cleanupOptions.get(key,[])
+      if cls.cleanupOptions[key] == []:
+        cls.cleanupOptions[key] = value
 
   @classmethod
   def getGnOutputPath(cls, path, target, platform, cpu, configuration):
     """
       Return gn output path for specified args.
     """
-    outputPath = cls.gnOutputPath.replace('[GN_OUT]', path).replace('[TARGET]',target).replace('[PLATFORM]',platform).replace('[CPU]',cpu).replace('[CONFIGURATION]',configuration)
+    outputPath = config.GN_TARGET_OUTPUT_PATH.replace('[GN_OUT]', path).replace('[TARGET]',target).replace('[PLATFORM]',platform).replace('[CPU]',cpu).replace('[CONFIGURATION]',configuration)
     return convertToPlatformPath(outputPath)

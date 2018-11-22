@@ -11,9 +11,11 @@ TEMPLATES_PATH = './templates'
 ORTC_DEFAULTS_PATH = './ortc'
 WEBRTC_DEFAULTS_PATH = './webrtc'
 WEBRTC_SOLUTION_PATH = './webrtc/windows/solutions'
+WEBRTC_SOLUTION_TEMPLATES_PATH = './webrtc/windows/templates/solutions'
 RELATIVE_DEPOT_TOOLS_PATH = './webrtc/xplatform/depot_tools'
 RELATIVE_BUILD_TOOLS_PATH = './webrtc/xplatform/webrtc/buildtools'
 PREPRATARION_WORKING_PATH = './webrtc/xplatform/webrtc'
+GN_TARGET_OUTPUT_PATH = '[GN_OUT]/[TARGET]_[PLATFORM]_[CPU]_[CONFIGURATION]'
 BUILT_LIBS_DESTINATION_PATH = '/[BUILD_OUTPUT]/[TARGET]/[PLATFORM]/[CPU]/[CONFIGURATION]/'
 
 #Paths are relative to the webrtc root path
@@ -209,6 +211,18 @@ WEBRTC_TARGET = 'webrtc'
 ADDITIONAL_TARGETS_TO_ADD = [
                               '//third_party/idl:idl'
                             ]
+
+WEBRTC_WRAPPER_PROJECTS = [
+                            'Api\Org_WebRtc\Org_WebRtc_WrapperGlue',
+                            'Api\Org_WebRtc\Org_WebRtc',
+                          ]
+
+
+NUGET_WINUWP_WEBRTC_SOLUTION = 'WebRtc.Nuget.Universal.sln'
+
+FILES_TO_COPY_FOR_WRAPPER_BUILD = [
+                  {'../chromium/third_party/BUILD.gn' : './third_party/BUILD.gn'},
+                ]
 
 ACTION_START_MESSAGE = '\n==================================== [ACTION] STARTED ====================================\n'
 ACTION_END_MESSAGE = '\n====================================== [ACTION] ENDED ======================================\n'

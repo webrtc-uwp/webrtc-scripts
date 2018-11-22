@@ -3,11 +3,12 @@ import sys
 import re
 import logging
 import subprocess
+import signal
 from shutil import copyfile, rmtree
 
 from logger import Logger
 from helper import convertToPlatformPath
-
+from errors import NO_ERROR, ERROR_SUBPROCESS_EXECUTAION_FAILED
 class Utility:
 
   @classmethod
@@ -188,3 +189,34 @@ class Utility:
     if os.path.isfile(backupFilePath):
       copyfile(backupFilePath, filePath)
       os.remove(backupFilePath) 
+
+  @classmethod
+  def runSubprocess(cls, commands, shouldLog = False):
+    """
+      Run provided command line as subprocess.
+    """
+    result = NO_ERROR
+    commandToExecute = ''
+    for command in commands:
+      if len(commandToExecute) > 0:
+        commandToExecute = commandToExecute + ' && '
+      if not shouldLog:
+        commandToExecute = commandToExecute + command + '>NUL'
+      else:
+        commandToExecute = commandToExecute + command
+    try:
+      #Execute command
+      process = subprocess.Popen(commandToExecute, shell=False, stderr=subprocess.PIPE)
+
+      #Enable showing subprocess output and responsiveness on keyboard actions (terminating script on user action) 
+      process.communicate()
+
+      result = process.returncode
+
+    except KeyboardInterrupt:
+      os.kill(process.pid, signal.SIGTERM)
+    except Exception as error:
+      result = ERROR_SUBPROCESS_EXECUTAION_FAILED
+      cls.logger.error(str(error))
+
+    return result
