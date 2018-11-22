@@ -218,7 +218,7 @@ WEBRTC_WRAPPER_PROJECTS = [
                           ]
 
 
-NUGET_WINUWP_WEBRTC_SOLUTION = 'WebRtc.Nuget.Universal.sln'
+NUGET_WINUWP_WEBRTC_SOLUTION = 'WebRtc.Wrapper.Universal.sln'
 
 FILES_TO_COPY_FOR_WRAPPER_BUILD = [
                   {'../chromium/third_party/BUILD.gn' : './third_party/BUILD.gn'},
