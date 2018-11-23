@@ -56,6 +56,13 @@ class Logger:
   formatter = None #ColoredFormatter(FORMAT)
   loggerHandle = None #logging.StreamHandler()
   #loggerHandle.setFormatter(formatter)
+  basicLogger = None
+
+  @classmethod
+  def initBasicLogger(cls):
+    logging.basicConfig(format='', level=logging.DEBUG)
+    cls.basicLogger = logging.getLogger()
+
   @classmethod
   def setUp(cls, logFormat, noColoredOutput = False, logToFile = '', overwriteLogFile = True):
 
@@ -83,16 +90,21 @@ class Logger:
       logger.addHandler(cls.loggerHandle)
     return logger
 
-  @staticmethod
-  def printColorMessage(message,textColor = ColoredFormatter.RED, background = None):
+  @classmethod
+  def printColorMessage(cls, message,textColor = ColoredFormatter.RED, background = None):
+    if cls.basicLogger == None:
+      cls.initBasicLogger()
+    
     coloredMessage = ''.join((ColoredFormatter.CSI_SEQUENCE, (str(textColor + 30)),
                             'm', message, ColoredFormatter.RESET_SEQUECE))
-    print(coloredMessage)
+    
+    #print(coloredMessage)
+    cls.basicLogger.debug(coloredMessage)
 
-  @staticmethod
-  def printStartActionMessage(action, textColor = ColoredFormatter.GREEN):
-    Logger.printColorMessage(ACTION_START_MESSAGE.replace('[ACTION]',action),textColor)
+  @classmethod
+  def printStartActionMessage(cls, action, textColor = ColoredFormatter.GREEN):
+    cls.printColorMessage(ACTION_START_MESSAGE.replace('[ACTION]',action),textColor)
   
-  @staticmethod
-  def printEndActionMessage(action, textColor = ColoredFormatter.GREEN):
-    Logger.printColorMessage(ACTION_END_MESSAGE.replace('[ACTION]',action),textColor)
+  @classmethod
+  def printEndActionMessage(cls, action, textColor = ColoredFormatter.GREEN):
+    cls.printColorMessage(ACTION_END_MESSAGE.replace('[ACTION]',action),textColor)

@@ -66,7 +66,7 @@ class Builder:
 
     cls.copyLibsToOutput(targetName, platform, cpu, configuration, destinationPathLib)
 
-    if Settings.libsBackupPath != '':
+    if Settings.enableBackup and Settings.libsBackupPath != '':
       backupPath = os.path.join(Settings.userWorkingPath,Settings.libsBackupPath)
       if os.path.exists(backupPath):
         shutil.rmtree(backupPath) 
@@ -75,7 +75,9 @@ class Builder:
     Utility.popd()
   
     if Settings.buildWrapper:
-      cls.buildWrapper(targetName,cpu,configuration)
+      if not cls.buildWrapper(targetName,cpu,configuration):
+        return ERROR_BUILD_FAILED
+      
 
     cls.logger.info('Running build for target: ' + targetName + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration + ', finished successfully!')
     return NO_ERROR
@@ -103,6 +105,7 @@ class Builder:
       #EXecute MSBuild command
       result = Utility.runSubprocess([cls.cmdVcVarsAll, cmdBuild, cls.cmdVcVarsAllClean], Settings.logLevel == 'DEBUG')
       if result != 0:
+        cls.logger.error('Building ' + target + ' target has failed!')
         ret = False
     except Exception as error:
       ret = False
@@ -141,8 +144,8 @@ class Builder:
           ],env=my_env)
 
         if result != 0:
-            cls.logger.error('Building ' + target + ' target has failed!')
-            return False
+          cls.logger.error('Building ' + target + ' target has failed!')
+          ret = False
 
     except Exception as error:
       cls.logger.error(str(error))

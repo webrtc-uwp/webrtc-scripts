@@ -201,7 +201,7 @@ class Utility:
       if len(commandToExecute) > 0:
         commandToExecute = commandToExecute + ' && '
       if not shouldLog:
-        commandToExecute = commandToExecute + command + '>NUL'
+        commandToExecute = commandToExecute + command + ' >NUL'
       else:
         commandToExecute = commandToExecute + command
     try:
@@ -209,7 +209,7 @@ class Utility:
       process = subprocess.Popen(commandToExecute, shell=False, stderr=subprocess.PIPE)
 
       #Enable showing subprocess output and responsiveness on keyboard actions (terminating script on user action) 
-      process.communicate()
+      stderr = process.communicate()
 
       result = process.returncode
 

@@ -123,6 +123,7 @@ class Settings:
 
     cls.msvsPath = msvsPath
 
+    cls.enableBackup = enableBackup
     cls.libsBackupPath = libsBackupPath
     
     #This value will be set during VS path check

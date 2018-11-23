@@ -83,4 +83,5 @@ showPATHOnError = True
 #Windows specific variables
 msvsPath = ''
 
+enableBackup = False
 libsBackupPath = 'Backup'

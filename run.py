@@ -61,16 +61,17 @@ def actionBuild():
     targetsToBuild, combineLibs = Builder.getTargetGnPath(target)
     for platform in Settings.targetPlatforms:
       for cpu in Settings.targetCPUs:
-        for configuration in Settings.targetConfigurations:
-          Logger.printStartActionMessage('Build')
-          result = Builder.run(target, targetsToBuild, platform, cpu, configuration, combineLibs)
-          Summary.addSummary('build', target, platform, cpu, configuration, result)
-          if result != NO_ERROR:
-              Logger.printEndActionMessage('Build',ColoredFormatter.RED)
-              shouldEndOnError(result)
-              #System.stopExecution(result)
-          else:
-            Logger.printEndActionMessage('Build')
+        if System.checkIfCPUIsSupportedForPlatform(cpu,platform):
+          for configuration in Settings.targetConfigurations:
+            Logger.printStartActionMessage('Build')
+            result = Builder.run(target, targetsToBuild, platform, cpu, configuration, combineLibs)
+            Summary.addSummary('build', target, platform, cpu, configuration, result)
+            if result != NO_ERROR:
+                Logger.printEndActionMessage('Build',ColoredFormatter.RED)
+                shouldEndOnError(result)
+                #System.stopExecution(result)
+            else:
+              Logger.printEndActionMessage('Build')
 
 def actionCreateNuget():
     pass
