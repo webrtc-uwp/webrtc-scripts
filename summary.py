@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from logger import Logger, ColoredFormatter
 from errors import NO_ERROR
 class Summary:
@@ -18,17 +20,18 @@ class Summary:
 
 
   @classmethod
-  def printSummary(cls):
-    Logger.printColorMessage('\n\n ========================================= SUMMARY ========================================= \n', ColoredFormatter.YELLOW)
+  def printSummary(cls, executionTime = 0):
+    Logger.printColorMessage('\n========================================= SUMMARY ========================================= \n', ColoredFormatter.YELLOW)
     for key, value in cls.action_results.iteritems():
       if key != 'cleanup':
-        Logger.printColorMessage('ACTION: ' + key + '\n', ColoredFormatter.WHITE)
+        Logger.printColorMessage('ACTION: ' + key + '', ColoredFormatter.WHITE)
         for resultKey, resultValue in value.iteritems():
           if resultValue['result'] == NO_ERROR:
-            Logger.printColorMessage('     SUCCESSFUL: ' + resultKey.replace('___', '   ') + '\n', ColoredFormatter.GREEN)
+            Logger.printColorMessage('     SUCCESSFUL: ' + resultKey.replace('___', '   ') + '      execution time: ' + str(timedelta(seconds=resultValue['time'])) + '', ColoredFormatter.GREEN)
           else:
-            Logger.printColorMessage('         FAILED: ' + resultKey.replace('___', '   ') + '\n', ColoredFormatter.RED)
-      Logger.printColorMessage('\n\n ------------------------------------------------------------------------------------------ \n', ColoredFormatter.WHITE)
+            Logger.printColorMessage('         FAILED: ' + resultKey.replace('___', '   ') + '      execution time: ' + str(timedelta(seconds=resultValue['time'])) +  '', ColoredFormatter.RED)
+      Logger.printColorMessage('\n------------------------------------------------------------------------------------------- ', ColoredFormatter.YELLOW)
+    Logger.printColorMessage('Total execution time: ' + str(timedelta(seconds=executionTime)), ColoredFormatter.YELLOW)
 
 
       

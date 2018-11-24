@@ -60,8 +60,13 @@ class Logger:
 
   @classmethod
   def initBasicLogger(cls):
-    logging.basicConfig(format='', level=logging.DEBUG)
-    cls.basicLogger = logging.getLogger()
+    basicLoggerHandle = logging.StreamHandler()
+    basicFormatter = logging.Formatter('')
+    basicLoggerHandle.setFormatter(basicFormatter)
+    basicLoggerHandle.setLevel(logging.DEBUG)
+    cls.basicLogger = logging.getLogger('basic')
+    cls.basicLogger.setLevel(logging.DEBUG)
+    cls.basicLogger.addHandler(basicLoggerHandle)
 
   @classmethod
   def setUp(cls, logFormat, noColoredOutput = False, logToFile = '', overwriteLogFile = True):

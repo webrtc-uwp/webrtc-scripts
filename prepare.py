@@ -1,5 +1,6 @@
 import os
 import subprocess
+import time
 from shutil import copyfile
 
 import config
@@ -57,6 +58,9 @@ class Preparation:
     
   @classmethod
   def run(cls, target, platform, cpu, configuration):
+    start_time = time.time()
+    ret = NO_ERROR
+    cls.executionTime = 0
     isError = False
     cls.logger.info('Runnning preparation for target: ' + target + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration)
 
@@ -115,11 +119,13 @@ class Preparation:
     
     if isError:
       cls.logger.error(str(errorMessage))
-      return ERROR_PREPARE_GN_GENERATION_FAILED
-
-    cls.logger.info('Successfully finished preparation for target: ' + target + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration)
-      
-    return NO_ERROR
+      ret = ERROR_PREPARE_GN_GENERATION_FAILED
+    else:
+      cls.logger.info('Successfully finished preparation for target: ' + target + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration)
+    
+    end_time = time.time()
+    cls.executionTime = end_time - start_time
+    return ret
     
   #---------------------------------- Private methods --------------------------------------------
   @classmethod

@@ -2,6 +2,7 @@ import os
 import subprocess
 import shutil 
 import signal
+import time
 
 from errors import *
 import config
@@ -32,6 +33,8 @@ class Builder:
       :param builderWorkingPath: Path where generated projects for specified target.
       :return: NO_ERROR if build was successfull. Otherwise returns error code
     """
+    start_time = time.time()
+    ret = NO_ERROR
     cls.logger.info('Running build for target: ' + targetName + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration)
 
     #If path with generated projects is not specified generate path from input arguments
@@ -49,38 +52,42 @@ class Builder:
     cls.cmdVcVarsAll = '\"' +  Settings.vcvarsallPath + '\" ' + config.WINDOWS_COMPILER_OPTIONS[System.hostCPU][cpu]
     cls.cmdVcVarsAllClean = '\"' +  Settings.vcvarsallPath + '\" ' + '/clean_env'
 
-    
     #Change current working directory to one with generated projects
     Utility.pushd(workingDir)
 
     #Start building and merging libraries
-    if not cls.buildTargets(targets, cpu):
-      return ERROR_BUILD_FAILED
-    
-    destinationPath = convertToPlatformPath(config.BUILT_LIBS_DESTINATION_PATH.replace('[BUILD_OUTPUT]',config.BUILD_OUTPUT_PATH).replace('[TARGET]',targetName).replace('[PLATFORM]',platform).replace('[CPU]',cpu).replace('[CONFIGURATION]',configuration))
-    destinationPathLib = os.path.join(Settings.webrtcPath, destinationPath)
+    if cls.buildTargets(targets, cpu):
+      destinationPath = convertToPlatformPath(config.BUILT_LIBS_DESTINATION_PATH.replace('[BUILD_OUTPUT]',config.BUILD_OUTPUT_PATH).replace('[TARGET]',targetName).replace('[PLATFORM]',platform).replace('[CPU]',cpu).replace('[CONFIGURATION]',configuration))
+      destinationPathLib = os.path.join(Settings.webrtcPath, destinationPath)
 
-    #Merge libraries if it is required
-    if shouldCombineLibs:
-      cls.mergeLibs(cpu,destinationPathLib)
+      #Merge libraries if it is required
+      if shouldCombineLibs:
+        if not cls.mergeLibs(cpu,destinationPathLib):
+          ret = ERROR_BUILD_MERGE_LIBS_FAILED
 
-    cls.copyLibsToOutput(targetName, platform, cpu, configuration, destinationPathLib)
+      if ret == NO_ERROR:
+        cls.copyLibsToOutput(targetName, platform, cpu, configuration, destinationPathLib)
 
-    if Settings.enableBackup and Settings.libsBackupPath != '':
-      backupPath = os.path.join(Settings.userWorkingPath,Settings.libsBackupPath)
-      if os.path.exists(backupPath):
-        shutil.rmtree(backupPath) 
-      shutil.copytree(destinationPathLib,backupPath)
+        if Settings.enableBackup and Settings.libsBackupPath != '':
+          backupPath = os.path.join(Settings.userWorkingPath,Settings.libsBackupPath)
+          if os.path.exists(backupPath):
+            shutil.rmtree(backupPath) 
+          shutil.copytree(destinationPathLib,backupPath)
+    else:
+      ret = ERROR_BUILD_FAILED
     #Switch to previously working directory
     Utility.popd()
   
-    if Settings.buildWrapper:
-      if not cls.buildWrapper(targetName,cpu,configuration):
-        return ERROR_BUILD_FAILED
-      
-
-    cls.logger.info('Running build for target: ' + targetName + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration + ', finished successfully!')
-    return NO_ERROR
+    if ret == NO_ERROR:
+      if Settings.buildWrapper:
+        if not cls.buildWrapper(targetName,cpu,configuration):
+          ret = ERROR_BUILD_FAILED
+        
+    if ret == NO_ERROR:
+      cls.logger.info('Running build for target: ' + targetName + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration + ', finished successfully!')
+    end_time = time.time()
+    cls.executionTime = end_time - start_time
+    return ret
 
   @classmethod
   def buildWrapper(cls, target, targetCPU, configuration):
@@ -144,8 +151,7 @@ class Builder:
           ],env=my_env)
 
         if result != 0:
-          cls.logger.error('Building ' + target + ' target has failed!')
-          ret = False
+          raise Exception('Building ' + target + ' target has failed!')
 
     except Exception as error:
       cls.logger.error(str(error))
@@ -165,6 +171,7 @@ class Builder:
       Merges obj files and creates fat webrtc library.
       TODO: Make it returns error, instead of to terminate execution on error
     """
+    ret = True
     cls.logger.info('Merging libs for cpu '+ targetCPU)
 
     #Determine lib.exe path
@@ -184,27 +191,32 @@ class Builder:
     for objs in listOfObjesToCombine:
       output = 'webrtc' + str(counter) + '.lib'
       cls.logger.debug('Creating ' + output + ' library')
-      ret = cls.combineLibs(targetCPU, objs, tempCombinePath, output)
-      if ret == NO_ERROR:
+      result = cls.combineLibs(targetCPU, objs, tempCombinePath, output)
+      if result == NO_ERROR:
         #Generated lib add to the list, which will be used for creation one fat webrtc lib
         libsToMerge += (os.path.join(tempCombinePath, output)) + ' '
         counter += 1
       else:
+        ret = False
         cls.logger.error('Creating ' + output + ' library has failed!')
-        System.stopExecution(ret)
+        return ret
+        #System.stopExecution(ret)
 
      #Create webrtc lib from specified lib files
     if len(libsToMerge) > 0:
-      ret = cls.combineLibs(targetCPU, libsToMerge, destinationPath, 'webrtc.lib')
-      if ret != NO_ERROR:
+      result = cls.combineLibs(targetCPU, libsToMerge, destinationPath, 'webrtc.lib')
+      if result != NO_ERROR:
+        ret = False
         cls.logger.error('Creating webrtc library has failed!')
-        System.stopExecution(ret)
+        return ret
+        #System.stopExecution(ret)
     else:
       cls.logger.warning('There is no libs to merge for target CPU ' + targetCPU)
 
     shutil.rmtree(tempCombinePath) 
 
     cls.logger.info('Merging libs is finished')
+    return ret
 
   @classmethod
   def combineLibs(cls, targetCPU, inputFiles, outputFolder, outputFile):

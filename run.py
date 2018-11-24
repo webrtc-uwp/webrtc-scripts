@@ -1,5 +1,6 @@
 import sys
 import os
+import time
 
 from inputHandler import Input
 from system import System
@@ -40,14 +41,14 @@ def actionPrepare():
       for cpu in Settings.targetCPUs:
         if System.checkIfCPUIsSupportedForPlatform(cpu,platform):
           for configuration in Settings.targetConfigurations:
-            Logger.printStartActionMessage('Prepare')
+            Logger.printStartActionMessage('Prepare ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration,ColoredFormatter.YELLOW)
             result = Preparation.run(target, platform, cpu, configuration)
-            Summary.addSummary('prepare', target, platform, cpu, configuration, result)
+            Summary.addSummary('prepare', target, platform, cpu, configuration, result, Preparation.executionTime)
             if result != NO_ERROR:
-              Logger.printEndActionMessage('Prepare',ColoredFormatter.RED)
-              System.stopExecution(result)
+              Logger.printEndActionMessage('Failed prepare ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration,ColoredFormatter.RED)
+              shouldEndOnError(result)
             else:
-              Logger.printEndActionMessage('Prepare')
+              Logger.printEndActionMessage('Prepare '  + target + ' ' + platform + ' ' + cpu + ' ' + configuration)
 
 def actionBuild():
   """
@@ -63,15 +64,15 @@ def actionBuild():
       for cpu in Settings.targetCPUs:
         if System.checkIfCPUIsSupportedForPlatform(cpu,platform):
           for configuration in Settings.targetConfigurations:
-            Logger.printStartActionMessage('Build')
+            Logger.printStartActionMessage('Build ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration,ColoredFormatter.YELLOW)
             result = Builder.run(target, targetsToBuild, platform, cpu, configuration, combineLibs)
-            Summary.addSummary('build', target, platform, cpu, configuration, result)
+            Summary.addSummary('build', target, platform, cpu, configuration, result, Builder.executionTime)
             if result != NO_ERROR:
-                Logger.printEndActionMessage('Build',ColoredFormatter.RED)
+                Logger.printEndActionMessage('Failed build ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration,ColoredFormatter.RED)
                 shouldEndOnError(result)
                 #System.stopExecution(result)
             else:
-              Logger.printEndActionMessage('Build')
+              Logger.printEndActionMessage('Build ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration)
 
 def actionCreateNuget():
     pass
@@ -84,11 +85,14 @@ def actionUpdatePublishedSample():
 
 def shouldEndOnError(error):
   if Settings.stopExecutionOnError:
-    Summary.printSummary()
     System.stopExecution(error)
+    Summary.printSummary()
 
 
 def main():
+  Logger.printStartActionMessage('Script execution started',ColoredFormatter.YELLOW)
+  #Save time when script is started to calculate total execution tima
+  start_time = time.time()
 
   #Determine host OS, checks supported targets, update python and system paths.
   System.preInit()
@@ -137,6 +141,7 @@ def main():
   if 'updatePublishedSample' in Settings.actions:
     actionUpdatePublishedSample()
 
-  Summary.printSummary()
+  end_time = time.time()
+  Summary.printSummary(end_time - start_time)
 
 if  __name__ =='__main__': main()

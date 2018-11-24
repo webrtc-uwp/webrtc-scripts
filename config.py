@@ -224,5 +224,5 @@ FILES_TO_COPY_FOR_WRAPPER_BUILD = [
                   {'../chromium/third_party/BUILD.gn' : './third_party/BUILD.gn'},
                 ]
 
-ACTION_START_MESSAGE = '\n==================================== [ACTION] STARTED ====================================\n'
+ACTION_START_MESSAGE = '\n===================================== [ACTION] STARTED =====================================\n'
 ACTION_END_MESSAGE = '\n====================================== [ACTION] ENDED ======================================\n'
