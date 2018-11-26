@@ -4,8 +4,7 @@ from importlib import import_module
 import config
 import defaults
 from defaults import *
-from helper import convertToPlatformPath
-
+from helper import convertToPlatformPath,iterateDict
 
 class Settings:
   """
@@ -141,7 +140,7 @@ class Settings:
     cls.cleanupOptions = cleanupOptions
 
     #Set specific clean configuration if specified in userDef.py or use default values from __actionOptions dict
-    for key,value in cls.__actionOptions.iteritems():
+    for key,value in iterateDict(cls.__actionOptions):
       cls.cleanupOptions[key] = cls.cleanupOptions.get(key,[])
       if cls.cleanupOptions[key] == []:
         cls.cleanupOptions[key] = value

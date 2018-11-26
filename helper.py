@@ -23,3 +23,9 @@ def getCPUFamily(machineType):
     return 'x64'
 
   return 'x64'
+
+def iterateDict(dictonary):
+  if hasattr(dict, 'iteritems'):
+    return dictonary.iteritems() 
+  else: 
+    return iter(dictonary.items())

@@ -51,8 +51,8 @@ class Preparation:
       #Download missing build tools
       System.downloadBuildToolsIfNeeded()
 
-    except Exception, errorMessage:
-      cls.logger.error(errorMessage)
+    except Exception as error:
+      cls.logger.error(error)
     finally:
       Utility.popd()
     

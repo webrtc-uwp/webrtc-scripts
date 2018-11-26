@@ -123,16 +123,16 @@ class Utility:
       cls.logger.debug('pushd ' + path)
       cls.pushstack.append(os.getcwd())
       os.chdir(path)
-    except Exception, errorMessage:
-      cls.logger.error(errorMessage)
+    except Exception as error:
+      cls.logger.error(error)
 
   @classmethod
   def popd(cls):
     try:
       cls.logger.debug('popd ' + cls.pushstack[-1])
       os.chdir(cls.pushstack.pop())
-    except Exception, errorMessage:
-      cls.logger.warning(errorMessage)
+    except Exception as error:
+      cls.logger.warning(error)
 
   @classmethod
   def getFilesWithExtensionsInFolder(cls, folders, extensions, folderToIgnore = (), stringLimit = 7000):
