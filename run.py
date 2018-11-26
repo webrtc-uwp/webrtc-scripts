@@ -9,12 +9,16 @@ from logger import Logger,ColoredFormatter
 from prepare import Preparation
 from builder import Builder
 from cleanup import Cleanup
-from errors import *
+from errors import NO_ERROR, ERROR_TARGET_NOT_SUPPORTED, ERROR_PLATFORM_NOT_SUPPORTED
 from summary import Summary
 
 def actionClean():
-  
+  """
+    Deletes output folders and files generated from idl
+  """
   Logger.printStartActionMessage('Cleanup')
+
+  #Init cleanup logger
   Cleanup.init()
 
   for action in Settings.cleanupOptions['actions']:
@@ -23,8 +27,10 @@ def actionClean():
         for platform in Settings.cleanupOptions['platforms']:
           for cpu in Settings.cleanupOptions['cpus']:
             for configuration in Settings.cleanupOptions['configurations']:
+              #Clean up output folders for specific target, platform, cpu and configuration
               Cleanup.run(action, target, platform, cpu, configuration)
     else:
+      #Perform other cleanup acrions that are not dependent of target ...
       Cleanup.run(action)
 
   Logger.printEndActionMessage('Cleanup')
@@ -46,6 +52,7 @@ def actionPrepare():
             Summary.addSummary('prepare', target, platform, cpu, configuration, result, Preparation.executionTime)
             if result != NO_ERROR:
               Logger.printEndActionMessage('Failed prepare ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration,ColoredFormatter.RED)
+              #Terminate script execution if stopExecutionOnError is set to True in userdef
               shouldEndOnError(result)
             else:
               Logger.printEndActionMessage('Prepare '  + target + ' ' + platform + ' ' + cpu + ' ' + configuration)
@@ -69,8 +76,8 @@ def actionBuild():
             Summary.addSummary('build', target, platform, cpu, configuration, result, Builder.executionTime)
             if result != NO_ERROR:
                 Logger.printEndActionMessage('Failed build ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration,ColoredFormatter.RED)
+                #Terminate script execution if stopExecutionOnError is set to True in userdef
                 shouldEndOnError(result)
-                #System.stopExecution(result)
             else:
               Logger.printEndActionMessage('Build ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration)
 
@@ -84,13 +91,16 @@ def actionUpdatePublishedSample():
   pass
 
 def shouldEndOnError(error):
+  """
+    Terminates script execution if stopExecutionOnError is set to True in userdef 
+  """
   if Settings.stopExecutionOnError:
     System.stopExecution(error)
     Summary.printSummary()
 
 
 def main():
-  Logger.printStartActionMessage('Script execution started',ColoredFormatter.YELLOW)
+  Logger.printStartActionMessage('Script execution',ColoredFormatter.YELLOW)
   #Save time when script is started to calculate total execution tima
   start_time = time.time()
 

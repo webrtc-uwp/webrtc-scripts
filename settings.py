@@ -50,7 +50,9 @@ class Settings:
 
   @classmethod
   def init(cls):
-
+    """
+      Based on userdef.py or specified input tamplate and input arguments sets script variables.
+    """
     #First import userdef.py created from defaults.py
     if os.path.isfile( cls.userDefFilePath):
       globals().update(import_module(config.USER_DEFAULTS_FILE).__dict__)
@@ -103,11 +105,14 @@ class Settings:
     cls.logLevel = logLevel
     cls.logToFile = logToFile
     cls.overwriteLogFile = overwriteLogFile
+
+    #If configurations are passed like input arguments use them, instead of one loaded from template
     if cls.inputArgs.noColor:
       cls.noColoredOutput = True
     else:
       cls.noColoredOutput = noColoredOutput
 
+    #If configurations are passed like input arguments use them, instead of one loaded from template
     if cls.inputArgs.noWrapper:
       cls.buildWrapper = False
     else:
@@ -149,6 +154,12 @@ class Settings:
   def getGnOutputPath(cls, path, target, platform, cpu, configuration):
     """
       Return gn output path for specified args.
+      :param path: Root folder where will be saved target specific output
+      :param target: Target (ortc, webrtc or * )
+      :param platform: Platform (win, winuwp or *)
+      :param cpu: CPU (arm, x86, x64 or *)
+      :param configuration: Release (debug, release or *)
+      :return outputPath: Return output path relative to to root webrt folder
     """
     outputPath = config.GN_TARGET_OUTPUT_PATH.replace('[GN_OUT]', path).replace('[TARGET]',target).replace('[PLATFORM]',platform).replace('[CPU]',cpu).replace('[CONFIGURATION]',configuration)
     return convertToPlatformPath(outputPath)

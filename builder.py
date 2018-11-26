@@ -46,7 +46,7 @@ class Builder:
     #If folder for specified target and platform doesn't exist, stop further execution
     if not os.path.exists(workingDir):
       cls.logger.error('Output folder at ' + workingDir + ' doesn\'t exist. It looks like prepare is not executed. Please run prepare action.')
-      return ERROR_BUILD_OUTPUT_FOLDER_DEOESNT_EXIST
+      return ERROR_BUILD_OUTPUT_FOLDER_NOT_EXIST
     
     #Set the PATH and environment variables for command-line builds (e.g. vcvarsall.bat x64_x86)
     cls.cmdVcVarsAll = '\"' +  Settings.vcvarsallPath + '\" ' + config.WINDOWS_COMPILER_OPTIONS[System.hostCPU][cpu]
@@ -66,10 +66,13 @@ class Builder:
           ret = ERROR_BUILD_MERGE_LIBS_FAILED
 
       if ret == NO_ERROR:
+        #Copy merged libs to output lib folder
         cls.copyLibsToOutput(targetName, platform, cpu, configuration, destinationPathLib)
 
+        #If enabled backup, copy libs and pdb to specified folder
         if Settings.enableBackup and Settings.libsBackupPath != '':
           backupPath = os.path.join(Settings.userWorkingPath,Settings.libsBackupPath)
+          #If backup folder exists delete it
           if os.path.exists(backupPath):
             shutil.rmtree(backupPath) 
           shutil.copytree(destinationPathLib,backupPath)
@@ -80,6 +83,7 @@ class Builder:
   
     if ret == NO_ERROR:
       if Settings.buildWrapper:
+        #Build wrapper library if option is enabled
         if not cls.buildWrapper(targetName ,platform, cpu, configuration):
           ret = ERROR_BUILD_FAILED
         
@@ -93,11 +97,18 @@ class Builder:
   def buildWrapper(cls, target, platform, targetCPU, configuration):
     """
       Builds wrapper projects.
+      :param target: Name of the main target (ortc or webrtc)
+      :param platform: Platform name
+      :param targetCPU: Target CPU
+      :param configuration: Configuration to build for
+      :return ret: True if build was successful or if there is no solution for specified target and platform, otherwise False
     """
     ret = True
     cls.logger.info('Building ' + target + ' wrapper projects for ' + targetCPU + ' for configuration  '+ configuration)
 
+    #Get solution to build, for specified target and platform. Solution is obtained from config.TARGET_WRAPPER_SOLUTIONS
     solutionName = Utility.getSolutionForTargetAndPlatform(target, platform)
+    #If solution is not provided, return True like it was succefull
     if solutionName == '':
       return True
 
