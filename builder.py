@@ -80,7 +80,7 @@ class Builder:
   
     if ret == NO_ERROR:
       if Settings.buildWrapper:
-        if not cls.buildWrapper(targetName,cpu,configuration):
+        if not cls.buildWrapper(targetName ,platform, cpu, configuration):
           ret = ERROR_BUILD_FAILED
         
     if ret == NO_ERROR:
@@ -90,18 +90,22 @@ class Builder:
     return ret
 
   @classmethod
-  def buildWrapper(cls, target, targetCPU, configuration):
+  def buildWrapper(cls, target, platform, targetCPU, configuration):
     """
       Builds wrapper projects.
     """
     ret = True
     cls.logger.info('Building ' + target + ' wrapper projects for ' + targetCPU + ' for configuration  '+ configuration)
 
+    solutionName = Utility.getSolutionForTargetAndPlatform(target, platform)
+    if solutionName == '':
+      return True
+
     try:
       #Solution template path
-      solutionSourcePath = os.path.join(Settings.rootSdkPath,convertToPlatformPath(config.WEBRTC_SOLUTION_TEMPLATES_PATH),config.NUGET_WINUWP_WEBRTC_SOLUTION)
+      solutionSourcePath = os.path.join(Settings.rootSdkPath,convertToPlatformPath(config.WEBRTC_SOLUTION_TEMPLATES_PATH),solutionName)
       #Path where solution template will be copied
-      solutionDestinationPath = os.path.join(Settings.rootSdkPath,convertToPlatformPath(config.WEBRTC_SOLUTION_PATH),config.NUGET_WINUWP_WEBRTC_SOLUTION)
+      solutionDestinationPath = os.path.join(Settings.rootSdkPath,convertToPlatformPath(config.WEBRTC_SOLUTION_PATH),solutionName)
       
       #Copy template solution to solution folder
       shutil.copyfile(solutionSourcePath,solutionDestinationPath)

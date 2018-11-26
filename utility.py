@@ -9,6 +9,7 @@ from shutil import copyfile, rmtree
 from logger import Logger
 from helper import convertToPlatformPath
 from errors import NO_ERROR, ERROR_SUBPROCESS_EXECUTAION_FAILED
+import config
 class Utility:
 
   @classmethod
@@ -189,6 +190,18 @@ class Utility:
     if os.path.isfile(backupFilePath):
       copyfile(backupFilePath, filePath)
       os.remove(backupFilePath) 
+
+  @classmethod
+  def getSolutionForTargetAndPlatform(cls, target, platform):
+    ret = None
+    targetDict = config.TARGET_WRAPPER_SOLUTIONS.get(target,None)
+    if targetDict != None:
+      ret = targetDict.get(platform,'')
+      if ret == '':
+        cls.logger.info('There is no Wrapper solution file for ' + target + ' ' + platform)
+      else:
+        cls.logger.info('Wrapper solution file is ' + str(ret))
+    return ret
 
   @classmethod
   def runSubprocess(cls, commands, shouldLog = False):
