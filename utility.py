@@ -31,6 +31,7 @@ class Utility:
       import distutils.spawn
       executablePath = distutils.spawn.find_executable(executable)
     else:
+      #Used for Python 3.3 or newer
       import shutil 
       executablePath = shutil.which(executable)
     
@@ -62,18 +63,32 @@ class Utility:
     os.environ['PATH'] = newPath
 
   @classmethod
-  def makeLink(cls,source,destination):
+  def makeLink(cls, source, destination):
+    """
+      Creates junction link.
+      :param source: Source folder
+      :param destination: Junction link to make
+    """
     if not os.path.exists(destination):
       cls.logger.debug('Creating link ' + convertToPlatformPath(destination) + ' to point to ' + convertToPlatformPath(source))
-      subprocess.call(['cmd', '/c', 'mklink', '/J', convertToPlatformPath(destination), convertToPlatformPath(source)])
+      cmd = 'cmd ' + '/c ' + 'mklink ' + '/J ' + convertToPlatformPath(destination) + ' ' + convertToPlatformPath(source)
+      result = Utility.runSubprocess([cmd], True)
+      if result == NO_ERROR:
+        cls.logger.debug('Successfully created link ' + destination)
+      else:
+        cls.logger.error('Failed creating link ' + destination)
 
-  @staticmethod
-  def deleteLink(linkToDelete):
+  @classmethod
+  def deleteLink(cls,linkToDelete):
     """
     TODO: Verify this is working correctly
     """
     if os.path.exists(linkToDelete):
-      subprocess.call(['cmd', '/c', 'rmdir', convertToPlatformPath(linkToDelete)])
+      #subprocess.call(['cmd', '/c', 'rmdir', convertToPlatformPath(linkToDelete)])
+      cmd = 'cmd ' + '/c ' + 'rmdir ' + convertToPlatformPath(linkToDelete)
+      result = Utility.runSubprocess([cmd], True)
+      if result != NO_ERROR:
+        cls.logger.error('Failed removing link ' + linkToDelete)
 
   @staticmethod
   def createFolders(foldersList):
@@ -204,9 +219,13 @@ class Utility:
     return ret
 
   @classmethod
-  def runSubprocess(cls, commands, shouldLog = False):
+  def runSubprocess(cls, commands, shouldLog = False, userEnv = None):
     """
-      Run provided command line as subprocess.
+      Runs provided command line as subprocess.
+      :param commands: List of commands to execute.
+      :param shouldLog: Flag if subprocess stdout should be logged or not
+      :param userEnv: Customized environment
+      :return result: NO_ERROR if subprocess is executed successfully. Otherwise error or subprocess returncode
     """
     result = NO_ERROR
     commandToExecute = ''
@@ -219,10 +238,14 @@ class Utility:
         commandToExecute = commandToExecute + command
     try:
       #Execute command
-      process = subprocess.Popen(commandToExecute, shell=False, stderr=subprocess.PIPE)
+      cls.logger.debug('Running subprocess: \n' + commandToExecute)
+      if userEnv == None:
+        process = subprocess.Popen(commandToExecute, shell=False, stderr=subprocess.PIPE)
+      else: 
+        process = subprocess.Popen(commandToExecute, shell=False, stderr=subprocess.PIPE, env=userEnv)
 
       #Enable showing subprocess output and responsiveness on keyboard actions (terminating script on user action) 
-      stderr = process.communicate()
+      process.communicate()
 
       result = process.returncode
 

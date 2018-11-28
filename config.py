@@ -212,9 +212,10 @@ ADDITIONAL_TARGETS_TO_ADD = [
                               '//third_party/idl:idl'
                             ]
 
+#Currently not in use
 WEBRTC_WRAPPER_PROJECTS = [
-                            'Api\Org_WebRtc\Org_WebRtc_WrapperGlue',
-                            'Api\Org_WebRtc\Org_WebRtc',
+                            'Api/Org_WebRtc/Org_WebRtc_WrapperGlue',
+                            'Api/Org_WebRtc/Org_WebRtc',
                           ]
 
 

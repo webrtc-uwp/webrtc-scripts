@@ -59,6 +59,7 @@ class Cleanup:
     except Exception as error:
       ret = False
       cls.logger.error(str(error))
+      cls.logger.error('Failed deleting folders')
 
     Utility.popd()
 
@@ -80,6 +81,7 @@ class Cleanup:
     except Exception as error:
       ret = False
       cls.logger.error(str(error))
+      cls.logger.error('Failed deleting userdef.py file')
 
     return ret
 
@@ -103,6 +105,7 @@ class Cleanup:
     except Exception as error:
       ret = False
       cls.logger.error(str(error))
+      cls.logger.error('Failed removing files generated with idl compiler.')
 
     Utility.popd()
 
@@ -138,7 +141,8 @@ class Cleanup:
     except Exception as error:
       ret = False
       cls.logger.error(str(error))
-
+      cls.logger.error('Failed reverting preparation changes')
+      
     Utility.popd()
 
     return ret

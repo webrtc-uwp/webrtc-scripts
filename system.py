@@ -9,7 +9,7 @@ import config
 from utility import Utility
 from settings import Settings
 from logger import Logger
-from errors import *
+from errors import error_codes, NO_ERROR, ERROR_SYSTEM_ERROR, ERROR_SYSTEM_MISSING_GIT, ERROR_SYSTEM_MISSING_PERL
 from helper import convertToPlatformPath, getCPUFamily
 
 
@@ -78,9 +78,6 @@ class System:
       #Determine Visual Studio and MSVC tools paths
       cls.__determineVisualStudioPath()
 
-    #Set current working directory to SDK root folder
-    #os.chdir(Settings.rootSdkPath)
-    
     #Install missing python packages
     cls.installPythonModules(config.PYTHON_PACKAGES_TO_INSTALL)
 
@@ -88,9 +85,11 @@ class System:
   def updatePythonTools(cls):
     """
       Update python's pip tool. In future maybe it would be required to update other tools as well.
+      TODO: Check when it is best to call it
     """
     #Update pip tool.
-    result = subprocess.call('python.exe -m pip install --upgrade pip')
+    cmd = 'python.exe -m pip install --upgrade pip'
+    result = Utility.runSubprocess([cmd])
     if result != 0:
       cls.logger.error('Failed to update pip!')
 
@@ -107,8 +106,7 @@ class System:
       except:
          #Install python package
         cmd = 'pip install ' + modulesDict[module]
-        cls.logger.debug('Running subprocess ' + cmd)
-        result = subprocess.call(cmd)
+        result = Utility.runSubprocess([cmd], Settings.logLevel == 'DEBUG')
         if result != 0:
           cls.logger.error('Failed to install package ' + modulesDict[module] + ' required for module ' + module)
 
@@ -312,18 +310,21 @@ class System:
     
     cls.logger.info('Downloading build tool ' + toolName + '...')
     #Download tool
+    cmd = 'python download_from_google_storage.py --bucket chromium-' + toolName + ' -s ' + os.path.join(Settings.localBuildToolsPath,toolName + '.exe.sha1')
+    result = Utility.runSubprocess([cmd], Settings.logLevel == 'DEBUG')
+    """
     ret = subprocess.call([
       'python',
       'download_from_google_storage.py',
       '--bucket', 'chromium-' + toolName,
       '-s',
       os.path.join(Settings.localBuildToolsPath,toolName + '.exe.sha1')])
-
+    """
     #Switch to previous working directory
     Utility.popd()
     #os.chdir(oldCurrent)
 
-    if ret != 0:
+    if result != 0:
       cls.logger.error('Failed downloading ' + toolName)
 
   @classmethod
@@ -380,7 +381,9 @@ class System:
       #Update environment variable with DEPOT_TOOLS_WIN_TOOLCHAIN set to 0, to prevent requiring https://chrome-internal.googlesource.com
       my_env["DEPOT_TOOLS_WIN_TOOLCHAIN"] = "0"
       #Run clangg update script
-      result = subprocess.call(['python', clangUpdateScriptPath], env=my_env)
+      cmd = 'python ' + clangUpdateScriptPath
+      result = Utility.runSubprocess([cmd], Settings.logLevel == 'DEBUG', my_env)
+      #result = subprocess.call(['python', clangUpdateScriptPath], env=my_env)
       if result == NO_ERROR:
         cls.logger.info('Clang-cl.exe is downloaded successfully.')
         Utility.createFolderLinks(config.FOLDERS_TO_LINK_LLVM)

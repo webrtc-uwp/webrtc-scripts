@@ -9,7 +9,7 @@ webRTCGnArgsTemplatePath='./webrtc/windows/templates/gns/args.gn'
 #gnOutputPath = r'[GN_OUT]/[TARGET]_[PLATFORM]_[CPU]_[CONFIGURATION]'
 
 #Output path where will be stored nuget package as well as libs and pdbs
-releaseOutputPath = '.'
+#releaseOutputPath = '.'
 
 #Supported platforms for specific host OS 
 supportedPlatformsForHostOs = { 

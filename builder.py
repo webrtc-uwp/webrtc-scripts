@@ -4,13 +4,13 @@ import shutil
 import signal
 import time
 
-from errors import *
 import config
-from settings import Settings
 from logger import Logger
-from utility import Utility
-from helper import convertToPlatformPath
 from system import System
+from utility import Utility
+from settings import Settings
+from helper import convertToPlatformPath
+from errors import error_codes, NO_ERROR, ERROR_BUILD_OUTPUT_FOLDER_NOT_EXIST,ERROR_BUILD_FAILED, ERROR_BUILD_MERGE_LIBS_FAILED
 
 class Builder:
   @classmethod
@@ -130,6 +130,8 @@ class Builder:
         cls.logger.error('Building ' + target + ' target has failed!')
         ret = False
     except Exception as error:
+      cls.logger.error(str(error))
+      cls.logger.error('Failed building wrappers for target ' + target)
       ret = False
     finally:
       #Delete solution used for building wrapper projects.
@@ -160,11 +162,8 @@ class Builder:
           Utility.backUpAndUpdateGnFile(mainBuildGnFilePath,config.WEBRTC_TARGET,config.ADDITIONAL_TARGETS_TO_ADD)
 
         #Run ninja to build targets
-        result = subprocess.call([
-            Settings.localNinjaPath + '.exe',
-            target,
-          ],env=my_env)
-
+        cmd = Settings.localNinjaPath + '.exe ' +  target
+        result = Utility.runSubprocess([cmd], Settings.logLevel == 'DEBUG', my_env)
         if result != 0:
           raise Exception('Building ' + target + ' target has failed!')
 
@@ -244,12 +243,13 @@ class Builder:
       #Call lib.exe to mergeobj files to webrtc[counter].lib files, which will be later merged to webrtc.lib
       cmdLibExe = '\"' +  cls.libexePath + '\" /IGNORE:' + ','.join(str(i) for i in config.WINDOWS_IGNORE_WARNINGS) +  ' /OUT:' + output + ' ' + inputFiles
 
-      #Make cmdLibExe command dependent on cmdVcVarsAll
-      commands = cls.cmdVcVarsAll + ' && ' + cmdLibExe + ' && ' + cls.cmdVcVarsAllClean
+      result = Utility.runSubprocess([cls.cmdVcVarsAll, cmdLibExe, cls.cmdVcVarsAllClean], Settings.logLevel == 'DEBUG')
 
       #cls.logger.debug('Command line to execute: ' + commands)
-      FNULL = open(os.devnull, 'w')
-      result = subprocess.call(commands,stdout=FNULL, stderr=subprocess.STDOUT)
+      #Make cmdLibExe command dependent on cmdVcVarsAll
+      #commands = cls.cmdVcVarsAll + ' && ' + cmdLibExe + ' && ' + cls.cmdVcVarsAllClean
+      #FNULL = open(os.devnull, 'w')
+      #result = subprocess.call(commands,stdout=FNULL, stderr=subprocess.STDOUT)
 
       if result != 0:
         cls.logger.error(error_codes[ERROR_BUILD_MERGE_LIBS_FAILED])
@@ -257,6 +257,7 @@ class Builder:
 
     except Exception as error:
       cls.logger.error(str(error))
+      cls.logger.info('Failed combining libraries')
       ret = ERROR_BUILD_MERGE_LIBS_FAILED
 
     return ret

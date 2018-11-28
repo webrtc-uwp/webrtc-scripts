@@ -2,7 +2,6 @@ import os
 from importlib import import_module
 
 import config
-import defaults
 from defaults import *
 from helper import convertToPlatformPath,iterateDict
 
@@ -28,7 +27,7 @@ class Settings:
     #User defaults file path
     cls.userDefFilePath = os.path.join(cls.userWorkingPath, config.USER_DEFAULTS_FILE + '.py')
     #Scripts root path
-    cls.rootScriptsPath = os.path.dirname(defaults.__file__)
+    cls.rootScriptsPath = os.path.dirname(__file__)
     #Predefined templates path
     cls.templatesPath = os.path.join(cls.rootScriptsPath, convertToPlatformPath(config.TEMPLATES_PATH))
     #Sdk root path
@@ -39,7 +38,7 @@ class Settings:
     #TODO: Make platform dependent - check host os and add proper subfolder name
     cls.localBuildToolsPath = os.path.join(Settings.rootSdkPath, convertToPlatformPath(config.RELATIVE_BUILD_TOOLS_PATH),'win')
     #defaults.py path
-    cls.defaultFilePath = os.path.join(os.path.dirname(defaults.__file__),'defaults.py')
+    cls.defaultFilePath = os.path.join(os.path.dirname(__file__),'defaults.py')
     #Root path for preparation
     cls.webrtcPath = os.path.join(cls.rootSdkPath, convertToPlatformPath(config.PREPRATARION_WORKING_PATH))
     #WebRtc solution path
@@ -99,6 +98,7 @@ class Settings:
     else:
       cls.targetConfigurations = targetConfigurations
 
+    cls.targetProgrammingLanguage = targetProgrammingLanguage
     cls.buildWrapper = buildWrapper
 
     cls.logFormat = logFormat
