@@ -18,14 +18,25 @@ class Utility:
 
   @staticmethod 
   def checkIfToolIsInstalled(toolName):
+    """
+      Check if specific tool executable is in the path.
+      :param toolName: Name of the tool executable.
+      :return ret: True if tool is in the path. Otehrwise False.
+    """
+    ret = False
     executablePath = Utility.getExecutablePath(toolName)
     if executablePath != None:
-      return True
+      ret = True
 
-    return False
+    return ret
 
   @staticmethod
   def getExecutablePath(executable):
+    """
+      Finds executable path.
+      :param executable: Name of the executable.
+      :return executablePath: Executable path.
+    """
     executablePath = None
     if sys.version_info[0] < 3.3:
       import distutils.spawn
@@ -39,6 +50,11 @@ class Utility:
 
   @staticmethod
   def searchFileInPATH(fileName):
+    """
+      Search if file is present in one of the folders in the PATH.
+      :param fileName: File to search for.
+      :return dirname: Return folder name if file is found.
+    """
     for dirname in os.environ['PATH'].split(os.pathsep):
         filePath = os.path.join(dirname, fileName)
         if os.path.isfile(filePath):
@@ -47,10 +63,18 @@ class Utility:
 
   @staticmethod
   def addModulePath(path):
+    """
+      Adds path to modules path.
+      :param path: Path to add.
+    """
     sys.path.append(path)
 
   @staticmethod
   def addPath(path):
+    """
+      Adds path to system PATH.
+      :param path: PAth to add.
+    """
     newPath = os.environ['PATH']
     if newPath.endswith(';'):
       newPath = newPath[:-1]
@@ -59,6 +83,10 @@ class Utility:
 
   @staticmethod
   def removePath(path):
+    """
+      Removes path from the sytem PATH.
+      :param path: Path to remove.
+    """
     newPath = os.environ['PATH'].replace(path + os.pathsep,'').replace(path,'')
     os.environ['PATH'] = newPath
 
@@ -66,8 +94,8 @@ class Utility:
   def makeLink(cls, source, destination):
     """
       Creates junction link.
-      :param source: Source folder
-      :param destination: Junction link to make
+      :param source: Source folder.
+      :param destination: Junction link to make.
     """
     if not os.path.exists(destination):
       cls.logger.debug('Creating link ' + convertToPlatformPath(destination) + ' to point to ' + convertToPlatformPath(source))
@@ -92,6 +120,10 @@ class Utility:
 
   @staticmethod
   def createFolders(foldersList):
+    """
+      Creates folders specified in the list.
+      :param foldersList: List of folders to create
+    """
     for path in foldersList:
       dirPath = convertToPlatformPath(path)
       if not os.path.exists(dirPath):
@@ -108,13 +140,15 @@ class Utility:
   def createFolderLinks(foldersToLink):
     for dict in foldersToLink:
       for source, destination in dict.items():
-        Utility.makeLink(convertToPlatformPath(source), convertToPlatformPath(destination))
+        if os.path.exists(source):
+          Utility.makeLink(convertToPlatformPath(source), convertToPlatformPath(destination))
 
   @staticmethod
   def deleteFolderLinks(foldersToLink):
     for dict in foldersToLink:
       for source, destination in dict.items():
-        Utility.deleteLink(convertToPlatformPath(destination))
+        if os.path.exists(destination):
+          Utility.deleteLink(convertToPlatformPath(destination))
 
   @staticmethod
   def copyFilesFromDict(filesToCopy):
