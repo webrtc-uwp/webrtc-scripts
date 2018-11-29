@@ -36,4 +36,15 @@ class Summary:
     Logger.printColorMessage('Total execution time: ' + str(timedelta(seconds=executionTime)), ColoredFormatter.YELLOW)
 
 
-      
+  @classmethod
+  def isPreparationFailed(cls, target, platform, cpu, configuration):
+    ret = False
+    prepareActionDict =  cls.action_results.get('prepare',None)
+    if prepareActionDict != None:
+      key = target + '___' + platform + '___' + cpu + '___' + configuration
+      resultDict = prepareActionDict.get(key,None)
+      if resultDict != None:
+        if resultDict['result'] != NO_ERROR:
+          ret = True
+
+    return ret

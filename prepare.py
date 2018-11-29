@@ -103,15 +103,20 @@ class Preparation:
     #Backup original BUILD.gn from webrtc root folder and add additional dependecies to webrtc target
     Utility.backUpAndUpdateGnFile(mainBuildGnFilePath,config.WEBRTC_TARGET,config.ADDITIONAL_TARGETS_TO_ADD)
 
-    #Generate Webrtc projects
+    
     try:
+      #Duplicate existing environment variables
       my_env = os.environ.copy()
-      my_env["DEPOT_TOOLS_WIN_TOOLCHAIN"] = "0"    
+      #Add new environment variable, required by gn for project generation
+      my_env["DEPOT_TOOLS_WIN_TOOLCHAIN"] = "0"  
+
       cls.logger.debug('Output path: ' + gnOutputPath)
       cls.logger.info('Generating webrtc projects ...')
+      #Generate Webrtc projects
       cmd = 'gn gen ' + gnOutputPath + ' --ide=' + config.VISUAL_STUDIO_VERSION
       result = Utility.runSubprocess([cmd], Settings.logLevel == 'DEBUG',my_env)
       if result != 0:
+        isError = True
         cls.logger.error('Projects generation has failed! (' + target + ',' + platform + ',' + cpu + ',' + configuration + ')')
       else:
         #Update ninja path in VS project files to point to ninja.exe in local depot_tools folder

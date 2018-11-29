@@ -11,6 +11,8 @@ from system import System
 from errors import NO_ERROR
 from helper import convertToPlatformPath
 
+#TODO: Return error code and terminate script!!!
+
 class Cleanup:
   @classmethod
   def init(cls):
@@ -54,14 +56,14 @@ class Cleanup:
     for folderPath in glob.iglob(convertToPlatformPath(outputFolderToClean)):
       foldersToDelete.append(folderPath)
 
-    try:
-      #Delete all folders marked for deletion
-      for folderToDelete in foldersToDelete:
+    #Delete all folders marked for deletion
+    for folderToDelete in foldersToDelete:
+      try:
         shutil.rmtree(folderToDelete)
-    except Exception as error:
-      ret = False
-      cls.logger.error(str(error))
-      cls.logger.error('Failed deleting folders')
+      except Exception as error:
+        ret = False
+        cls.logger.error(str(error))
+        cls.logger.error('Failed deleting folders')
 
     Utility.popd()
 
@@ -168,4 +170,8 @@ class Cleanup:
     if action == 'cleanPrepare':
       ret = cls.cleanPrepare()
 
+    if ret:
+      cls.logger.info('Cleanup action ' + action + ' is finished successfully for ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration)
+    else:
+      cls.logger.info('Cleanup action ' + action + ' has failed for ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration)
     return ret

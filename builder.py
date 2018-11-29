@@ -191,6 +191,12 @@ class Builder:
     #Determine lib.exe path
     cls.libexePath = os.path.join(Settings.msvcToolsBinPath, targetCPU, 'lib.exe')
     
+    if not os.path.isfile(cls.libexePath):
+      ret = False
+      cls.logger.error('Merging libraries cannot be done. Missing file ' + cls.libexePath + '!')
+      cls.logger.warning('Please, install VS component Visual c++ compiler and libraries for ' + targetCPU)
+      return ret
+
     #Get list of strings, with file paths total length less than 7000,,
     listOfObjesToCombine = Utility.getFilesWithExtensionsInFolder(config.COMBINE_LIB_FOLDERS, ('.obj','.o'), config.COMBINE_LIB_IGNORE_SUBFOLDERS)
 

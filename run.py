@@ -80,15 +80,19 @@ def actionBuild():
       for cpu in Settings.targetCPUs:
         if System.checkIfCPUIsSupportedForPlatform(cpu,platform):
           for configuration in Settings.targetConfigurations:
-            Logger.printStartActionMessage('Build ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration,ColoredFormatter.YELLOW)
-            result = Builder.run(target, targetsToBuild, platform, cpu, configuration, combineLibs)
-            Summary.addSummary('build', target, platform, cpu, configuration, result, Builder.executionTime)
-            if result != NO_ERROR:
-                Logger.printEndActionMessage('Failed build ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration,ColoredFormatter.RED)
-                #Terminate script execution if stopExecutionOnError is set to True in userdef
-                shouldEndOnError(result)
+            if not Summary.isPreparationFailed(target, platform, cpu, configuration):
+              Logger.printStartActionMessage('Build ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration,ColoredFormatter.YELLOW)
+              result = Builder.run(target, targetsToBuild, platform, cpu, configuration, combineLibs)
+              Summary.addSummary('build', target, platform, cpu, configuration, result, Builder.executionTime)
+              if result != NO_ERROR:
+                  Logger.printEndActionMessage('Failed build ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration,ColoredFormatter.RED)
+                  #Terminate script execution if stopExecutionOnError is set to True in userdef
+                  shouldEndOnError(result)
+              else:
+                Logger.printEndActionMessage('Build ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration)
             else:
-              Logger.printEndActionMessage('Build ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration)
+              Logger.printColorMessage('Build cannot run because preparation has failed for ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration,ColoredFormatter.YELLOW)
+              Logger.printEndActionMessage('Build not run for ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration,ColoredFormatter.YELLOW)
 
 def actionCreateNuget():
     pass
