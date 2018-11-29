@@ -12,6 +12,9 @@ from errors import NO_ERROR, ERROR_SUBPROCESS_EXECUTAION_FAILED
 import config
 class Utility:
 
+  #Used in pushd and popd
+  pushstack = list()
+
   @classmethod
   def setUp(cls):
     cls.logger = Logger.getLogger('Utility')
@@ -73,7 +76,7 @@ class Utility:
   def addPath(path):
     """
       Adds path to system PATH.
-      :param path: PAth to add.
+      :param path: Path to add.
     """
     newPath = os.environ['PATH']
     if newPath.endswith(';'):
@@ -109,10 +112,10 @@ class Utility:
   @classmethod
   def deleteLink(cls,linkToDelete):
     """
-    TODO: Verify this is working correctly
+      Deletes junction link.
+      :param linkToDelete: Path to link. 
     """
     if os.path.exists(linkToDelete):
-      #subprocess.call(['cmd', '/c', 'rmdir', convertToPlatformPath(linkToDelete)])
       cmd = 'cmd ' + '/c ' + 'rmdir ' + convertToPlatformPath(linkToDelete)
       result = Utility.runSubprocess([cmd], True)
       if result != NO_ERROR:
@@ -130,7 +133,11 @@ class Utility:
         os.makedirs(dirPath)
 
   @staticmethod
-  def removeFolders(foldersList):
+  def deleteFolders(foldersList):
+    """
+      Deletes folders specified in the list.
+      :param foldersList: List of folders to delete
+    """
     for path in foldersList:
       dirPath = convertToPlatformPath(path)
       if os.path.exists(dirPath):
@@ -138,36 +145,47 @@ class Utility:
 
   @staticmethod
   def createFolderLinks(foldersToLink):
+    """
+      Creates links from provided dict {source : link}.
+      :param foldersList: List of dictionaries with source path as key and destination path (link) as value.
+    """
     for dict in foldersToLink:
       for source, destination in dict.items():
         if os.path.exists(source):
           Utility.makeLink(convertToPlatformPath(source), convertToPlatformPath(destination))
 
-  @staticmethod
-  def deleteFolderLinks(foldersToLink):
+  @classmethod
+  def deleteFolderLinks(cls, foldersToLink):
+    """
+      Deletes links from provided dict {source : link}.
+      :param foldersList: List of dictionaries with source path as key and destination path (link) as value.
+    """
     for dict in foldersToLink:
       for source, destination in dict.items():
         if os.path.exists(destination):
-          Utility.deleteLink(convertToPlatformPath(destination))
+          cls.deleteLink(convertToPlatformPath(destination))
 
-  @staticmethod
-  def copyFilesFromDict(filesToCopy):
+  @classmethod
+  def copyFilesFromDict(cls, filesToCopy):
+    """
+      Copies files from provided dict {sourceFilePath : destinationFilePath}.
+      :param filesToCopy: List of dictionaries with source file path as key and destination path as value.
+    """
     for dict in filesToCopy:
       for source, destination in dict.items():
-        copyfile(convertToPlatformPath(source), convertToPlatformPath(destination))
-
-  @staticmethod
-  def changeWorkingDir(path):
-    if os.path.isdir(path):
-      os.chdir(path)
-    else:
-      return False
-    return True 
-
-  pushstack = list()
+        filePath = convertToPlatformPath(source)
+        if os.path.isfile(filePath):
+          try:
+            copyfile(filePath, convertToPlatformPath(destination))
+          except Exception as error:
+            cls.logger.error(error)
 
   @classmethod
   def pushd(cls, path):
+    """
+      Changes current working directory. Push old working path to stack.
+      :param path: New working path
+    """
     try:
       cls.logger.debug('pushd ' + path)
       cls.pushstack.append(os.getcwd())
@@ -177,6 +195,9 @@ class Utility:
 
   @classmethod
   def popd(cls):
+    """
+      Changes current working directory to previous. Pops old working path from stack.
+    """
     try:
       cls.logger.debug('popd ' + cls.pushstack[-1])
       os.chdir(cls.pushstack.pop())
@@ -184,13 +205,21 @@ class Utility:
       cls.logger.warning(error)
 
   @classmethod
-  def getFilesWithExtensionsInFolder(cls, folders, extensions, folderToIgnore = (), stringLimit = 7000):
+  def getFilesWithExtensionsInFolder(cls, folders, extensions, folderToIgnores = (), stringLimit = 7000):
+    """
+      Creates list of all file paths with specified extensions in specified list of folders.
+      :param folders: List of folders in which search for specified files will be performed.
+      :param extensions: List of file extensions.
+      :param folderToIgnores: List of folders to ignore in search.
+      :param stringLimit: Max limit for the string with file paths
+      :return listOfPaths: List of strings with file paths.
+    """
     listOfFiles = ''
     listOfPaths = []
     for folder in folders:
       if os.path.exists(convertToPlatformPath(folder)):
         for root, dirs, files in os.walk(convertToPlatformPath(folder)):
-          if not root.endswith(folderToIgnore):
+          if not root.endswith(folderToIgnores):
             for file in files:
               if file.endswith(extensions):
                 listOfFiles += os.path.join(root, file) + ' '

@@ -9,7 +9,8 @@ import config
 from utility import Utility
 from settings import Settings
 from logger import Logger
-from errors import error_codes, NO_ERROR, ERROR_SYSTEM_ERROR, ERROR_SYSTEM_MISSING_GIT, ERROR_SYSTEM_MISSING_PERL
+from errors import error_codes, NO_ERROR, ERROR_SYSTEM_ERROR, ERROR_SYSTEM_MISSING_GIT, \
+                   ERROR_SYSTEM_MISSING_PERL, ERROR_SYSTEM_FAILED_USERDEF_CREATION, ERROR_SYSTEM_FAILED_DELETING_USERDEF
 from helper import convertToPlatformPath, getCPUFamily
 
 
@@ -21,7 +22,7 @@ class System:
 
   #Defined here, so it can be performed logger check if script failes before logger is created
   logger = None
-
+  recreatedUserDef = False
   @classmethod
   def preInit(cls):
     """
@@ -254,6 +255,26 @@ class System:
 
     sys.exit(error)
 
+  @classmethod
+  def recreateUserDef(cls):
+    """
+      Recreates userdef.py file if it is not just created. If userdef.py file creation has failed, 
+      script will be terminated. 
+      :return ret: NO_ERROR if userdef is created or it was "just" created. 
+                   ERROR_SYSTEM_FAILED_DELETING_USERDEF if deleting userdef.py failed.
+    """
+    ret = NO_ERROR
+    if not cls.recreatedUserDef:
+      try:
+        #Deletes userdef.py file
+        if os.path.isfile(Settings.userDefFilePath):
+          os.remove(Settings.userDefFilePath)
+        cls.__createUserDefFile()
+      except Exception as error:
+        cls.logger.error(str(error))
+        ret = ERROR_SYSTEM_FAILED_DELETING_USERDEF
+      
+    return ret
   #---------------------------------- Private methods --------------------------------------------
   @classmethod
   def __createUserDefFile(cls):
@@ -262,13 +283,20 @@ class System:
     """
     #Checks if in user working directory exists files userdefs.py and if not creates it from default.py
     if not os.path.isfile(Settings.userDefFilePath):
-      with open(Settings.defaultFilePath, 'r') as defaultsFile:
-        tempFileContent = defaultsFile.readlines()
-        tempFileContent = tempFileContent[4:]
-        tempFileContent.insert(0,'# ' + config.USERDEF_DESCRIPTION_MESSAGE + '\n')
-        tempFileContent = "".join(tempFileContent)
-        with open(Settings.userDefFilePath, 'w') as userDefFile:
-          userDefFile.write(tempFileContent)
+      try:
+        with open(Settings.defaultFilePath, 'r') as defaultsFile:
+          tempFileContent = defaultsFile.readlines()
+          tempFileContent = tempFileContent[4:]
+          tempFileContent.insert(0,'# ' + config.USERDEF_DESCRIPTION_MESSAGE + '\n')
+          tempFileContent = "".join(tempFileContent)
+          with open(Settings.userDefFilePath, 'w') as userDefFile:
+            userDefFile.write(tempFileContent)
+            cls.recreatedUserDef = True
+      except Exception as error:
+        Logger.printColorMessage(str(error))
+        cls.stopExecution(ERROR_SYSTEM_FAILED_USERDEF_CREATION)
+        
+
 
   @classmethod
   def __setSupportedTargets(cls):
@@ -312,17 +340,9 @@ class System:
     #Download tool
     cmd = 'python download_from_google_storage.py --bucket chromium-' + toolName + ' -s ' + os.path.join(Settings.localBuildToolsPath,toolName + '.exe.sha1')
     result = Utility.runSubprocess([cmd], Settings.logLevel == 'DEBUG')
-    """
-    ret = subprocess.call([
-      'python',
-      'download_from_google_storage.py',
-      '--bucket', 'chromium-' + toolName,
-      '-s',
-      os.path.join(Settings.localBuildToolsPath,toolName + '.exe.sha1')])
-    """
+
     #Switch to previous working directory
     Utility.popd()
-    #os.chdir(oldCurrent)
 
     if result != 0:
       cls.logger.error('Failed downloading ' + toolName)

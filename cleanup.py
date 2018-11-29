@@ -7,6 +7,8 @@ import config
 from logger import Logger
 from settings import Settings
 from utility import Utility
+from system import System
+from errors import NO_ERROR
 from helper import convertToPlatformPath
 
 class Cleanup:
@@ -73,15 +75,9 @@ class Cleanup:
       :return ret: True if useddef.py is deleted, otherwise False
     """
     ret = True
-
-    try:
-      #Deletes userdef.py file
-      if os.path.isfile(Settings.userDefFilePath):
-        os.remove(Settings.userDefFilePath) 
-    except Exception as error:
+    result = System.recreateUserDef()
+    if result != NO_ERROR:
       ret = False
-      cls.logger.error(str(error))
-      cls.logger.error('Failed deleting userdef.py file')
 
     return ret
 
@@ -131,12 +127,12 @@ class Cleanup:
       #Remove links created for Ortc target
       Utility.deleteFolderLinks(config.FOLDERS_TO_LINK_ORTC)
       #Delete created folders for Ortc target
-      Utility.removeFolders(config.FOLDERS_TO_GENERATE_ORTC)
+      Utility.deleteFolders(config.FOLDERS_TO_GENERATE_ORTC)
 
       #Remove links created for WebRtc target
       Utility.deleteFolderLinks(config.FOLDERS_TO_LINK)
       #Delete created folders for WebRtc target
-      Utility.removeFolders(config.FOLDERS_TO_GENERATE)
+      Utility.deleteFolders(config.FOLDERS_TO_GENERATE)
 
     except Exception as error:
       ret = False

@@ -35,7 +35,7 @@ targetPlatforms = [ 'win', 'winuwp' ]
 targetConfigurations = [ 'Release', 'Debug' ]
 targetProgrammingLanguage = [ 'cx', 'cppwinrt', 'c', 'dotnet', 'python' ]
 
-#Supported actions: clean, prepare, build, createNuget, publishNuget, updatePublishedSample 
+#Supported actions: clean, createuserdef, prepare, build, createNuget, publishNuget, updatePublishedSample 
 actions = [ 'prepare', 'build' ]
 
 #=========== cleanupOptions

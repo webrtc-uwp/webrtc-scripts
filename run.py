@@ -35,6 +35,15 @@ def actionClean():
 
   Logger.printEndActionMessage('Cleanup')
 
+def actionCreateUserdef():
+  """
+    Creates userdef.py file.
+  """
+  result = System.recreateUserDef()
+  if result != NO_ERROR:
+    #Terminate script execution if stopExecutionOnError is set to True in userdef
+    shouldEndOnError(result)
+
 def actionPrepare():
   """
     Prepare dev environment for all specified targets and platforms.
@@ -100,7 +109,7 @@ def shouldEndOnError(error):
 
 
 def main():
-  Logger.printStartActionMessage('Script execution',ColoredFormatter.YELLOW)
+  
   #Save time when script is started to calculate total execution tima
   start_time = time.time()
 
@@ -110,6 +119,9 @@ def main():
   #Parse input parameters if any. This must be call after System.preInit, because it is required to determine host os first. 
   Input.parseInput(sys.argv[1:])
   
+  #Start message put here, so it is not shown when script help is being shown.
+  Logger.printStartActionMessage('Script execution',ColoredFormatter.YELLOW)
+
   #Create userdef.py file if missing. Load settings. Create system logger. Download depot tools (gn and clang-format). -----Set working directory to rood sdk folder.
   System.setUp()
 
@@ -136,6 +148,9 @@ def main():
   if 'clean' in Settings.actions:
     actionClean()
     
+  if 'createuserdef' in Settings.actions:
+    actionCreateUserdef()
+
   if 'prepare' in Settings.actions:
     actionPrepare()
 
