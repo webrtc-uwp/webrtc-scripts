@@ -115,6 +115,9 @@ class Settings:
 
     cls.webRTCGnArgsTemplatePath = webRTCGnArgsTemplatePath
 
+    cls.nugetFolderPath = nugetFolderPath
+    cls.nugetVersionInfo = nugetVersionInfo
+
     cls.msvsPath = msvsPath
 
     cls.libsBackupPath = libsBackupPath

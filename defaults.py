@@ -6,6 +6,15 @@
 #args.gn template path
 webRTCGnArgsTemplatePath='./webrtc/windows/templates/gns/args.gn'
 
+#Path where nuget package and all of the fil
+nugetFolderPath = './webrtc/windows/nuget'
+nugetVersionInfo = {
+                      #Main version number of the NuGet package 
+                      'number': '66',
+                      #False if not prerelease, Default is based on previous version, False if not prerelease
+                      'prerelease': 'Default'
+                   }
+
 gnOutputPath = r'[GN_OUT]/[TARGET]_[PLATFORM]_[CPU]_[CONFIGURATION]'
 
 #Output path where will be stored nuget package as well as libs and pdbs

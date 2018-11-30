@@ -16,15 +16,11 @@ RELATIVE_BUILD_TOOLS_PATH = './webrtc/xplatform/webrtc/buildtools'
 PREPRATARION_WORKING_PATH = './webrtc/xplatform/webrtc'
 BUILT_LIBS_DESTINATION_PATH = '/[BUILD_OUTPUT]/[TARGET]/[PLATFORM]/[CPU]/[CONFIGURATION]/'
 
-#Paths for Nuget
-NUGET_FOLDER = '../webrtc/windows/nuget'
-NUSPEC_PATH = NUGET_FOLDER + '/WebRtc.nuspec'
-TARGETS_PATH = NUGET_FOLDER + '/WebRtc.targets'
-NUGET_TO_SCRIPTS = '../../../scripts/'
+#Paths are relative to the root SDK path
+NUGET_TEMPLATES_FOLDER = './scripts/templates/'
+NUGET_LIBRARIES = '/libraries/[TARGET]/[PLATFORM]/[CPU]/[CONFIGURATION]/'
 NUGET_URL = 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe'
-NUGET_EXE_DST = NUGET_FOLDER + '/nuget.exe'
-NATIVE_LIB_SRC = '../webrtc/windows/solutions/Build/Output/Org.WebRtc/' + \
-    '[CONFIGURATION]/[CPU]/[FILE]'
+NATIVE_LIB_SRC = './[TARGET]/windows/solutions/Build/Output/Org.[TARGET]/[CONFIGURATION]/[CPU]/[FILE]'
 NATIVE_LIB_TARGET = 'runtimes\\win10-[CPU]\\native'
 
 #Paths are relative to the webrtc root path

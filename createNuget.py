@@ -2,14 +2,17 @@ import os
 import subprocess
 import shutil
 import itertools
+import json
 from xml.etree import ElementTree as ET
 
+from errors import ERROR_NUGET_CREATION_MISSING_FILE, NO_ERROR
 import config
-from logger import Logger
+from logger import Logger,ColoredFormatter
 from settings import Settings
 from helper import convertToPlatformPath
+from utility import Utility
+from summary import Summary
 import defaults
-# import userdef
 
 
 class CreateNuget:
@@ -38,11 +41,10 @@ class CreateNuget:
 
         :param nuget_command: nuget cli command can be writtenwith or without nuget prefix.
         :param *args: aditional options and arguments for the nuget cli command
+            example: CreateNuget.nuget_cli('help', '-All', '-Markdown')
         """
 
-        if os.path.exists(config.NUGET_EXE_DST):
-            cls.logger.info('nuget.exe already downloaded')
-        else:
+        if not os.path.exists(cls.nugetExePath):
             cls.download_nuget()
 
         # allows nuget command to be written with or wihout 'nuget ' prefix
@@ -50,9 +52,9 @@ class CreateNuget:
             nuget_command = nuget_command.replace('nuget ', '')
         try:
             # absolute path to nuget.exe
-            exe_path = convertToPlatformPath(
-                os.path.dirname(os.path.abspath(__file__)) + '\\' + config.NUGET_EXE_DST)
+            exe_path = convertToPlatformPath(cls.nugetExePath)
             full_command = [exe_path, nuget_command]
+            cls.logger.info(exe_path)
             # add options or other arguments to the nuget command
             for cmd in args:
                 full_command.append(cmd)
@@ -69,13 +71,13 @@ class CreateNuget:
         if CreateNuget.module_exists('urllib.request'):
             import urllib
             cls.logger.info('Downloading NuGet.exe file with urllib.request...')
-            urllib.request.urlretrieve(config.NUGET_URL, config.NUGET_EXE_DST)
+            urllib.request.urlretrieve(config.NUGET_URL, cls.nugetExePath)
 
         # Python 2:
         if CreateNuget.module_exists('urllib2'):
             import urllib2
             cls.logger.info('Downloading NuGet.exe file with urllib2...')
-            with open(config.NUGET_EXE_DST, 'wb') as f:
+            with open(cls.nugetExePath, 'wb') as f:
                 f.write(urllib2.urlopen(config.NUGET_URL).read())
                 f.close()
         cls.logger.info("Download Complete!")
@@ -94,119 +96,224 @@ class CreateNuget:
             return True
 
     @classmethod
-    def update_nuspec_files(cls, configuration, cpu, f_type=['.dll', '.pri'], target_path=False):
+    def get_versions(cls, target):
         """
-        Updates existing file elements contained in .nuspec file
-        :param configuration: Release or Debug.
-        :param cpu: target cpu.
-        :param f_type: array of file types to be updated (Default ['.dll', '.pri']).
-        :param target_path: path for the target attribute of the file element that
-            needs to be provided for all non default file types (.dll, .pri).
+        Get NuGet package versions from nuget.org
+        :param target: webrtc and/or ortc
         """
-        try:
-            """
-            in order for update to work nuspec must not have   xmlns="..."
-            inside the package tag, otherwise files tag will not be found
-            """
-            with open(config.NUSPEC_PATH, 'rb') as nuspec:
-                tree = ET.parse(nuspec)
-            files = tree.find('files')
-            # Element is <file> element, ft is each file type
-            for element, ft in itertools.product(files, f_type):
-                src_attrib = element.attrib.get('src')
-                # Check if <file> element has a src with given cpu, configuration and file type
-                if all(val in src_attrib for val in [cpu, configuration, ft]):
-                    f_name = 'Org.WebRtc' + ft
-                    # New src path to the lib file with required cpu, configuration and file type
-                    src_path = convertToPlatformPath(
-                        config.NATIVE_LIB_SRC
-                        .replace('[CONFIGURATION]', configuration)
-                        .replace('[CPU]', cpu)
-                        .replace('[FILE]', f_name)
-                    )
-                    # New target attribute of the <file> element
-                    # (place where lib file will be placed inside NuGet package)
-                    if target_path is False:
-                        target_path = convertToPlatformPath(config.NATIVE_LIB_TARGET.replace('[CPU]', cpu))
-                    # Check if the file from the new src exists
-                    if os.path.exists(src_path):
-                        # Once the file check is completed add the path (.nuspec->script) to the new src
-                        src_path = convertToPlatformPath(config.NUGET_TO_SCRIPTS + src_path)
-                        element.set('src', src_path)
-                        element.set('target', target_path)
-                        # Save changes to the .nuspec file
-                        tree.write(config.NUSPEC_PATH)
-                        cls.logger.info('Updated nuspec file for configuration: ' + configuration + "; cpu: " + cpu + "; file extention: " + f_name)
-                    else:
-                        raise Exception('File does NOT exist: ' + src_path)
-        except Exception as errorMessage:
-            cls.logger.error(errorMessage)
+        import json
+        # Works only if number of published versions of the nuget packet is less than 500
+        search = 'https://api-v2v3search-0.nuget.org/search/query?q=packageid:' + target + '&ignoreFilter=true&prerelease=true&take=500'
+
+        cls.logger.info('Colecting ' + target + ' NuGet package versions from nuget.org...')
+        # Python 3:
+        if CreateNuget.module_exists('urllib.request'):
+            import urllib
+            with urllib.request.urlopen(search) as url:
+                data = json.loads(url.read().decode())
+        # Python 2:
+        if CreateNuget.module_exists('urllib'):
+            import urllib
+            response = urllib.urlopen(search)
+            data = json.loads(response.read())
+        data_array = data['data']
+
+        versions = []
+        for item in data_array:
+            for key, val in item.items():
+                if key == 'Version':
+                    versions.append(val)
+        versions = set(versions)
+        versions = sorted(versions)
+
+        return versions
 
     @classmethod
-    def check_files(cls, configuration, cpu, f_type=['.dll', '.pri']):
+    def create_versions_storage(cls, versions, target):
         """
-        Checks if file exists without changing anything
+        Creates a file with the NuGet package versions
+        :param versions: list of NuGet package versions
+        :param target: webrtc and/or ortc
+        """
+        if not os.path.exists(cls.nugetFolderPath):
+            os.makedirs(cls.nugetFolderPath)
+        formated_versions = {}
+        version_numbers = set()
+        storrage = {}
+        # Get package version numbers
+        for version in versions:
+            v_split = version.split('.')
+            version_number = int(v_split[1])
+            if version_number>40:
+                version_numbers.add(version_number)
+        version_numbers = sorted(version_numbers, reverse=True)
+        # Set up dictionary format for every version
+        for v in version_numbers:
+            formated_versions[v] = {}
+        # Get latest major number for every version of the package
+        for version in versions:
+            v_split = version.split('.')
+            major_number = False
+            for v in version_numbers:
+                # Find major number only if the version number matches
+                if v is int(v_split[1]):
+                    major_number = int(v_split[0])
+                    if "major_number" in formated_versions[v]:
+                        major_number = max(major_number, formated_versions[v]["major_number"])
+                    formated_versions[v]["major_number"] = major_number
+        # Get latest change number if exists for all version numbers
+        for version in versions:
+            v_split = version.split('.')
+            for v in version_numbers:
+                # Find change number only if the major number and version number match
+                if v is int(v_split[1]) and formated_versions[v]["major_number"] is int(v_split[0]):
+                    change_number = False
+                    if len(v_split) > 3:
+                        change_number = int(v_split[2])
+                    if change_number is not False:
+                        if "change_number" in formated_versions[v]:
+                            change_number = max(change_number, formated_versions[v]["change_number"])
+                        formated_versions[v]["change_number"] = change_number
+        # Get latest build number for all version numbers while checking if it has chang number or not
+        for version in versions:
+            v_split = version.split('.')
+            is_prerelease = False
+            if '-' in v_split[-1]:
+                is_prerelease = v_split[-1].split('-')
+                v_split[-1] = is_prerelease[0]
+            for v in version_numbers:
+                # Find build number only if the major number and version number match
+                if v is int(v_split[1]) and formated_versions[v]["major_number"] is int(v_split[0]):
+                    if "change_number" in formated_versions[v]:
+                        if len(v_split) > 3 and int(v_split[2]) is formated_versions[v]["change_number"]:
+                            if is_prerelease is not False:
+                                build_number = int(is_prerelease[0])
+                            else:
+                                build_number = int(v_split[3])
+                            if "build_number" in formated_versions[v]:
+                                build_number = max(build_number, formated_versions[v]["build_number"])
+                            formated_versions[v]["build_number"] = build_number
+                    else:
+                        if is_prerelease is not False:
+                            build_number = int(is_prerelease[0])
+                        else:
+                            build_number = int(v_split[2])
+                        if "build_number" in formated_versions[v]:
+                            build_number = max(build_number, formated_versions[v]["build_number"])
+                        formated_versions[v]["build_number"] = build_number
+        # Check if the latest package version is prerelease or not
+        for version in versions:
+            v_split = version.split('.')
+            is_prerelease = False
+            if '-' in v_split[-1]:
+                is_prerelease = v_split[-1].split('-')
+                v_split[-1] = is_prerelease[0]
+            for v in formated_versions.keys():
+                # Check if version number matches, and if latest major number for that version matches
+                if v is int(v_split[1]) and formated_versions[v]["major_number"] is int(v_split[0]):
+                    # Check if the latest version has a change number
+                    if "change_number" in formated_versions[v]:
+                        if len(v_split) > 3:
+                            if int(v_split[3]) is formated_versions[v]["build_number"] and int(v_split[2]) is formated_versions[v]["change_number"]:
+                                if is_prerelease is not False:
+                                    formated_versions[v]["prerelease"] = is_prerelease[1]
+                                elif "prerelease" in formated_versions[v]:
+                                    del formated_versions[v]["prerelease"]
+                    else:
+                        if len(v_split) is 3:
+                            if int(v_split[2]) is formated_versions[v]["build_number"]:
+                                if is_prerelease is not False:
+                                    formated_versions[v]["prerelease"] = is_prerelease[1]
+                                elif "prerelease" in formated_versions[v]:
+                                    del formated_versions[v]["prerelease"]
+        storrage[target] = formated_versions
+
+        with open(cls.versions_file, 'w') as f:
+            json.dump(storrage, f, indent=4)
+
+    @classmethod
+    def get_latest_version(cls, version, target, prerelease="Default"):
+        """
+        Determines the full version number for the selected NuGet package version
+        :param version: Version of the package that is to be built
+        :param prerelease: By default selects version number will have the same prerelease value as the previous one
+            If the version is not prerelease, the value of prerelease parameter should be False
+            If the prerelease type is different put that type in the prerelease parameter instead
+        """
+        version = unicode(version)
+        with open(cls.versions_file, 'r') as f:
+            all_versions = json.load(f)
+        if version in all_versions[target]:
+            this_version = all_versions[target][version]
+            build_no = int(this_version["build_number"])
+            build_no = build_no + 1
+            format_version = str(this_version["major_number"]) + '.' + str(version) + '.'
+            if "change_number" in this_version:
+                format_version += str(this_version["change_number"]) + '.'
+            format_version += str(build_no)
+            if "prerelease" in this_version and prerelease is "Default":
+                format_version += '-' + str(this_version["prerelease"])
+            if prerelease is 'false' or prerelease is 'False':
+                prerelease = False
+            if prerelease is not "Default" and prerelease is not False:
+                format_version += '-' + prerelease
+            return(format_version)
+        else:
+            return "ERROR_VERSION_NOT_SUPPORTED"
+
+    @classmethod
+    def copy_files(cls, target, platform, configuration, cpu, f_type=['.dll', '.pri', '.winmd', '.xml']):
+        """
+        Copy lib files that will be used for building nuget package to the destination folder
+        :param target: webrtc or ortc
+        :param platform: win or winuwp
         :param configuration: Release or Debug.
         :param cpu: target cpu.
         :param f_type: array of file types to be updated (Default ['.dll', '.pri']).
         """
         try:
+            # Create libraries directory if needed
+            if not os.path.exists(cls.nugetFolderPath + '/libraries'):
+                os.makedirs(cls.nugetFolderPath + '/libraries')
+            
             for ft in f_type:
-                f_name = 'Org.WebRtc' + ft
+                f_name = 'Org.' + target + ft
                 src_path = convertToPlatformPath(
                     config.NATIVE_LIB_SRC
+                    .replace('[TARGET]', target)
+                    .replace('[PLATFORM]', platform)
                     .replace('[CONFIGURATION]', configuration)
                     .replace('[CPU]', cpu)
                     .replace('[FILE]', f_name)
                 )
+                dst_path = convertToPlatformPath(
+                    cls.destinationLibPath
+                    .replace('[TARGET]', target)
+                    .replace('[PLATFORM]', platform)
+                    .replace('[CONFIGURATION]', configuration)
+                    .replace('[CPU]', cpu)
+                )
+                # Create directory for the specified configuration if needed
+                if not os.path.exists(dst_path):
+                    os.makedirs(dst_path)
+                # Check if file exists and copy it to the specified directory
                 if os.path.exists(src_path):
-                    cls.logger.info('File Exists! \n' + src_path)
+                    shutil.copy(src_path, dst_path)
+                    cls.logger.debug('FIle copied: ' + dst_path + f_name)
                 else:
-                    cls.logger.info('File does NOT exist! \n' + src_path)
+                    cls.logger.warning('File does NOT exist! ' + src_path)
+                    return ERROR_NUGET_CREATION_MISSING_FILE
         except Exception as errorMessage:
             cls.logger.error(errorMessage)
 
-    @classmethod
-    def delete_nuspec_files(cls, configuration, cpu, f_type=['.dll', '.pri']):
-        """
-        Delete file element in .nuspec based on src attribute
-        :param configuration: Release or Debug.
-        :param cpu: target cpu.
-        :param f_type: array of file types to be updated (Default ['.dll', '.pri']).
-        """
-        try:
-            """
-            in order for update to work nuspec must not have   xmlns="..."
-            inside the package tag, otherwise files tag will not be found
-            """
-            with open(config.NUSPEC_PATH, 'rb') as nuspec:
-                tree = ET.parse(nuspec)
-            files = tree.find('files')
-            # Element is <file> element, ft is each file type
-            for element, ft in itertools.product(files, f_type):
-                src_attrib = element.attrib.get('src')
-                target_attrib = element.attrib.get('target')
-                tag = element.tag
-                # Check if <file> element has a src with given cpu, configuration
-                # and file type, then remove it from .nuspec
-                if all(val in src_attrib for val in [cpu, configuration, ft]):
-                    files.remove(element)
-                    cls.logger.info(
-                        'File deleted: <{} src="{}" target="{}"/>'
-                        .format(tag, src_attrib, target_attrib)
-                    )
-            # Save changes to the .nuspec file
-            tree.write(config.NUSPEC_PATH)
-        except Exception as errorMessage:
-            cls.logger.error(errorMessage)
+        return NO_ERROR
 
     @classmethod
-    def add_nuspec_files(cls, configuration, cpu, f_type=['.dll', '.pri'], f_name='Org.WebRtc', target_path=False):
+    def update_nuspec_files(cls, target, platform, configuration, cpu, f_type=['.dll', '.pri'], f_name='Org.WebRtc', target_path=False):
         """
-        Add file elements to .nuspec file based on config
-        Every cpu type that you want to add to NuGet package must be built in
-        eather Release or Debug configuration
-
+        Updates existing file elements contained in .nuspec file
+        :param target: webrtc or ortc
+        :param platform: win or winuwp
         :param configuration: Release or Debug.
         :param cpu: target cpu.
         :param f_type: array of file types to be updated (Default ['.dll', '.pri']).
@@ -219,41 +326,129 @@ class CreateNuget:
             in order for update to work nuspec must not have   xmlns="..."
             inside the package tag, otherwise files tag will not be found
             """
-            with open(config.NUSPEC_PATH, 'rb') as nuspec:
+            nuspecName = target + '.nuspec'
+            with open(nuspecName, 'rb') as nuspec:
+                tree = ET.parse(nuspec)
+            files = tree.find('files')
+            # Element is <file> element, ft is each file type
+            for element, ft in itertools.product(files, f_type):
+                src_attrib = element.attrib.get('src')
+                # Check if <file> element has a src with given cpu, configuration and file type
+                if all(val in src_attrib for val in [cpu, configuration, ft]):
+                    file_name = f_name + ft
+                    # New src path to the lib file with required cpu, configuration and file type
+                    src_path = convertToPlatformPath(
+                        config.NUGET_LIBRARIES
+                        .replace('[TARGET]', target)
+                        .replace('[PLATFORM]', platform)
+                        .replace('[CONFIGURATION]', configuration)
+                        .replace('[CPU]', cpu)
+                    )
+                    src_path += file_name
+                    # New target attribute of the <file> element
+                    # (place where lib file will be placed inside NuGet package)
+                    if target_path is False:
+                        target_path = convertToPlatformPath(config.NATIVE_LIB_TARGET.replace('[CPU]', cpu))
+                    # Check if the file from the new src exists
+                    if os.path.exists(src_path):
+                        element.set('src', src_path)
+                        element.set('target', target_path)
+                        # Save changes to the .nuspec file
+                        tree.write(nuspecName)
+                        cls.logger.debug("File updated: " + src_path)
+                    else:
+                        raise Exception('File does NOT exist: ' + src_path)
+        except Exception as errorMessage:
+            cls.logger.error(errorMessage)
+
+    @classmethod
+    def delete_nuspec_files(cls, target, platform, configuration, cpu, f_type=['.dll', '.pri']):
+        """
+        Delete file element in .nuspec based on src attribute
+        :param target: webrtc or ortc
+        :param platform: win or winuwp
+        :param configuration: Release or Debug.
+        :param cpu: target cpu.
+        :param f_type: array of file types to be updated (Default ['.dll', '.pri']).
+        """
+        try:
+            """
+            in order for update to work nuspec must not have   xmlns="..."
+            inside the package tag, otherwise files tag will not be found
+            """
+            nuspecName = target + '.nuspec'
+            with open(nuspecName, 'rb') as nuspec:
+                tree = ET.parse(nuspec)
+            files = tree.find('files')
+            # Element is <file> element, ft is each file type
+            for element, ft in itertools.product(files, f_type):
+                src_attrib = element.attrib.get('src')
+                # Check if <file> element has a src with given cpu, configuration
+                # and file type, then remove it from .nuspec
+                if all(val in src_attrib for val in [target, platform, cpu, configuration, ft]):
+                    files.remove(element)
+                    cls.logger.debug("File Deleted: " + src_attrib)
+            # Save changes to the .nuspec file
+            tree.write(nuspecName)
+        except Exception as errorMessage:
+            cls.logger.error(errorMessage)
+
+    @classmethod
+    def add_nuspec_files(cls, target, platform, configuration, cpu, f_type=['.dll', '.pri'], f_name='Org.WebRtc', target_path=False):
+        """
+        Add file elements to .nuspec file based on config
+        Every cpu type that you want to add to NuGet package must be built in
+        eather Release or Debug configuration
+
+        :param target: webrtc or ortc
+        :param platform: win or winuwp
+        :param configuration: Release or Debug.
+        :param cpu: target cpu.
+        :param f_type: array of file types to be updated (Default ['.dll', '.pri']).
+        :param f_name: name of the lib file that needs to be added(Default: Org.WebRtc)
+        :param target_path: path for the target attribute of the file element that
+            needs to be provided for all non default file types (.dll, .pri).
+        """
+        try:
+            """
+            in order for update to work nuspec must not have   xmlns="..."
+            inside the package tag, otherwise files tag will not be found
+            """
+            nuspecName = target + '.nuspec'
+            with open(nuspecName, 'rb') as nuspec:
                 tree = ET.parse(nuspec)
             files = tree.find('files')
             for ft in f_type:
                 # Add extention to the file name
-                f_name += ft
+                file_name = f_name + ft
                 # Src path to the lib file with required cpu, configuration and file type
                 src_path = convertToPlatformPath(
-                    config.NATIVE_LIB_SRC
+                    config.NUGET_LIBRARIES
+                    .replace('[TARGET]', target)
+                    .replace('[PLATFORM]', platform)
                     .replace('[CONFIGURATION]', configuration)
                     .replace('[CPU]', cpu)
-                    .replace('[FILE]', f_name)
                 )
+                src_path += file_name
                 # Target attribute of the <file> element (place where lib file will be placed inside NuGet package)
                 if target_path is False:
                     target_path = convertToPlatformPath(config.NATIVE_LIB_TARGET.replace('[CPU]', cpu))
                 # Check if the file from the new src exists
                 if os.path.exists(src_path):
-                    # Once the file check is completed add the path (.nuspec->script) to the new src
-                    src_path = convertToPlatformPath(config.NUGET_TO_SCRIPTS + src_path)
                     file_attrib = {'src': src_path, 'target': target_path}
                     # Make a new file element with the attributes from above
                     new_file = ET.SubElement(files, 'file', attrib=file_attrib)
                     new_file.tail = "\n\t\t"
-                    cls.logger.info('Added nuspec file for configuration: ' + configuration + "; cpu: " + cpu + "; file extention: " + f_name)
                 else:
                     raise Exception('File does NOT exist! \n' + src_path)
             # Save changes to the .nuspec file
-            tree.write(config.NUSPEC_PATH)
+            tree.write(nuspecName)
         except Exception as errorMessage:
             cls.logger.error(errorMessage)
 
     @classmethod
     def add_targets_itemgroup(
-        cls, items_condition, sub_include, sub_elem='Reference',
+        cls, target, items_condition, sub_include, sub_elem='Reference',
         sub_sub_elem=False
     ):
         """
@@ -272,7 +467,7 @@ class CreateNuget:
             in order for update to work targets must not have   xmlns="..."
             inside the Project tag, otherwise tag will not be found
             """
-            with open(config.TARGETS_PATH, 'rb') as targets:
+            with open(cls.targets_file.replace('[TARGET]', target), 'rb') as targets:
                 tree = ET.parse(targets)
             project = tree.getroot()
             # Add new ItemGroup element to .targets file
@@ -303,99 +498,130 @@ class CreateNuget:
             new_itemgroup.tail = '\n\t'
             project.append(new_itemgroup)
             # Save changes to the .targets file
-            tree.write(config.TARGETS_PATH)
+            tree.write(cls.targets_file.replace('[TARGET]', target))
         except Exception as errorMessage:
             cls.logger.error(errorMessage)
 
     @classmethod
-    def delete_targets_itemgroups(cls):
+    def delete_targets_itemgroups(cls, target):
         """
         Delete all ItemGroup elements from .targets file
+        :param target: webrtc or ortc
         """
         try:
-            with open(config.TARGETS_PATH, 'rb') as targets:
+            with open(cls.targets_file.replace('[TARGET]', target), 'rb') as targets:
                 tree = ET.parse(targets)
             project = tree.getroot()
             for element in project:
                 if 'ItemGroup' in element.tag:
                     project.remove(element)
-            tree.write(config.TARGETS_PATH)
-            cls.logger.info('ItemGroups deleted')
+            tree.write(cls.targets_file.replace('[TARGET]', target))
         except Exception as errorMessage:
             cls.logger.error(errorMessage)
 
     @classmethod
-    def create_nuspec(cls, version):
+    def create_nuspec(cls, version, target):
         """
-        Create WebRtc.nuspec file based on a template with default values
+        Create .nuspec file based on a template with default values
         :param version: version of the nuget package must be specified when
-        copying nuspec file
+            copying nuspec file
+        :param target: webrtc or ortc
         """
-        # .nuspec file that is used to build the NuGet package
-        with open(config.NUSPEC_PATH, 'w') as destination:
-            # Template .nuspec file
-            with open(config.NUGET_FOLDER + '/templates/WebRtc.nuspec', 'r') as source:
-                for line in source:
-                    if '<version>' in line:
-                        destination.write('\t\t<version>' + version + '</version>\n')
-                    else:
+        try:
+            if not os.path.exists(cls.nugetFolderPath):
+                os.makedirs(cls.nugetFolderPath)
+            # .nuspec file that is used to build the NuGet package
+            with open(cls.nuspec_file.replace('[TARGET]', target), 'w') as destination:
+                # Template .nuspec file
+                with open(config.NUGET_TEMPLATES_FOLDER + target + '.nuspec', 'r') as source:
+                    for line in source:
+                        if '<version>' in line:
+                            destination.write('\t\t<version>' + version + '</version>\n')
+                        else:
+                            destination.write(line)
+            cls.logger.debug('Nuspec file created successfuly!')
+        except Exception as error:
+            cls.logger.error(error)
+
+    @classmethod
+    def create_targets(cls, target):
+        """
+        Create .targets file based on a template with default values
+        :param target: webrtc or ortc
+        """
+        try:
+            if not os.path.exists(cls.nugetFolderPath):
+                os.makedirs(cls.nugetFolderPath)
+            # .targets file that is used to build the NuGet package
+            with open(cls.targets_file.replace('[TARGET]', target), 'w') as destination:
+                # Template .targets file
+                with open(config.NUGET_TEMPLATES_FOLDER + target + '.targets', 'r') as source:
+                    for line in source:
                         destination.write(line)
-        cls.logger.info('nuspec created')
+            cls.logger.debug('Targets file created successfuly!')
+        except Exception as error:
+            cls.logger.error(error)
 
     @classmethod
-    def create_targets(cls):
-        """
-        Create WebRtc.targets file based on a template with default values for WebRtc
-        """
-        # .targets file that is used to build the NuGet package
-        with open(config.TARGETS_PATH, 'w') as destination:
-            # Template .targets file
-            with open(config.NUGET_FOLDER + '/templates/WebRtc.targets', 'r') as source:
-                for line in source:
-                    destination.write(line)
-        cls.logger.info('targets created')
-
-    @classmethod
-    def check_and_move(cls, version):
+    def check_and_move(cls, target, version):
         """
         Checks if nuget package was made successfully and moves it to nuget folder
+        :param target: webrtc or ortc
+        :param version: Version of the created NuGet file
         """
-        package = 'WebRtc.' + version + '.nupkg'
+        package = target + '.' + version + '.nupkg'
         if os.path.isfile(package):
-            shutil.move(package, config.NUGET_FOLDER + '/' + package)
+            shutil.move(package, cls.nugetFolderPath + '/' + package)
         else:
             cls.logger.error('NuGet package does not exist')
 
     @classmethod
-    def run(cls, version, cpus, configurations):
+    def run(cls, target, platforms, cpus, configurations, targetFolder, versionInfo):
         """
-        Method used to call all other methods in order necessary for create
-            WebRtc NuGet package
+        Method used to call all other methods in order necessary to create NuGet package
         First creates .nuspec, then .targets then adds files to .nuspec
         based on parameters
-        :param version: nuspec version.
+        :param target: webrtc or ortc
+        :param platform: win or winuwp
         :param cpus: list of target cpus.
         :param configurations: Debug/Release.
+        :param targetFolder: base folder where all files will be placed including created package
+        :param versionInfo: Dictionary with the basic information about NuGet version number
         """
-        cls.create_nuspec(version)
-        cls.create_targets()
-        for configuration, cpu in itertools.product(
-            configurations, cpus
-        ):
-            cls.add_nuspec_files(configuration, cpu)
-            cls.update_nuspec_files(
-                configuration, cpu,
-                f_type=['.winmd', '.xml'], target_path=r'lib\uap10.0'
-            )
-        cls.nuget_cli('pack', config.NUGET_FOLDER + '/WebRtc.nuspec')
-        cls.check_and_move(version)
-        # cls.nuget_cli('help', '-All', '-Markdown')
-
-
-def main():
-    """
-    WebRtc must be built for selected CPUs in userdef file before running
-    """
-
-if __name__ == '__main__':
-    main()
+        
+        cls.nugetFolderPath = targetFolder
+        cls.nugetExePath = cls.nugetFolderPath + '/nuget.exe'
+        cls.nuspec_file = cls.nugetFolderPath + '/[TARGET].nuspec'
+        cls.targets_file = cls.nugetFolderPath + '/[TARGET].targets'
+        cls.versions_file = cls.nugetFolderPath + '/versions.json'
+        cls.destinationLibPath = cls.nugetFolderPath + config.NUGET_LIBRARIES
+        version = False
+        result = NO_ERROR
+        versions = cls.get_versions(target)
+        cls.create_versions_storage(versions, target)
+        version = cls.get_latest_version(versionInfo['number'], target, versionInfo['prerelease'])
+        cls.create_nuspec(version, target)
+        cls.create_targets(target)
+        for platform, cpu, configuration in itertools.product(platforms, cpus, configurations):
+            cls.logger.info('Runnning preparation for target: ' + target + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration)
+            
+            # check and copy all lib files to the specified folder 
+            result = cls.copy_files(target, platform, configuration, cpu)
+            Summary.addSummary('CreateNuget', target, platform, cpu, configuration, result)
+            
+            # go to specified nuget folder
+            Utility.pushd(cls.nugetFolderPath)
+            # add .dll and .pri files to .nuspec file
+            cls.add_nuspec_files(target, platform, configuration, cpu)
+            # update .winmd and .xml tags in nuspec file with the copied files
+            cls.update_nuspec_files(target, platform, configuration, cpu,f_type=['.winmd', '.xml'], target_path=r'lib\uap10.0')
+            # return to the base directory
+            Utility.popd()
+        cls.nuget_cli('pack', cls.nugetFolderPath + '/webrtc.nuspec')
+        cls.check_and_move(target, version)
+        cls.logger.info('NuGet package created succesfuly: ' + cls.nugetFolderPath + '/' + version)
+        
+        if result != NO_ERROR:
+            Logger.printEndActionMessage('CreateNuget',ColoredFormatter.RED)
+        else:
+            Logger.printEndActionMessage('CreateNuget')

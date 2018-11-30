@@ -69,9 +69,11 @@ def actionBuild():
 def actionCreateNuget():
   CreateNuget.init()
 
-  CreateNuget.run(
-      '1.66.0.2-Alpha', Settings.targetCPUs, Settings.targetConfigurations
-  )
+  for target in Settings.targets:
+    CreateNuget.run(
+      target, Settings.targetPlatforms, Settings.targetCPUs, 
+      Settings.targetConfigurations, Settings.nugetFolderPath, Settings.nugetVersionInfo
+    )
 
 def actionPublishNuget():
   pass

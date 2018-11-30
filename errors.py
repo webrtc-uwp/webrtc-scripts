@@ -14,6 +14,10 @@ ERROR_BUILD_OUTPUT_FOLDER_DEOESNT_EXIST,\
 ERROR_BUILD_FAILED,\
 ERROR_BUILD_MERGE_LIBS_FAILED = range(11)
 
+ERROR_COPY_LIB_FILES_FAILED = "Failed to copy lib file!"
+ERROR_UPDATE_NUSPEC_FAILED = "Failed to update .nuspec file!"
+ERROR_ADD_NUSPEC_FAILED = "Failed to add lib file to .nuspec file!"
+
 #TODO: give more details about perl if it is really required
 #TODO: check python version and show error if it is 3.0 or later
 error_codes = {
