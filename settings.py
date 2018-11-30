@@ -2,10 +2,8 @@ import os
 from importlib import import_module
 
 import config
-import defaults
 from defaults import *
-from helper import convertToPlatformPath
-
+from helper import convertToPlatformPath,iterateDict
 
 class Settings:
   """
@@ -29,7 +27,7 @@ class Settings:
     #User defaults file path
     cls.userDefFilePath = os.path.join(cls.userWorkingPath, config.USER_DEFAULTS_FILE + '.py')
     #Scripts root path
-    cls.rootScriptsPath = os.path.dirname(defaults.__file__)
+    cls.rootScriptsPath = os.path.dirname(__file__)
     #Predefined templates path
     cls.templatesPath = os.path.join(cls.rootScriptsPath, convertToPlatformPath(config.TEMPLATES_PATH))
     #Sdk root path
@@ -40,7 +38,7 @@ class Settings:
     #TODO: Make platform dependent - check host os and add proper subfolder name
     cls.localBuildToolsPath = os.path.join(Settings.rootSdkPath, convertToPlatformPath(config.RELATIVE_BUILD_TOOLS_PATH),'win')
     #defaults.py path
-    cls.defaultFilePath = os.path.join(os.path.dirname(defaults.__file__),'defaults.py')
+    cls.defaultFilePath = os.path.join(os.path.dirname(__file__),'defaults.py')
     #Root path for preparation
     cls.webrtcPath = os.path.join(cls.rootSdkPath, convertToPlatformPath(config.PREPRATARION_WORKING_PATH))
     #WebRtc solution path
@@ -51,7 +49,9 @@ class Settings:
 
   @classmethod
   def init(cls):
-
+    """
+      Based on userdef.py or specified input tamplate and input arguments sets script variables.
+    """
     #First import userdef.py created from defaults.py
     if os.path.isfile( cls.userDefFilePath):
       globals().update(import_module(config.USER_DEFAULTS_FILE).__dict__)
@@ -64,7 +64,7 @@ class Settings:
           os.path.isfile(os.path.join(cls.templatesPath, cls.inputArgs.template + '.py'))): 
         globals().update(import_module(cls.inputArgs.template).__dict__)
 
-    cls.gnOutputPath = gnOutputPath
+    #cls.gnOutputPath = gnOutputPath
 
     cls.supportedPlatformsForHostOs = supportedPlatformsForHostOs
     cls.supportedCPUsForPlatform = supportedCPUsForPlatform
@@ -98,15 +98,25 @@ class Settings:
     else:
       cls.targetConfigurations = targetConfigurations
 
-    
+    cls.targetProgrammingLanguage = targetProgrammingLanguage
+    cls.buildWrapper = buildWrapper
+
     cls.logFormat = logFormat
     cls.logLevel = logLevel
     cls.logToFile = logToFile
     cls.overwriteLogFile = overwriteLogFile
+
+    #If configurations are passed like input arguments use them, instead of one loaded from template
     if cls.inputArgs.noColor:
       cls.noColoredOutput = True
     else:
       cls.noColoredOutput = noColoredOutput
+
+    #If configurations are passed like input arguments use them, instead of one loaded from template
+    if cls.inputArgs.noWrapper:
+      cls.buildWrapper = False
+    else:
+      cls.buildWrapper = buildWrapper
 
     cls.stopExecutionOnError = stopExecutionOnError
     cls.showTraceOnError = showTraceOnError
@@ -120,6 +130,7 @@ class Settings:
 
     cls.msvsPath = msvsPath
 
+    cls.enableBackup = enableBackup
     cls.libsBackupPath = libsBackupPath
     
     #This value will be set during VS path check
@@ -132,20 +143,26 @@ class Settings:
                     'targets' : cls.targets,
                     'cpus' : cls.targetCPUs,
                     'platforms' : cls.targetPlatforms,
-                    'configuration' : cls.targetConfigurations
+                    'configurations' : cls.targetConfigurations
     }
-    cls.cleanOptions = cleanOptions
+    cls.cleanupOptions = cleanupOptions
 
     #Set specific clean configuration if specified in userDef.py or use default values from __actionOptions dict
-    for key,value in cls.__actionOptions.iteritems():
-      cls.cleanOptions[key] = cls.cleanOptions.get(key,[])
-      if cls.cleanOptions[key] == []:
-        cls.cleanOptions[key] = value
+    for key,value in iterateDict(cls.__actionOptions):
+      cls.cleanupOptions[key] = cls.cleanupOptions.get(key,[])
+      if cls.cleanupOptions[key] == []:
+        cls.cleanupOptions[key] = value
 
   @classmethod
   def getGnOutputPath(cls, path, target, platform, cpu, configuration):
     """
       Return gn output path for specified args.
+      :param path: Root folder where will be saved target specific output
+      :param target: Target (ortc, webrtc or * )
+      :param platform: Platform (win, winuwp or *)
+      :param cpu: CPU (arm, x86, x64 or *)
+      :param configuration: Release (debug, release or *)
+      :return outputPath: Return output path relative to to root webrt folder
     """
-    outputPath = cls.gnOutputPath.replace('[GN_OUT]', path).replace('[TARGET]',target).replace('[PLATFORM]',platform).replace('[CPU]',cpu).replace('[CONFIGURATION]',configuration)
+    outputPath = config.GN_TARGET_OUTPUT_PATH.replace('[GN_OUT]', path).replace('[TARGET]',target).replace('[PLATFORM]',platform).replace('[CPU]',cpu).replace('[CONFIGURATION]',configuration)
     return convertToPlatformPath(outputPath)

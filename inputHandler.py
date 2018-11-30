@@ -13,7 +13,7 @@ class Input:
     parser = argparse.ArgumentParser()
     parser.add_argument('template', nargs='?', help='Template name, where default settings are overwritten')
     
-    parser.add_argument('-a','--actions', nargs='*', choices=['prepare', 'build'], help='Actions to perform')
+    parser.add_argument('-a','--actions', nargs='*', choices=['clean','createuserdef', 'prepare', 'build'], type=str.lower, help='Actions to perform')
 
     if System.checkIfTargetIsSupported('ortc'):
       parser.add_argument('-t','--targets', nargs='*', choices=['ortc', 'webrtc'], help='Target')
@@ -32,5 +32,7 @@ class Input:
     parser.add_argument('-c','--configurations', nargs='*', choices=['debug', 'release'], type=str.lower, help='Target build configuration')
 
     parser.add_argument('--noColor', action='store_true', help='Do not colorize output')
+
+    parser.add_argument('--noWrapper', action='store_true', help='Do not build wrapper projects')
     
     Settings.inputArgs = parser.parse_args()

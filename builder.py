@@ -2,14 +2,15 @@ import os
 import subprocess
 import shutil 
 import signal
+import time
 
-from errors import *
 import config
-from settings import Settings
 from logger import Logger
-from utility import Utility
-from helper import convertToPlatformPath
 from system import System
+from utility import Utility
+from settings import Settings
+from helper import convertToPlatformPath
+from errors import error_codes, NO_ERROR, ERROR_BUILD_OUTPUT_FOLDER_NOT_EXIST,ERROR_BUILD_FAILED, ERROR_BUILD_MERGE_LIBS_FAILED
 
 class Builder:
   @classmethod
@@ -32,6 +33,8 @@ class Builder:
       :param builderWorkingPath: Path where generated projects for specified target.
       :return: NO_ERROR if build was successfull. Otherwise returns error code
     """
+    start_time = time.time()
+    ret = NO_ERROR
     cls.logger.info('Running build for target: ' + targetName + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration)
 
     #If path with generated projects is not specified generate path from input arguments
@@ -43,88 +46,96 @@ class Builder:
     #If folder for specified target and platform doesn't exist, stop further execution
     if not os.path.exists(workingDir):
       cls.logger.error('Output folder at ' + workingDir + ' doesn\'t exist. It looks like prepare is not executed. Please run prepare action.')
-      return ERROR_BUILD_OUTPUT_FOLDER_DEOESNT_EXIST
+      return ERROR_BUILD_OUTPUT_FOLDER_NOT_EXIST
     
     #Set the PATH and environment variables for command-line builds (e.g. vcvarsall.bat x64_x86)
     cls.cmdVcVarsAll = '\"' +  Settings.vcvarsallPath + '\" ' + config.WINDOWS_COMPILER_OPTIONS[System.hostCPU][cpu]
     cls.cmdVcVarsAllClean = '\"' +  Settings.vcvarsallPath + '\" ' + '/clean_env'
 
-    
     #Change current working directory to one with generated projects
     Utility.pushd(workingDir)
 
     #Start building and merging libraries
-    if not cls.buildTargets(targets, cpu):
-      return ERROR_BUILD_FAILED
-    
-    destinationPath = convertToPlatformPath(config.BUILT_LIBS_DESTINATION_PATH.replace('[BUILD_OUTPUT]',config.BUILD_OUTPUT_PATH).replace('[TARGET]',targetName).replace('[PLATFORM]',platform).replace('[CPU]',cpu).replace('[CONFIGURATION]',configuration))
-    destinationPathLib = os.path.join(Settings.webrtcPath, destinationPath)
+    if cls.buildTargets(targets, cpu):
+      destinationPath = convertToPlatformPath(config.BUILT_LIBS_DESTINATION_PATH.replace('[BUILD_OUTPUT]',config.BUILD_OUTPUT_PATH).replace('[TARGET]',targetName).replace('[PLATFORM]',platform).replace('[CPU]',cpu).replace('[CONFIGURATION]',configuration))
+      destinationPathLib = os.path.join(Settings.webrtcPath, destinationPath)
 
-    #Merge libraries if it is required
-    if shouldCombineLibs:
-      cls.mergeLibs(cpu,destinationPathLib)
+      #Merge libraries if it is required
+      if shouldCombineLibs:
+        if not cls.mergeLibs(cpu,destinationPathLib):
+          ret = ERROR_BUILD_MERGE_LIBS_FAILED
 
-    cls.copyLibsToOutput(targetName, platform, cpu, configuration, destinationPathLib)
+      if ret == NO_ERROR:
+        #Copy merged libs to output lib folder
+        cls.copyLibsToOutput(targetName, platform, cpu, configuration, destinationPathLib)
 
-    if Settings.libsBackupPath != '':
-      backupPath = os.path.join(Settings.userWorkingPath,Settings.libsBackupPath)
-      if os.path.exists(backupPath):
-        shutil.rmtree(backupPath) 
-      shutil.copytree(destinationPathLib,backupPath)
+        #If enabled backup, copy libs and pdb to specified folder
+        if Settings.enableBackup and Settings.libsBackupPath != '':
+          backupPath = os.path.join(Settings.userWorkingPath,Settings.libsBackupPath)
+          #If backup folder exists delete it
+          if os.path.exists(backupPath):
+            shutil.rmtree(backupPath) 
+          shutil.copytree(destinationPathLib,backupPath)
+    else:
+      ret = ERROR_BUILD_FAILED
     #Switch to previously working directory
     Utility.popd()
   
-    cls.buildWrapper(targetName,cpu,configuration)
-
-    cls.logger.info('Running build for target: ' + targetName + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration + ', finished successfully!')
-    return NO_ERROR
+    if ret == NO_ERROR:
+      if Settings.buildWrapper:
+        #Build wrapper library if option is enabled
+        if not cls.buildWrapper(targetName ,platform, cpu, configuration):
+          ret = ERROR_BUILD_FAILED
+        
+    if ret == NO_ERROR:
+      cls.logger.info('Running build for target: ' + targetName + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration + ', finished successfully!')
+    end_time = time.time()
+    cls.executionTime = end_time - start_time
+    return ret
 
   @classmethod
-  def buildWrapper(cls, target, targetCPU, configuration):
+  def buildWrapper(cls, target, platform, targetCPU, configuration):
     """
       Builds wrapper projects.
+      :param target: Name of the main target (ortc or webrtc)
+      :param platform: Platform name
+      :param targetCPU: Target CPU
+      :param configuration: Configuration to build for
+      :return ret: True if build was successful or if there is no solution for specified target and platform, otherwise False
     """
     ret = True
     cls.logger.info('Building ' + target + ' wrapper projects for ' + targetCPU + ' for configuration  '+ configuration)
 
-  #MSBuild %~1 /property:Configuration=%CONFIGURATION% /property:Platform=%~3 /nodeReuse:False
+    #Get solution to build, for specified target and platform. Solution is obtained from config.TARGET_WRAPPER_SOLUTIONS
+    solutionName = Utility.getSolutionForTargetAndPlatform(target, platform)
+    #If solution is not provided, return True like it was succefull
+    if solutionName == '':
+      return True
+
     try:
-      solutionPath = os.path.join(Settings.webrtcSolutionPaths,'WebRtc.Nuget.Universal.sln')
-      projectName1 = 'Api\Org_WebRtc\Org_WebRtc'
-      projectName2 = 'Api\Org_WebRtc\Org_WebRtc_WrapperGlue'
-      #Call lib.exe to mergeobj files to webrtc[counter].lib files, which will be later merged to webrtc.lib
-      #cmdBuild = 'MSBuild ' + solutionFile + '/property:Configuration=' + configuration + ' /property:Platform=' + targetCPU + ' /nodeReuse:False'
-      cmdBuild = 'msbuild ' + solutionPath + ' /t:' + projectName2 + ',' + projectName1 + ' /p:Configuration=\"' + configuration + '\" /p:Platform=\"' + targetCPU + '\" /p:BuildProjectReferences=false'
-      #cmdBuild = 'msbuild ' + solutionPath + ' /p:Configuration=\"' + configuration + '\" /p:Platform=\"' + targetCPU + '\" /p:BuildProjectReferences=false'
+      #Solution template path
+      solutionSourcePath = os.path.join(Settings.rootSdkPath,convertToPlatformPath(config.WEBRTC_SOLUTION_TEMPLATES_PATH),solutionName)
+      #Path where solution template will be copied
+      solutionDestinationPath = os.path.join(Settings.rootSdkPath,convertToPlatformPath(config.WEBRTC_SOLUTION_PATH),solutionName)
+      
+      #Copy template solution to solution folder
+      shutil.copyfile(solutionSourcePath,solutionDestinationPath)
 
-      #Make cmdLibExe command dependent on cmdVcVarsAll
-      commands = cls.cmdVcVarsAll + ' && ' + cmdBuild + ' && ' + cls.cmdVcVarsAllClean
+      #MSBuild command for building wrapper projects
+      cmdBuild = 'msbuild ' + solutionDestinationPath + ' /t:Build' + ' /p:Configuration=\"' + configuration + '\" /p:Platform=\"' + targetCPU + '\"'
 
-      #FNULL = open(os.devnull, 'w')
-      #result = subprocess.call(commands, stdout=FNULL, stderr=subprocess.STDOUT)
-
-      p = subprocess.Popen(commands, shell=False, stderr=subprocess.PIPE)
-      p.communicate()
-      """
-      ## But do not wait till netstat finish, start displaying output immediately ##
-      while True:
-        out = p.stderr.read(1)
-        if out == '' and p.poll() != None:
-            break
-        if out != '':
-            sys.stdout.write(out)
-            sys.stdout.flush()
-      """
-      result = p.wait()
+      #EXecute MSBuild command
+      result = Utility.runSubprocess([cls.cmdVcVarsAll, cmdBuild, cls.cmdVcVarsAllClean], Settings.logLevel == 'DEBUG')
       if result != 0:
+        cls.logger.error('Building ' + target + ' target has failed!')
         ret = False
-    except KeyboardInterrupt:
-      os.kill(p.pid, signal.SIGTERM)
     except Exception as error:
+      cls.logger.error(str(error))
+      cls.logger.error('Failed building wrappers for target ' + target)
       ret = False
     finally:
-      pass
-
+      #Delete solution used for building wrapper projects.
+      os.remove(solutionDestinationPath) 
     if ret:
       cls.logger.info('Successfully finished building wrappers for target ' + target)
 
@@ -151,14 +162,10 @@ class Builder:
           Utility.backUpAndUpdateGnFile(mainBuildGnFilePath,config.WEBRTC_TARGET,config.ADDITIONAL_TARGETS_TO_ADD)
 
         #Run ninja to build targets
-        result = subprocess.call([
-            Settings.localNinjaPath + '.exe',
-            target,
-          ],env=my_env)
-
+        cmd = Settings.localNinjaPath + '.exe ' +  target
+        result = Utility.runSubprocess([cmd], Settings.logLevel == 'DEBUG', my_env)
         if result != 0:
-            cls.logger.error('Building ' + target + ' target has failed!')
-            return False
+          raise Exception('Building ' + target + ' target has failed!')
 
     except Exception as error:
       cls.logger.error(str(error))
@@ -178,11 +185,18 @@ class Builder:
       Merges obj files and creates fat webrtc library.
       TODO: Make it returns error, instead of to terminate execution on error
     """
+    ret = True
     cls.logger.info('Merging libs for cpu '+ targetCPU)
 
     #Determine lib.exe path
     cls.libexePath = os.path.join(Settings.msvcToolsBinPath, targetCPU, 'lib.exe')
     
+    if not os.path.isfile(cls.libexePath):
+      ret = False
+      cls.logger.error('Merging libraries cannot be done. Missing file ' + cls.libexePath + '!')
+      cls.logger.warning('Please, install VS component Visual c++ compiler and libraries for ' + targetCPU)
+      return ret
+
     #Get list of strings, with file paths total length less than 7000,,
     listOfObjesToCombine = Utility.getFilesWithExtensionsInFolder(config.COMBINE_LIB_FOLDERS, ('.obj','.o'), config.COMBINE_LIB_IGNORE_SUBFOLDERS)
 
@@ -197,27 +211,32 @@ class Builder:
     for objs in listOfObjesToCombine:
       output = 'webrtc' + str(counter) + '.lib'
       cls.logger.debug('Creating ' + output + ' library')
-      ret = cls.combineLibs(targetCPU, objs, tempCombinePath, output)
-      if ret == NO_ERROR:
+      result = cls.combineLibs(targetCPU, objs, tempCombinePath, output)
+      if result == NO_ERROR:
         #Generated lib add to the list, which will be used for creation one fat webrtc lib
         libsToMerge += (os.path.join(tempCombinePath, output)) + ' '
         counter += 1
       else:
+        ret = False
         cls.logger.error('Creating ' + output + ' library has failed!')
-        System.stopExecution(ret)
+        return ret
+        #System.stopExecution(ret)
 
      #Create webrtc lib from specified lib files
     if len(libsToMerge) > 0:
-      ret = cls.combineLibs(targetCPU, libsToMerge, destinationPath, 'webrtc.lib')
-      if ret != NO_ERROR:
+      result = cls.combineLibs(targetCPU, libsToMerge, destinationPath, 'webrtc.lib')
+      if result != NO_ERROR:
+        ret = False
         cls.logger.error('Creating webrtc library has failed!')
-        System.stopExecution(ret)
+        return ret
+        #System.stopExecution(ret)
     else:
       cls.logger.warning('There is no libs to merge for target CPU ' + targetCPU)
 
     shutil.rmtree(tempCombinePath) 
 
     cls.logger.info('Merging libs is finished')
+    return ret
 
   @classmethod
   def combineLibs(cls, targetCPU, inputFiles, outputFolder, outputFile):
@@ -230,12 +249,13 @@ class Builder:
       #Call lib.exe to mergeobj files to webrtc[counter].lib files, which will be later merged to webrtc.lib
       cmdLibExe = '\"' +  cls.libexePath + '\" /IGNORE:' + ','.join(str(i) for i in config.WINDOWS_IGNORE_WARNINGS) +  ' /OUT:' + output + ' ' + inputFiles
 
-      #Make cmdLibExe command dependent on cmdVcVarsAll
-      commands = cls.cmdVcVarsAll + ' && ' + cmdLibExe + ' && ' + cls.cmdVcVarsAllClean
+      result = Utility.runSubprocess([cls.cmdVcVarsAll, cmdLibExe, cls.cmdVcVarsAllClean], Settings.logLevel == 'DEBUG')
 
       #cls.logger.debug('Command line to execute: ' + commands)
-      FNULL = open(os.devnull, 'w')
-      result = subprocess.call(commands,stdout=FNULL, stderr=subprocess.STDOUT)
+      #Make cmdLibExe command dependent on cmdVcVarsAll
+      #commands = cls.cmdVcVarsAll + ' && ' + cmdLibExe + ' && ' + cls.cmdVcVarsAllClean
+      #FNULL = open(os.devnull, 'w')
+      #result = subprocess.call(commands,stdout=FNULL, stderr=subprocess.STDOUT)
 
       if result != 0:
         cls.logger.error(error_codes[ERROR_BUILD_MERGE_LIBS_FAILED])
@@ -243,6 +263,7 @@ class Builder:
 
     except Exception as error:
       cls.logger.error(str(error))
+      cls.logger.info('Failed combining libraries')
       ret = ERROR_BUILD_MERGE_LIBS_FAILED
 
     return ret

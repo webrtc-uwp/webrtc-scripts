@@ -1,5 +1,6 @@
 import os
 import subprocess
+import time
 from shutil import copyfile
 
 import config
@@ -8,7 +9,7 @@ from settings import Settings
 from system import System
 from logger import Logger
 from helper import convertToPlatformPath
-from errors import *
+from errors import error_codes, NO_ERROR, ERROR_PREPARE_GN_GENERATION_FAILED
 
 class Preparation:
   """
@@ -40,6 +41,7 @@ class Preparation:
         Utility.createFolders(config.FOLDERS_TO_GENERATE_ORTC)
         Utility.createFolderLinks(config.FOLDERS_TO_LINK_ORTC)
 
+      #Copy files whose paths and destinations are in dictionary { file_path : destination_path }
       Utility.copyFilesFromDict(config.FILES_TO_COPY)
 
       #If win is one of the selected platforms it is required to have clang-cl.
@@ -50,13 +52,25 @@ class Preparation:
       #Download missing build tools
       System.downloadBuildToolsIfNeeded()
 
-    except Exception, errorMessage:
-      cls.logger.error(errorMessage)
+    except Exception as error:
+      cls.logger.error(error)
     finally:
       Utility.popd()
     
   @classmethod
   def run(cls, target, platform, cpu, configuration):
+    """
+      Start target building process.
+      :param targetName: Name of the main target (ortc or webrtc)
+      :param targets: List of the targets to build
+      :param platform: Platform name
+      :param cpu: Target CPU
+      :param configuration: Configuration to build for
+      :return: NO_ERROR if preparation was successfull. Otherwise returns error code.
+    """
+    start_time = time.time()
+    ret = NO_ERROR
+    cls.executionTime = 0
     isError = False
     cls.logger.info('Runnning preparation for target: ' + target + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration)
 
@@ -89,24 +103,26 @@ class Preparation:
     #Backup original BUILD.gn from webrtc root folder and add additional dependecies to webrtc target
     Utility.backUpAndUpdateGnFile(mainBuildGnFilePath,config.WEBRTC_TARGET,config.ADDITIONAL_TARGETS_TO_ADD)
 
-    #Generate Webrtc projects
+    
     try:
-      os.environ['DEPOT_TOOLS_WIN_TOOLCHAIN'] = '0'
+      #Duplicate existing environment variables
+      my_env = os.environ.copy()
+      #Add new environment variable, required by gn for project generation
+      my_env["DEPOT_TOOLS_WIN_TOOLCHAIN"] = "0"  
+
       cls.logger.debug('Output path: ' + gnOutputPath)
       cls.logger.info('Generating webrtc projects ...')
-      result = subprocess.call([
-        'gn',
-        'gen',
-        gnOutputPath,
-        '--ide=' + config.VISUAL_STUDIO_VERSION,
-      ])
-
+      #Generate Webrtc projects
+      cmd = 'gn gen ' + gnOutputPath + ' --ide=' + config.VISUAL_STUDIO_VERSION
+      result = Utility.runSubprocess([cmd], Settings.logLevel == 'DEBUG',my_env)
       if result != 0:
+        isError = True
         cls.logger.error('Projects generation has failed! (' + target + ',' + platform + ',' + cpu + ',' + configuration + ')')
       else:
         #Update ninja path in VS project files to point to ninja.exe in local depot_tools folder
         cls.__updateNinjaPathinProjects(gnOutputPath)
-    except Exception as errorMessage:
+    except Exception as error:
+      cls.logger.error(str(error))
       isError = True
     finally:
       #Delete updated BUILD.gn from webrtc root folder and recover original file
@@ -114,16 +130,21 @@ class Preparation:
       Utility.popd()
     
     if isError:
-      cls.logger.error(str(errorMessage))
-      return ERROR_PREPARE_GN_GENERATION_FAILED
-
-    cls.logger.info('Successfully finished preparation for target: ' + target + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration)
-      
-    return NO_ERROR
+      ret = ERROR_PREPARE_GN_GENERATION_FAILED
+    else:
+      cls.logger.info('Successfully finished preparation for target: ' + target + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration)
+    
+    end_time = time.time()
+    cls.executionTime = end_time - start_time
+    return ret
     
   #---------------------------------- Private methods --------------------------------------------
   @classmethod
   def __updateNinjaPathinProjects(cls,folder):
+    """
+      Updates ninja.exe path in VS projects.
+      :param folder: Root folder where starts search for all vcxproj that are calling ninja.exe
+    """
     for root, dirs, files in os.walk(folder):
       for file in files:
           if file.endswith('.vcxproj'):

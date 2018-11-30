@@ -9,7 +9,8 @@ import config
 from utility import Utility
 from settings import Settings
 from logger import Logger
-from errors import *
+from errors import error_codes, NO_ERROR, ERROR_SYSTEM_ERROR, ERROR_SYSTEM_MISSING_GIT, \
+                   ERROR_SYSTEM_MISSING_PERL, ERROR_SYSTEM_FAILED_USERDEF_CREATION, ERROR_SYSTEM_FAILED_DELETING_USERDEF
 from helper import convertToPlatformPath, getCPUFamily
 
 
@@ -21,7 +22,7 @@ class System:
 
   #Defined here, so it can be performed logger check if script failes before logger is created
   logger = None
-
+  recreatedUserDef = False
   @classmethod
   def preInit(cls):
     """
@@ -78,9 +79,6 @@ class System:
       #Determine Visual Studio and MSVC tools paths
       cls.__determineVisualStudioPath()
 
-    #Set current working directory to SDK root folder
-    #os.chdir(Settings.rootSdkPath)
-    
     #Install missing python packages
     cls.installPythonModules(config.PYTHON_PACKAGES_TO_INSTALL)
 
@@ -88,9 +86,11 @@ class System:
   def updatePythonTools(cls):
     """
       Update python's pip tool. In future maybe it would be required to update other tools as well.
+      TODO: Check when it is best to call it
     """
     #Update pip tool.
-    result = subprocess.call('python.exe -m pip install --upgrade pip')
+    cmd = 'python.exe -m pip install --upgrade pip'
+    result = Utility.runSubprocess([cmd])
     if result != 0:
       cls.logger.error('Failed to update pip!')
 
@@ -107,8 +107,7 @@ class System:
       except:
          #Install python package
         cmd = 'pip install ' + modulesDict[module]
-        cls.logger.debug('Running subprocess ' + cmd)
-        result = subprocess.call(cmd)
+        result = Utility.runSubprocess([cmd], Settings.logLevel == 'DEBUG')
         if result != 0:
           cls.logger.error('Failed to install package ' + modulesDict[module] + ' required for module ' + module)
 
@@ -256,6 +255,26 @@ class System:
 
     sys.exit(error)
 
+  @classmethod
+  def recreateUserDef(cls):
+    """
+      Recreates userdef.py file if it is not just created. If userdef.py file creation has failed, 
+      script will be terminated. 
+      :return ret: NO_ERROR if userdef is created or it was "just" created. 
+                   ERROR_SYSTEM_FAILED_DELETING_USERDEF if deleting userdef.py failed.
+    """
+    ret = NO_ERROR
+    if not cls.recreatedUserDef:
+      try:
+        #Deletes userdef.py file
+        if os.path.isfile(Settings.userDefFilePath):
+          os.remove(Settings.userDefFilePath)
+        cls.__createUserDefFile()
+      except Exception as error:
+        cls.logger.error(str(error))
+        ret = ERROR_SYSTEM_FAILED_DELETING_USERDEF
+      
+    return ret
   #---------------------------------- Private methods --------------------------------------------
   @classmethod
   def __createUserDefFile(cls):
@@ -264,13 +283,20 @@ class System:
     """
     #Checks if in user working directory exists files userdefs.py and if not creates it from default.py
     if not os.path.isfile(Settings.userDefFilePath):
-      with open(Settings.defaultFilePath, 'r') as defaultsFile:
-        tempFileContent = defaultsFile.readlines()
-        tempFileContent = tempFileContent[4:]
-        tempFileContent.insert(0,'# ' + config.USERDEF_DESCRIPTION_MESSAGE + '\n')
-        tempFileContent = "".join(tempFileContent)
-        with open(Settings.userDefFilePath, 'w') as userDefFile:
-          userDefFile.write(tempFileContent)
+      try:
+        with open(Settings.defaultFilePath, 'r') as defaultsFile:
+          tempFileContent = defaultsFile.readlines()
+          tempFileContent = tempFileContent[4:]
+          tempFileContent.insert(0,'# ' + config.USERDEF_DESCRIPTION_MESSAGE + '\n')
+          tempFileContent = "".join(tempFileContent)
+          with open(Settings.userDefFilePath, 'w') as userDefFile:
+            userDefFile.write(tempFileContent)
+            cls.recreatedUserDef = True
+      except Exception as error:
+        Logger.printColorMessage(str(error))
+        cls.stopExecution(ERROR_SYSTEM_FAILED_USERDEF_CREATION)
+        
+
 
   @classmethod
   def __setSupportedTargets(cls):
@@ -312,18 +338,13 @@ class System:
     
     cls.logger.info('Downloading build tool ' + toolName + '...')
     #Download tool
-    ret = subprocess.call([
-      'python',
-      'download_from_google_storage.py',
-      '--bucket', 'chromium-' + toolName,
-      '-s',
-      os.path.join(Settings.localBuildToolsPath,toolName + '.exe.sha1')])
+    cmd = 'python download_from_google_storage.py --bucket chromium-' + toolName + ' -s ' + os.path.join(Settings.localBuildToolsPath,toolName + '.exe.sha1')
+    result = Utility.runSubprocess([cmd], Settings.logLevel == 'DEBUG')
 
     #Switch to previous working directory
     Utility.popd()
-    #os.chdir(oldCurrent)
 
-    if ret != 0:
+    if result != 0:
       cls.logger.error('Failed downloading ' + toolName)
 
   @classmethod
@@ -380,7 +401,9 @@ class System:
       #Update environment variable with DEPOT_TOOLS_WIN_TOOLCHAIN set to 0, to prevent requiring https://chrome-internal.googlesource.com
       my_env["DEPOT_TOOLS_WIN_TOOLCHAIN"] = "0"
       #Run clangg update script
-      result = subprocess.call(['python', clangUpdateScriptPath], env=my_env)
+      cmd = 'python ' + clangUpdateScriptPath
+      result = Utility.runSubprocess([cmd], Settings.logLevel == 'DEBUG', my_env)
+      #result = subprocess.call(['python', clangUpdateScriptPath], env=my_env)
       if result == NO_ERROR:
         cls.logger.info('Clang-cl.exe is downloaded successfully.')
         Utility.createFolderLinks(config.FOLDERS_TO_LINK_LLVM)
