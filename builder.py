@@ -71,7 +71,7 @@ class Builder:
 
         #If enabled backup, copy libs and pdb to specified folder
         if Settings.enableBackup and Settings.libsBackupPath != '':
-          backupPath = os.path.join(Settings.userWorkingPath,Settings.libsBackupPath)
+          backupPath = os.path.join(Settings.userWorkingPath,convertToPlatformPath(Settings.libsBackupPath))
           #If backup folder exists delete it
           if os.path.exists(backupPath):
             shutil.rmtree(backupPath) 

@@ -123,8 +123,6 @@ class Settings:
     cls.showSettingsValuesOnError = showSettingsValuesOnError
     cls.showPATHOnError = showPATHOnError
 
-    cls.webRTCGnArgsTemplatePath = webRTCGnArgsTemplatePath
-
     cls.msvsPath = msvsPath
 
     cls.enableBackup = enableBackup

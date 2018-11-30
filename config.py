@@ -6,6 +6,9 @@
 #Filename with user default values.
 USER_DEFAULTS_FILE = 'userdef'
 
+#args.gn template path. 
+WEBRTC_GN_ARGS_TEMPLATE_PATH='./webrtc/windows/templates/gns/args.gn'
+
 #Paths are relative to the root SDK path
 TEMPLATES_PATH = './templates'
 ORTC_DEFAULTS_PATH = './ortc'

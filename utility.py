@@ -234,40 +234,101 @@ class Utility:
 
   @classmethod
   def importDependencyForTarget(cls, gnFile, target, dependency):
+    """
+      Insert additional dependencies for specified target.
+      :param gnFile: Gn file to update.
+      :param target: Target whose dependencies need to be updated.
+      :param dependency: Dependency to add.
+      :return ret: True if successfully update, otherwise False.
+    """
+    ret = True
     if os.path.exists(gnFile):
-      targetMark = '(\"' + target + '\")'
-      depsRegex = r'\s*deps\s*=\s*\[*'
-      depsFlag = False
-      insertFlag = False
-      with open(gnFile, 'r') as gnReadFile:
-        gnContent = gnReadFile.readlines()
-      with open(gnFile,'w') as gnWriteFile:
-        for line in gnContent:
-          gnWriteFile.write(line)
-          if targetMark in line:
-            depsFlag = True
-          else:
-            if depsFlag:
-              if re.findall(depsRegex,line) != []:
-                insertFlag = True
-                depsFlag = False
-            elif insertFlag:
-              gnWriteFile.write('"' + dependency + '",')
-              insertFlag = False
+      try:
+        #Search for "name_of_target"
+        targetMark = '(\"' + target + '\")'
+        #regex search for deps i.e. 'deps = ['. Re search for: spaces, 'deps', spaces, '=', spaces, '[' 
+        depsRegex = r'\s*deps\s*=\s*\[*'
+        depsFlag = False
+        insertFlag = False
+        #Read gn file content
+        with open(gnFile, 'r') as gnReadFile:
+          gnContent = gnReadFile.readlines()
+        #Open file for writing
+        with open(gnFile,'w') as gnWriteFile:
+          for line in gnContent:
+            gnWriteFile.write(line)
+            #Check if read line contains 'name_of_target', and set depsFlag to true if contains
+            if targetMark in line:
+              depsFlag = True
+            else:
+              if depsFlag:
+                #If desired target is found, search fo deps and set insertFlag to true if found
+                if re.findall(depsRegex,line) != []:
+                  insertFlag = True
+                  depsFlag = False
+              elif insertFlag:
+                #If deps is found insert new dependecy
+                gnWriteFile.write('"' + dependency + '",')
+                insertFlag = False
+      except Exception as error:
+        ret = False
+        cls.logger.error(str(error))
+        cls.logger.error('Failed updating target ' + target + ' with dependency ' + dependency + ' in gn file ' + gnFile)
+    else:
+      ret = False
+      cls.logger.error('Gn file ' + gnFile + ' doesn\'t exist')
+
+    return ret
 
   @classmethod
   def backUpAndUpdateGnFile(cls, filePath, targetToUpdate, dependencyToAdd):
+    """
+      Backups specified gn files and updates dependency for target in that file.
+      :param filePath: Gn file path.
+      :param targetToUpdate: Name of the target to update.
+      :param dependencyToAdd: List of dependecies to add.
+      :return ret: True if successfully updated.
+    """
+    ret = True
     if os.path.isfile(filePath):
-      copyfile(filePath, filePath + '.bak')
-      for dependecy in dependencyToAdd:
-        cls.importDependencyForTarget(filePath, targetToUpdate, dependecy)
+      try:
+        #Backup gn file
+        copyfile(filePath, filePath + '.bak')
+      except Exception as error:
+        ret = False
+        cls.logger.error(str(error))
+        cls.logger.error('Failed creating ' + filePath + ' backup file')
+      if ret:
+        #Add dependencies
+        for dependecy in dependencyToAdd:
+          ret = cls.importDependencyForTarget(filePath, targetToUpdate, dependecy)
+    else:
+      ret = False
+      cls.logger.warning(filePath + ' doesn\'t exist.')
+    
+    return ret
 
   @classmethod
   def returnOriginalFile(cls, filePath):
+    """
+      Replace file with its backup version.
+      :param filePath: Path to file to revert to original state.
+    """
+    ret = True
     backupFilePath = filePath + '.bak'
-    if os.path.isfile(backupFilePath):
-      copyfile(backupFilePath, filePath)
-      os.remove(backupFilePath) 
+    if os.path.isfile(filePath) and os.path.isfile(backupFilePath):
+      try:
+        copyfile(backupFilePath, filePath)
+        os.remove(backupFilePath)
+      except Exception as error:
+        ret = False
+        cls.logger.error(str(error))
+        cls.logger.error('Failed replacing ' + filePath + ' with its backup version.')
+    else:
+      ret = False
+      cls.logger.warning(filePath + ' or its backup doesn\'t exist.')
+    
+    return ret
 
   @classmethod
   def getSolutionForTargetAndPlatform(cls, target, platform):
@@ -308,9 +369,12 @@ class Utility:
         process = subprocess.Popen(commandToExecute, shell=False, stderr=subprocess.PIPE, env=userEnv)
 
       #Enable showing subprocess output and responsiveness on keyboard actions (terminating script on user action) 
-      process.communicate()
+      stdout, stderr = process.communicate()
 
       result = process.returncode
+      if result != 0 and stderr != '':
+        result = ERROR_SUBPROCESS_EXECUTAION_FAILED
+        cls.logger.error(str(stderr))
 
     except KeyboardInterrupt:
       os.kill(process.pid, signal.SIGTERM)

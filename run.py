@@ -16,8 +16,9 @@ def actionClean():
   """
     Deletes output folders and files generated from idl
   """
-  Logger.printStartActionMessage('Cleanup')
+  ret = True
 
+  Logger.printStartActionMessage('Cleanup')
   #Init cleanup logger
   Cleanup.init()
 
@@ -28,12 +29,14 @@ def actionClean():
           for cpu in Settings.cleanupOptions['cpus']:
             for configuration in Settings.cleanupOptions['configurations']:
               #Clean up output folders for specific target, platform, cpu and configuration
-              Cleanup.run(action, target, platform, cpu, configuration)
+              ret = Cleanup.run(action, target, platform, cpu, configuration)
     else:
       #Perform other cleanup acrions that are not dependent of target ...
-      Cleanup.run(action)
-
-  Logger.printEndActionMessage('Cleanup')
+      ret = Cleanup.run(action)
+  if ret:
+    Logger.printEndActionMessage('Cleanup')
+  else:
+    Logger.printEndActionMessage('Cleanup failed!',ColoredFormatter.RED)
 
 def actionCreateUserdef():
   """

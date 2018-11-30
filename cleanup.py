@@ -173,5 +173,5 @@ class Cleanup:
     if ret:
       cls.logger.info('Cleanup action ' + action + ' is finished successfully for ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration)
     else:
-      cls.logger.info('Cleanup action ' + action + ' has failed for ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration)
+      cls.logger.error('Cleanup action ' + action + ' has failed for ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration)
     return ret
