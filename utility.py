@@ -121,27 +121,44 @@ class Utility:
       if result != NO_ERROR:
         cls.logger.error('Failed removing link ' + linkToDelete)
 
-  @staticmethod
-  def createFolders(foldersList):
+  @classmethod
+  def createFolders(cls, foldersList):
     """
       Creates folders specified in the list.
       :param foldersList: List of folders to create
+      :return ret: True if folder exists or if it is created.
     """
-    for path in foldersList:
-      dirPath = convertToPlatformPath(path)
-      if not os.path.exists(dirPath):
-        os.makedirs(dirPath)
+    ret = True
+    try:
+      for path in foldersList:
+        dirPath = convertToPlatformPath(path)
+        if not os.path.exists(dirPath):
+          os.makedirs(dirPath)
+    except Exception as error:
+      cls.logger.warning(str(error))
+      ret = False
 
-  @staticmethod
-  def deleteFolders(foldersList):
+    return ret
+
+
+  @classmethod
+  def deleteFolders(cls, foldersList):
     """
       Deletes folders specified in the list.
       :param foldersList: List of folders to delete
+      return ret: True if folder is successfully deleted or if it doesn't exist.
     """
-    for path in foldersList:
-      dirPath = convertToPlatformPath(path)
-      if os.path.exists(dirPath):
-        rmtree(dirPath)
+    ret = True
+    try:
+      for path in foldersList:
+        dirPath = convertToPlatformPath(path)
+        if os.path.exists(dirPath):
+          rmtree(dirPath)
+    except Exception as error:
+      cls.logger.warning(str(error))
+      ret = False
+
+    return ret
 
   @staticmethod
   def createFolderLinks(foldersToLink):
