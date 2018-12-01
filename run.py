@@ -16,7 +16,7 @@ def actionClean():
   """
     Deletes output folders and files generated from idl
   """
-  ret = True
+  result = NO_ERROR
 
   Logger.printStartActionMessage('Cleanup')
   #Init cleanup logger
@@ -29,14 +29,15 @@ def actionClean():
           for cpu in Settings.cleanupOptions['cpus']:
             for configuration in Settings.cleanupOptions['configurations']:
               #Clean up output folders for specific target, platform, cpu and configuration
-              ret = Cleanup.run(action, target, platform, cpu, configuration)
+              result = Cleanup.run(action, target, platform, cpu, configuration)
     else:
       #Perform other cleanup acrions that are not dependent of target ...
-      ret = Cleanup.run(action)
-  if ret:
+      result = Cleanup.run(action)
+  if result == NO_ERROR:
     Logger.printEndActionMessage('Cleanup')
   else:
     Logger.printEndActionMessage('Cleanup failed!',ColoredFormatter.RED)
+    System.stopExecution(result)
 
 def actionCreateUserdef():
   """
@@ -63,7 +64,7 @@ def actionPrepare():
             result = Preparation.run(target, platform, cpu, configuration)
             Summary.addSummary('prepare', target, platform, cpu, configuration, result, Preparation.executionTime)
             if result != NO_ERROR:
-              Logger.printEndActionMessage('Failed prepare ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration,ColoredFormatter.RED)
+              Logger.printEndActionMessage('Failed preparing ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration,ColoredFormatter.RED)
               #Terminate script execution if stopExecutionOnError is set to True in userdef
               shouldEndOnError(result)
             else:
@@ -88,7 +89,7 @@ def actionBuild():
               result = Builder.run(target, targetsToBuild, platform, cpu, configuration, combineLibs)
               Summary.addSummary('build', target, platform, cpu, configuration, result, Builder.executionTime)
               if result != NO_ERROR:
-                  Logger.printEndActionMessage('Failed build ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration,ColoredFormatter.RED)
+                  Logger.printEndActionMessage('Failed building ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration,ColoredFormatter.RED)
                   #Terminate script execution if stopExecutionOnError is set to True in userdef
                   shouldEndOnError(result)
               else:

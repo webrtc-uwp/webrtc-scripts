@@ -3,6 +3,7 @@ import subprocess
 import shutil 
 import signal
 import time
+from datetime import datetime
 
 import config
 from logger import Logger
@@ -10,7 +11,9 @@ from system import System
 from utility import Utility
 from settings import Settings
 from helper import convertToPlatformPath
-from errors import error_codes, NO_ERROR, ERROR_BUILD_OUTPUT_FOLDER_NOT_EXIST, ERROR_BUILD_UPDATING_DEPS_FAILED, ERROR_BUILD_FAILED, ERROR_BUILD_MISSING_LIB_EXECUTABLE, ERROR_BUILD_MERGE_LIBS_FAILED
+from errors import error_codes, NO_ERROR, ERROR_BUILD_OUTPUT_FOLDER_NOT_EXIST, ERROR_BUILD_UPDATING_DEPS_FAILED, ERROR_BUILD_FAILED,\
+                   ERROR_BUILD_MISSING_LIB_EXECUTABLE, ERROR_BUILD_BUILDING_WRAPPER_FAILED, ERROR_BUILD_MERGE_LIBS_FAILED,\
+                   ERROR_BUILD_BACKUP_DELETION_FAILED, ERROR_BUILD_BACKUP_DELETION_FAILED, ERROR_BUILD_BACKUP_FAILED
 
 class Builder:
   @classmethod
@@ -70,26 +73,16 @@ class Builder:
         #Copy merged libs to the output lib folder
         cls.copyNativeLibPdbsToOutput(destinationPathLib)
 
-        """#If enabled backup, copy libs and pdb to specified folder
-        if Settings.enabledBackup and Settings.libsBackupPath != '':
-          backupPath = os.path.join(Settings.userWorkingPath,convertToPlatformPath(Settings.libsBackupPath))
-          #If backup folder exists delete it
-          if os.path.exists(backupPath):
-            shutil.rmtree(backupPath) 
-          shutil.copytree(destinationPathLib,backupPath)"""
-
     #Switch to previously working directory
     Utility.popd()
   
-    if ret == NO_ERROR:
-      if Settings.buildWrapper:
-        #Build wrapper library if option is enabled
-        if not cls.buildWrapper(targetName ,platform, cpu, configuration):
-          ret = ERROR_BUILD_FAILED
+    #Build wrapper library if option is enabled
+    if Settings.buildWrapper and ret == NO_ERROR:
+      ret = cls.buildWrapper(targetName ,platform, cpu, configuration)
 
     #If enabled backup, copy libs and pdb to specified folder
-    if Settings.enabledBackup:
-      cls.makeBackup()
+    if Settings.enabledBackup and ret == NO_ERROR:
+      cls.makeBackup(destinationPathLib, targetName, platform, cpu, configuration)
 
     if ret == NO_ERROR:
       cls.logger.info('Running build for target: ' + targetName + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration + ', finished successfully!')
@@ -100,22 +93,23 @@ class Builder:
   @classmethod
   def buildWrapper(cls, target, platform, targetCPU, configuration):
     """
-      TODO: return error code
       Builds wrapper projects.
       :param target: Name of the main target (ortc or webrtc)
       :param platform: Platform name
       :param targetCPU: Target CPU
       :param configuration: Configuration to build for
-      :return ret: True if build was successful or if there is no solution for specified target and platform, otherwise False
+      :return: NO_ERROR if build was successfull. Otherwise returns error code
     """
-    ret = True
+    ret = NO_ERROR
     cls.logger.info('Building ' + target + ' wrapper projects for ' + targetCPU + ' for configuration  '+ configuration)
 
     #Get solution to build, for specified target and platform. Solution is obtained from config.TARGET_WRAPPER_SOLUTIONS
-    solutionName = Utility.getSolutionForTargetAndPlatform(target, platform)
+    solutionName = cls.__getSolutionForTargetAndPlatform(target, platform)
+
     #If solution is not provided, return True like it was succefull
     if solutionName == '':
-      return True
+      cls.logger.warning('Solution with wrapper projects is not specified in config!')
+      return NO_ERROR
 
     try:
       #Solution template path
@@ -124,24 +118,27 @@ class Builder:
       solutionDestinationPath = os.path.join(Settings.rootSdkPath,convertToPlatformPath(config.WEBRTC_SOLUTION_PATH),solutionName)
       
       #Copy template solution to solution folder
-      shutil.copyfile(solutionSourcePath,solutionDestinationPath)
+      if not Utility.copyFile(solutionSourcePath,solutionDestinationPath):
+        return ERROR_BUILD_BUILDING_WRAPPER_FAILED
+
+      #shutil.copyfile(solutionSourcePath,solutionDestinationPath)
 
       #MSBuild command for building wrapper projects
       cmdBuild = 'msbuild ' + solutionDestinationPath + ' /t:Build' + ' /p:Configuration=\"' + configuration + '\" /p:Platform=\"' + targetCPU + '\"'
-
-      #EXecute MSBuild command
+      #Execute MSBuild command
       result = Utility.runSubprocess([cls.cmdVcVarsAll, cmdBuild, cls.cmdVcVarsAllClean], Settings.logLevel == 'DEBUG')
-      if result != 0:
-        cls.logger.error('Building ' + target + ' target has failed!')
-        ret = False
+      if result != NO_ERROR:
+        ret = ERROR_BUILD_BUILDING_WRAPPER_FAILED
+        cls.logger.error('Failed building ' + target + ' wrapper projects for ' + targetCPU + ' for configuration  '+ configuration)
     except Exception as error:
       cls.logger.error(str(error))
-      cls.logger.error('Failed building wrappers for target ' + target)
-      ret = False
+      cls.logger.error('Failed building ' + target + ' wrapper projects for ' + targetCPU + ' for configuration  '+ configuration)
+      ret = ERROR_BUILD_BUILDING_WRAPPER_FAILED
     finally:
       #Delete solution used for building wrapper projects.
-      os.remove(solutionDestinationPath) 
-    if ret:
+      Utility.deleteFiles([solutionDestinationPath])
+
+    if ret == NO_ERROR:
       cls.logger.info('Successfully finished building wrappers for target ' + target)
 
     return ret
@@ -295,13 +292,15 @@ class Builder:
       listOfLibsToCopy = Utility.getFilesWithExtensionsInFolder(['.'],('.dll'),config.COMBINE_LIB_IGNORE_SUBFOLDERS,0)
       
       for lib in listOfLibsToCopy:
-        shutil.copyfile(lib, os.path.join(destinationPathLib,os.path.basename(lib)))
+        ret = Utility.copyFile(pdb, os.path.join(destinationPathPdb,os.path.basename(pdb)))
+        #shutil.copyfile(lib, os.path.join(destinationPathLib,os.path.basename(lib)))
       """
 
       listOfPdbsToCopy = Utility.getFilesWithExtensionsInFolder(['.'],('.pdb'),config.COMBINE_LIB_IGNORE_SUBFOLDERS,0)
       
       for pdb in listOfPdbsToCopy:
-        shutil.copyfile(pdb, os.path.join(destinationPathPdb,os.path.basename(pdb)))
+        ret = Utility.copyFile(pdb, os.path.join(destinationPathPdb,os.path.basename(pdb)))
+        #shutil.copyfile(pdb, os.path.join(destinationPathPdb,os.path.basename(pdb)))
     
     except Exception as error:
       cls.logger.warning(str(error))
@@ -311,23 +310,69 @@ class Builder:
     return ret
 
   @classmethod
-  def makeBackup(cls):
+  def makeBackup(cls, nativeOutputPath, target, platform, cpu, configuration):
     """
       TODO: Add flag for overriding backup
             Add time sufix to backup folder
             Copy wrapper libs to Backup
     """
+    ret = NO_ERROR
+    #Backup folder name
+    targetFolder = target + '_' + platform + '_' + cpu + '_' + configuration 
+
     backupFolder = Settings.libsBackupPath
     if backupFolder == '':
       backupFolder = 'Backup'
           
     backupPath = os.path.join(Settings.userWorkingPath,convertToPlatformPath(backupFolder))
-    #If backup folder exists delete it
-    """if os.path.exists(backupPath):
-            shutil.rmtree(backupPath) 
-          shutil.copytree(destinationPathLib,backupPath)"""
+    #If backup folder exists delete it, or add time suffix to folder name
+    if os.path.exists(backupPath):
+      if Settings.overwriteBackup:
+        if not Utility.deleteFolders([backupPath]):
+          ret = ERROR_BUILD_BACKUP_DELETION_FAILED
+      else:
+        timeSuffix = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        backupPath = os.path.join(Settings.userWorkingPath,convertToPlatformPath(backupFolder) + '_' + timeSuffix)
+
+    #if ret == NO_ERROR:
+      #Create backup folder
+      #if not Utility.createFolders([backupPath]):
+      #  ret = ERROR_BUILD_BACKUP_FAILED
+
+    if ret == NO_ERROR:
+      nativeDestinationPath = os.path.join(backupPath,targetFolder,'native')
+      #if Utility.createFolders([nativeDestinationPath]):
+      if not Utility.copyFolder(nativeOutputPath, nativeDestinationPath):
+        ret = ERROR_BUILD_BACKUP_FAILED
+
+    if ret == NO_ERROR:  
+      if Settings.buildWrapper:
+        #Determine wrapper projects output path
+        wrapperRootOutputPath = os.path.join(Settings.rootSdkPath,convertToPlatformPath(config.WEBRTC_WRAPPER_PROJECTS_OUTPUT_PATH))
+        wrapperOutputPath =  os.path.join(wrapperRootOutputPath, configuration, cpu)
+        wrapperDestinationPath = os.path.join(backupPath,targetFolder,'wrapper')
+        #if Utility.createFolders([wrapperDestinationPath]):
+        if not Utility.copyFolder(wrapperOutputPath, wrapperDestinationPath):
+          ret = ERROR_BUILD_BACKUP_FAILED
+
+    if ret != NO_ERROR:
+      cls.logger.warning('Backup failed!')
+
+    return ret
 
   @classmethod
   def getTargetGnPath(cls, target):
     targetsToBuild, shouldCombineLibs = config.TARGETS_TO_BUILD.get(target,(target,0))
     return targetsToBuild, shouldCombineLibs
+
+  @classmethod
+  def __getSolutionForTargetAndPlatform(cls, target, platform):
+    ret = None
+    targetDict = config.TARGET_WRAPPER_SOLUTIONS.get(target,None)
+    if targetDict != None:
+      ret = targetDict.get(platform,'')
+      if ret == '':
+        cls.logger.info('There is no Wrapper solution file for ' + target + ' ' + platform)
+      else:
+        cls.logger.info('Wrapper solution file is ' + str(ret))
+    return ret

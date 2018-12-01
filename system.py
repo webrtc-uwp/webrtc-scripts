@@ -267,8 +267,7 @@ class System:
     if not cls.recreatedUserDef:
       try:
         #Deletes userdef.py file
-        if os.path.isfile(Settings.userDefFilePath):
-          os.remove(Settings.userDefFilePath)
+        Utility.deleteFiles([Settings.userDefFilePath])
         cls.__createUserDefFile()
       except Exception as error:
         cls.logger.error(str(error))

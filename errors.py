@@ -17,8 +17,17 @@ ERROR_NUGET_CREATION_MISSING_FILE,\
 ERROR_BUILD_OUTPUT_FOLDER_NOT_EXIST,\
 ERROR_BUILD_UPDATING_DEPS_FAILED,\
 ERROR_BUILD_FAILED,\
+ERROR_BUILD_MISSING_LIB_EXECUTABLE,\
 ERROR_BUILD_MERGE_LIBS_FAILED,\
-ERROR_SUBPROCESS_EXECUTAION_FAILED = range(16)
+ERROR_BUILD_BUILDING_WRAPPER_FAILED,\
+ERROR_BUILD_BACKUP_DELETION_FAILED,\
+ERROR_BUILD_BACKUP_FAILED,\
+ERROR_SUBPROCESS_EXECUTAION_FAILED,\
+ERROR_CLEANUP_DELETING_OUTPUT_FAILED,\
+ERROR_CLEANUP_DELETING_FLG_FILES_FAILED,\
+ERROR_CLEANUP_DELETING_GENERATED_FILES_FAILED,\
+ERROR_CLEANUP_REVERTING_PREPARE_CHANGES_FAILED = range(25)
+
 
 #TODO: give more details about perl if it is really required
 #TODO: check python version and show error if it is 3.0 or later
@@ -37,6 +46,14 @@ error_codes = {
   ERROR_BUILD_OUTPUT_FOLDER_NOT_EXIST : 'Output folder doesn\'t exist',
   ERROR_BUILD_UPDATING_DEPS_FAILED : 'Failed updating target dependencies!',
   ERROR_BUILD_FAILED : 'Build has failed',
+  ERROR_BUILD_MISSING_LIB_EXECUTABLE : 'Missing file lib.exe file for specified CPU!',
   ERROR_BUILD_MERGE_LIBS_FAILED : 'Merging libraries has failed!',
-  ERROR_SUBPROCESS_EXECUTAION_FAILED : 'Subprocess execution has failed!'
+  ERROR_BUILD_BUILDING_WRAPPER_FAILED : 'Building wrapper projects has failed!',
+  ERROR_BUILD_BACKUP_DELETION_FAILED : 'Failed deleting old backup folder!',
+  ERROR_BUILD_BACKUP_FAILED : 'Failed creating build backup!',
+  ERROR_SUBPROCESS_EXECUTAION_FAILED : 'Subprocess execution has failed!',
+  ERROR_CLEANUP_DELETING_OUTPUT_FAILED : 'Failed deleting output folders!',
+  ERROR_CLEANUP_DELETING_FLG_FILES_FAILED : 'Failed deleting .flg files!',
+  ERROR_CLEANUP_DELETING_GENERATED_FILES_FAILED : 'Failed deleting files generated with idl compiler!',
+  ERROR_CLEANUP_REVERTING_PREPARE_CHANGES_FAILED : 'Failed reverting prepare changes!'
 }

@@ -125,9 +125,10 @@ class Settings:
 
     cls.msvsPath = msvsPath
 
-    cls.enableBackup = enableBackup
+    cls.enabledBackup = enabledBackup
     cls.libsBackupPath = libsBackupPath
-    
+    cls.overwriteBackup = overwriteBackup
+
     #This value will be set during VS path check
     cls.msvcToolsPath = ''
     cls.msvcToolsBinPath = ''

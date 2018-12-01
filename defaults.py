@@ -103,6 +103,8 @@ showPATHOnError = True
 msvsPath = ''
 
 #If set to True, output libraries and pdbs will be stored in Backup folder
-enableBackup = False
+enabledBackup = False
 #Backup folder, in user working directory (folder from where script is run)
 libsBackupPath = './Backup'
+#Flag for overwriting current backup folder
+overwriteBackup = False

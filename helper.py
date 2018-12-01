@@ -13,6 +13,9 @@ def convertToPlatformPath(path):
   elif '\\' in path:
     listOfString = path.split('\\')
   if len(listOfString) > 0:
+    #For win it is necessary to add \\ for drive letter
+    if ':' in listOfString[0]:
+      listOfString[0] = listOfString[0] + os.sep
     return os.path.join(*listOfString)
   return path
 

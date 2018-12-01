@@ -4,7 +4,7 @@ import re
 import logging
 import subprocess
 import signal
-from shutil import copyfile, rmtree
+from shutil import copyfile, copytree, rmtree
 
 from logger import Logger
 from helper import convertToPlatformPath
@@ -115,11 +115,18 @@ class Utility:
       Deletes junction link.
       :param linkToDelete: Path to link. 
     """
+    ret = True
+   
     if os.path.exists(linkToDelete):
       cmd = 'cmd ' + '/c ' + 'rmdir ' + convertToPlatformPath(linkToDelete)
       result = Utility.runSubprocess([cmd], True)
       if result != NO_ERROR:
+        ret = False
         cls.logger.error('Failed removing link ' + linkToDelete)
+    else:
+      cls.logger.warning(linkToDelete + ' link doesn\'t exist.')
+
+    return ret
 
   @classmethod
   def createFolders(cls, foldersList):
@@ -145,7 +152,7 @@ class Utility:
   def deleteFolders(cls, foldersList):
     """
       Deletes folders specified in the list.
-      :param foldersList: List of folders to delete
+      :param foldersList: List of folders to delete.
       return ret: True if folder is successfully deleted or if it doesn't exist.
     """
     ret = True
@@ -154,6 +161,8 @@ class Utility:
         dirPath = convertToPlatformPath(path)
         if os.path.exists(dirPath):
           rmtree(dirPath)
+        else:
+          cls.logger.warning(dirPath + ' folder doesn\'t exist.')
     except Exception as error:
       cls.logger.warning(str(error))
       ret = False
@@ -177,10 +186,58 @@ class Utility:
       Deletes links from provided dict {source : link}.
       :param foldersList: List of dictionaries with source path as key and destination path (link) as value.
     """
+    ret = True
     for dict in foldersToLink:
       for source, destination in dict.items():
-        if os.path.exists(destination):
-          cls.deleteLink(convertToPlatformPath(destination))
+        ret = cls.deleteLink(convertToPlatformPath(destination))
+        if not ret:
+          break
+
+    return ret
+
+  @classmethod
+  def copyFolder(cls, source, destination):
+    ret = True
+    if os.path.exists(source):
+      try:
+        copytree(source,destination)
+      except Exception as error:
+        ret = False
+        cls.logger.error(str(error))
+    else:
+      cls.logger.error(source + ' folder doesn\'t exist.')
+      ret = False
+    return ret
+
+  @classmethod
+  def copyFile(cls, source, destination):
+    ret = True
+    if os.path.isfile(source):
+      try:
+        copyfile(source, destination)
+      except Exception as error:
+        ret = False
+        cls.logger.error(str(error))
+    else:
+      cls.logger.warning(source + ' file doesn\'t exist')
+      ret = False
+    
+    return ret
+
+  @classmethod
+  def deleteFiles(cls, files):
+    ret = True
+    for file in files:
+      if os.path.isfile(file):
+        try:
+          os.remove(file)
+        except Exception as error:
+          ret = False
+          cls.logger.error(str(error))
+      else:
+        cls.logger.warning(file + ' file doesn\'t exist')
+    
+    return ret
 
   @classmethod
   def copyFilesFromDict(cls, filesToCopy):
@@ -195,7 +252,7 @@ class Utility:
           try:
             copyfile(filePath, convertToPlatformPath(destination))
           except Exception as error:
-            cls.logger.error(error)
+            cls.logger.error(str(error))
 
   @classmethod
   def pushd(cls, path):
@@ -345,18 +402,6 @@ class Utility:
       ret = False
       cls.logger.warning(filePath + ' or its backup doesn\'t exist.')
     
-    return ret
-
-  @classmethod
-  def getSolutionForTargetAndPlatform(cls, target, platform):
-    ret = None
-    targetDict = config.TARGET_WRAPPER_SOLUTIONS.get(target,None)
-    if targetDict != None:
-      ret = targetDict.get(platform,'')
-      if ret == '':
-        cls.logger.info('There is no Wrapper solution file for ' + target + ' ' + platform)
-      else:
-        cls.logger.info('Wrapper solution file is ' + str(ret))
     return ret
 
   @classmethod

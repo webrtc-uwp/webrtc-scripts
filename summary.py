@@ -20,7 +20,6 @@ class Summary:
 
     cls.action_results[action] = resultActionDict
 
-
   @classmethod
   def printSummary(cls, executionTime = 0):
     Logger.printColorMessage('\n========================================= SUMMARY ========================================= \n', ColoredFormatter.YELLOW)
