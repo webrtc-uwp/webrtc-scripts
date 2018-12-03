@@ -11,6 +11,7 @@ from builder import Builder
 from cleanup import Cleanup
 from errors import NO_ERROR, ERROR_TARGET_NOT_SUPPORTED, ERROR_PLATFORM_NOT_SUPPORTED
 from summary import Summary
+from backup import Backup
 
 def actionClean():
   """
@@ -84,7 +85,7 @@ def actionBuild():
       for cpu in Settings.targetCPUs:
         if System.checkIfCPUIsSupportedForPlatform(cpu,platform):
           for configuration in Settings.targetConfigurations:
-            if not Summary.isPreparationFailed(target, platform, cpu, configuration):
+            if not Summary.checkIfActionFailed('prepare', target, platform, cpu, configuration):
               Logger.printStartActionMessage('Build ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration,ColoredFormatter.YELLOW)
               result = Builder.run(target, targetsToBuild, platform, cpu, configuration, combineLibs)
               Summary.addSummary('build', target, platform, cpu, configuration, result, Builder.executionTime)
@@ -97,6 +98,19 @@ def actionBuild():
             else:
               Logger.printColorMessage('Build cannot run because preparation has failed for ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration,ColoredFormatter.YELLOW)
               Logger.printEndActionMessage('Build not run for ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration,ColoredFormatter.YELLOW)
+
+def actionBackup():
+  """
+    Backups the latest build.
+  """
+  Backup.init()
+  for target in Settings.targets:
+    for platform in Settings.targetPlatforms:
+      for cpu in Settings.targetCPUs:
+        if System.checkIfCPUIsSupportedForPlatform(cpu,platform):
+          for configuration in Settings.targetConfigurations:
+            if not Summary.checkIfActionFailed('build', target, platform, cpu, configuration):
+              Backup.run(target, platform, cpu, configuration)
 
 def actionCreateNuget():
     pass
@@ -164,6 +178,9 @@ def main():
 
   if 'build' in Settings.actions:
     actionBuild()
+
+  if 'backup' in Settings.actions:
+    actionBackup()
 
   if 'createNuget' in Settings.actions:
     actionCreateNuget()

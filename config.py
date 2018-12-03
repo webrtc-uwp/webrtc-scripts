@@ -231,13 +231,26 @@ NUGET_WINUWP_WEBRTC_SOLUTION = 'WebRtc.Wrapper.Universal.sln'
 TARGET_WRAPPER_SOLUTIONS = {
                               'webrtc' :  {
                                             'winuwp' : 'WebRtc.Wrapper.Universal.sln',
-                                            'win' : '',
+                                            'net' : '',
                                           },
                               'ortc' :  {
                                           'winuwp' : '',
-                                          'win' : ''
+                                          'net' : ''
                                         }
-                          }
+                            }
+
+WEBRTC_WRAPPER_PROJECTS_OUTPUT_PATH = './webrtc/windows/solutions/Build/Output/Org.WebRtc'
+
+TARGET_WRAPPER_PROJECTS_OUTPUT_PATHS = {
+                                          'webrtc' :  {
+                                                        'winuwp' : './webrtc/windows/solutions/Build/Output/Org.WebRtc',
+                                                        'net' : '',
+                                                      },
+                                          'ortc' :  {
+                                                      'winuwp' : '',
+                                                      'net' : ''
+                                                    }
+                                        }
 
 FILES_TO_COPY_FOR_WRAPPER_BUILD = [
                   {'../chromium/third_party/BUILD.gn' : './third_party/BUILD.gn'},

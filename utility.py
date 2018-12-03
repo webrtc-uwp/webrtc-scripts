@@ -405,6 +405,27 @@ class Utility:
     return ret
 
   @classmethod
+  def getValueForTargetAndPlatformDict(cls, dict, target, platform):
+    """
+      Extracts value from dict for specific target and platform. Dict example: config.TARGET_WRAPPER_SOLUTIONS
+      :param dict: Dictionary to extract from.
+      :param target: Target name, that is the key for the inner dict.
+      :param platform: Platform name, that is the key for the second inned dict.
+    """
+    ret = None
+    if dict == None:
+      return ret
+
+    targetDict = dict.get(target,None)
+    if targetDict != None:
+      ret = targetDict.get(platform,'')
+      if ret == '':
+        cls.logger.warning('There is no data for ' + target + ' ' + platform)
+      else:
+        cls.logger.info('Data for ' + target + ' ' + platform + ' is ' + str(ret))
+    return ret
+
+  @classmethod
   def runSubprocess(cls, commands, shouldLog = False, userEnv = None):
     """
       Runs provided command line as subprocess.
