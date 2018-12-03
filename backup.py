@@ -5,7 +5,8 @@ import config
 from settings import Settings
 from utility import Utility
 from helper import convertToPlatformPath
-from errors import NO_ERROR, ERROR_BUILD_BACKUP_DELETION_FAILED, ERROR_BUILD_BACKUP_FAILED
+import errors
+from errors import NO_ERROR
 from logger import Logger
 class Backup:
 
@@ -23,7 +24,7 @@ class Backup:
     if os.path.exists(cls.backupPath):
       if Settings.overwriteBackup:
         if not Utility.deleteFolders([cls.backupPath]):
-          ret = ERROR_BUILD_BACKUP_DELETION_FAILED
+          ret = errors.ERROR_BUILD_BACKUP_DELETION_FAILED
       else:
         timeSuffix = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         cls.backupPath = os.path.join(Settings.userWorkingPath,convertToPlatformPath(backupFolder) + '_' + timeSuffix)
@@ -50,7 +51,7 @@ class Backup:
     if ret == NO_ERROR:
       nativeDestinationPath = os.path.join(cls.backupPath,targetFolder,'native')
       if not Utility.copyFolder(nativeOutputPathLib, nativeDestinationPath):
-        ret = ERROR_BUILD_BACKUP_FAILED
+        ret = errors.ERROR_BUILD_BACKUP_FAILED
 
     if ret == NO_ERROR:  
       if Settings.buildWrapper:
@@ -62,7 +63,7 @@ class Backup:
           wrapperOutputPath =  os.path.join(wrapperRootOutputPath, configuration, cpu)
           wrapperDestinationPath = os.path.join(cls.backupPath,targetFolder,'wrapper')
           if not Utility.copyFolder(wrapperOutputPath, wrapperDestinationPath):
-            ret = ERROR_BUILD_BACKUP_FAILED
+            ret = errors.ERROR_BUILD_BACKUP_FAILED
         else:
           cls.logger.warning('Wrapper output folder doesn\'t exist!')
 

@@ -9,8 +9,8 @@ import config
 from utility import Utility
 from settings import Settings
 from logger import Logger
-from errors import error_codes, NO_ERROR, ERROR_SYSTEM_ERROR, ERROR_SYSTEM_MISSING_GIT, \
-                   ERROR_SYSTEM_MISSING_PERL, ERROR_SYSTEM_FAILED_USERDEF_CREATION, ERROR_SYSTEM_FAILED_DELETING_USERDEF
+import errors
+from errors import error_codes, NO_ERROR
 from helper import convertToPlatformPath, getCPUFamily
 
 
@@ -115,14 +115,19 @@ class System:
   def downloadBuildToolsIfNeeded(cls):
     """
       Downloads gn and clang-format build tools if missing.
+      :return ret: True if all tools are present or successfully donloaded.
     """
+    ret = True
+
     if not Utility.checkIfToolIsInstalled(config.BUILD_TOOL_GN):
       cls.logger.warning(config.BUILD_TOOL_GN + ' build tool is not found.')
-      cls.__downloadBuildTool(config.BUILD_TOOL_GN)
+      ret = cls.__downloadBuildTool(config.BUILD_TOOL_GN)
 
-    if not Utility.checkIfToolIsInstalled(config.BUILD_TOOL_CLANG_FORMAT):
+    if not Utility.checkIfToolIsInstalled(config.BUILD_TOOL_CLANG_FORMAT) and ret:
       cls.logger.warning(config.BUILD_TOOL_CLANG_FORMAT + ' build tool is not found.')
-      cls.__downloadBuildTool(config.BUILD_TOOL_CLANG_FORMAT)
+      ret = cls.__downloadBuildTool(config.BUILD_TOOL_CLANG_FORMAT)
+
+    return ret
 
   @classmethod
   def checkTools(cls):
@@ -133,12 +138,12 @@ class System:
     #Check if Git is installed
     if not Utility.checkIfToolIsInstalled('git'):
       cls.logger.warning('git' + ' is not installed.')
-      return ERROR_SYSTEM_MISSING_GIT
+      return errors.ERROR_SYSTEM_MISSING_GIT
     
     #Check if Perl is installed
     if not Utility.checkIfToolIsInstalled('perl'):
       cls.logger.warning('perl' + ' is not installed.')
-      #return ERROR_SYSTEM_MISSING_PERL
+      #return errors.ERROR_SYSTEM_MISSING_PERL
 
     return NO_ERROR
 
@@ -271,7 +276,7 @@ class System:
         cls.__createUserDefFile()
       except Exception as error:
         cls.logger.error(str(error))
-        ret = ERROR_SYSTEM_FAILED_DELETING_USERDEF
+        ret = errors.ERROR_SYSTEM_FAILED_DELETING_USERDEF
       
     return ret
   #---------------------------------- Private methods --------------------------------------------
@@ -293,7 +298,7 @@ class System:
             cls.recreatedUserDef = True
       except Exception as error:
         Logger.printColorMessage(str(error))
-        cls.stopExecution(ERROR_SYSTEM_FAILED_USERDEF_CREATION)
+        cls.stopExecution(errors.ERROR_SYSTEM_FAILED_USERDEF_CREATION)
         
 
 
@@ -330,8 +335,10 @@ class System:
     """
       Download tools from the google storage, Currently used for downloading gn and clang-format
       :param toolName: tool name (gn, clang-format)
+      :return ret: True if successfully downloaded.
     """
-    
+    ret = True
+
     #Temporary change working directory to local depot tools path
     Utility.pushd(Settings.localDepotToolsPath)
     
@@ -343,8 +350,11 @@ class System:
     #Switch to previous working directory
     Utility.popd()
 
-    if result != 0:
+    if result != NO_ERROR:
+      ret = False
       cls.logger.error('Failed downloading ' + toolName)
+    
+    return ret
 
   @classmethod
   def __determineVisualStudioPath(cls):
@@ -389,7 +399,13 @@ class System:
       cls.logger.debug('MSVC tools bin path is ' + Settings.msvcToolsBinPath)
 
   @classmethod
-  def installClangClIfMissing(cls):
+  def downloadClangClIfMissing(cls):
+    """
+      Downloads clang-cl.exe if missing.
+      :return ret: True if exists or if it is successfully downloaded.
+    """
+    ret = True
+
     #Check if clang-cl is already downloaded
     clangPath = os.path.join(Settings.webrtcPath,convertToPlatformPath(config.CLANG_CL_PATH))
     if not os.path.isfile(clangPath):
@@ -407,6 +423,9 @@ class System:
         cls.logger.info('Clang-cl.exe is downloaded successfully.')
         Utility.createFolderLinks(config.FOLDERS_TO_LINK_LLVM)
       else:
+        ret = False
         cls.logger.error('Downloading Clang-cl.exe has failed.')
     else:
       cls.logger.debug('Clang-cl.exe is found.')
+    
+    return ret

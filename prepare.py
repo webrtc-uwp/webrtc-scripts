@@ -9,8 +9,8 @@ from settings import Settings
 from system import System
 from logger import Logger
 from helper import convertToPlatformPath
-from errors import error_codes, NO_ERROR, ERROR_PREPARE_GN_GENERATION_FAILED,ERROR_PREPARE_OUTPUT_FOLDER_PREPARATION_FAILED,\
-                   ERROR_PREPARE_UPDATING_DEPS_FAILED
+import errors
+from errors import NO_ERROR
 
 class Preparation:
   """
@@ -22,6 +22,8 @@ class Preparation:
       It is invoked only once, and does common stuff for all targets and platfroms. 
       Creates module logger. Sets working directory. Creates missing folders and links.
     """
+    ret = NO_ERROR
+
     #Create logger
     cls.logger = Logger.getLogger('Prepare')
 
@@ -34,29 +36,40 @@ class Preparation:
       #Change working directory
       Utility.pushd(Settings.webrtcPath)
 
-      Utility.createFolders(config.FOLDERS_TO_GENERATE)
-      Utility.createFolderLinks(config.FOLDERS_TO_LINK)
+      if not Utility.createFolders(config.FOLDERS_TO_GENERATE):
+        ret =  errors.ERROR_PREPARE_CREATING_FOLDERS_FAILED
+
+      if not Utility.createFolderLinks(config.FOLDERS_TO_LINK) and ret == NO_ERROR:
+        ret =  errors.ERROR_PREPARE_CREATING_LINKS_FAILED
 
       #In case ortc is one of the targets create specific folders and links
       if (ortc):
-        Utility.createFolders(config.FOLDERS_TO_GENERATE_ORTC)
-        Utility.createFolderLinks(config.FOLDERS_TO_LINK_ORTC)
+        if not Utility.createFolders(config.FOLDERS_TO_GENERATE_ORTC) and ret == NO_ERROR:
+          ret = errors.ERROR_PREPARE_CREATING_FOLDERS_FAILED
+        if not Utility.createFolderLinks(config.FOLDERS_TO_LINK_ORTC) and ret == NO_ERROR:
+          ret = errors.ERROR_PREPARE_CREATING_LINKS_FAILED
 
       #Copy files whose paths and destinations are in dictionary { file_path : destination_path }
-      Utility.copyFilesFromDict(config.FILES_TO_COPY)
+      if not Utility.copyFilesFromDict(config.FILES_TO_COPY) and ret == NO_ERROR:
+        ret = errors.ERROR_PREPARE_COPYING_FILES_FAILED
 
       #If win is one of the selected platforms it is required to have clang-cl.
       #It is called here becuae proper folders structure is required to execute update script
       if 'win' in Settings.targetPlatforms:
-        System.installClangClIfMissing()
+        if not System.downloadClangClIfMissing() and ret == NO_ERROR:
+         ret = errors.ERROR_PREPARE_INSTALLING_CLANG_FAILED
         
       #Download missing build tools
-      System.downloadBuildToolsIfNeeded()
+      if not System.downloadBuildToolsIfNeeded() and ret == NO_ERROR:
+        ret = errors.ERROR_PREPARE_INSTALLING_CLANG_FAILED
 
     except Exception as error:
-      cls.logger.error(error)
+      ret = errors.ERROR_PREPARE_SET_UP_FAILED
+      cls.logger.error(str(error))
     finally:
       Utility.popd()
+
+    return ret
     
   @classmethod
   def run(cls, target, platform, cpu, configuration):
@@ -72,7 +85,7 @@ class Preparation:
     ret = NO_ERROR
     cls.executionTime = 0
     mainBuildGnFilePath = None
-    isError = False
+
     cls.logger.info('Runnning preparation for target: ' + target + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration)
 
     #Change working directory
@@ -90,7 +103,7 @@ class Preparation:
         #Generate ninja files and VS projects
         ret = cls.__generateProjects(gnOutputPath)
       else:
-        ret = ERROR_PREPARE_UPDATING_DEPS_FAILED
+        ret = errors.ERROR_PREPARE_UPDATING_DEPS_FAILED
 
     #Delete updated BUILD.gn from webrtc root folder and recover original file
     if mainBuildGnFilePath != None:
@@ -140,7 +153,7 @@ class Preparation:
         argsFile.write(newArgs)
     except Exception as error:
       cls.logger.error(str(error))
-      ret = ERROR_PREPARE_OUTPUT_FOLDER_PREPARATION_FAILED
+      ret = errors.ERROR_PREPARE_OUTPUT_FOLDER_PREPARATION_FAILED
 
     return ret
 
@@ -165,14 +178,14 @@ class Preparation:
       cmd = 'gn gen ' + gnOutputPath + ' --ide=' + config.VISUAL_STUDIO_VERSION
       result = Utility.runSubprocess([cmd], Settings.logLevel == 'DEBUG',my_env)
       if result != 0:
-        ret = ERROR_PREPARE_GN_GENERATION_FAILED
+        ret = errors.ERROR_PREPARE_GN_GENERATION_FAILED
         cls.logger.error('Projects generation has failed!')
       else:
         #Update ninja path in VS project files to point to ninja.exe in local depot_tools folder
         cls.__updateNinjaPathinProjects(gnOutputPath)
     except Exception as error:
       cls.logger.error(str(error))
-      ret = ERROR_PREPARE_GN_GENERATION_FAILED
+      ret = errors.ERROR_PREPARE_GN_GENERATION_FAILED
 
     return ret
 
@@ -184,10 +197,13 @@ class Preparation:
     """
     for root, dirs, files in os.walk(folder):
       for file in files:
-          if file.endswith('.vcxproj'):
+        if file.endswith('.vcxproj'):
+          try:
             #cls.logger.debug('Updating ninja path in VS project file ' + file)
             #Replace 'call ninja.exe' with 'call local_depot_tools_path\ninja.exe'
             with open(os.path.join(root,file)) as projectFile:
               updatedProject=projectFile.read().replace('call ninja.exe', 'call ' + Settings.localNinjaPath)
             with open(os.path.join(root,file), 'w') as projectFile:
               projectFile.write(updatedProject)
+          except Exception as error:
+            cls.logger.warning(str(error))

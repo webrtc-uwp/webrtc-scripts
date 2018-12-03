@@ -11,9 +11,8 @@ from system import System
 from utility import Utility
 from settings import Settings
 from helper import convertToPlatformPath
-from errors import error_codes, NO_ERROR, ERROR_BUILD_OUTPUT_FOLDER_NOT_EXIST, ERROR_BUILD_UPDATING_DEPS_FAILED, ERROR_BUILD_FAILED,\
-                   ERROR_BUILD_MISSING_LIB_EXECUTABLE, ERROR_BUILD_BUILDING_WRAPPER_FAILED, ERROR_BUILD_MERGE_LIBS_FAILED,\
-                   ERROR_BUILD_BACKUP_DELETION_FAILED, ERROR_BUILD_BACKUP_DELETION_FAILED, ERROR_BUILD_BACKUP_FAILED
+import errors
+from errors import error_codes, NO_ERROR
 
 class Builder:
   @classmethod
@@ -49,7 +48,7 @@ class Builder:
     #If folder for specified target and platform doesn't exist, stop further execution
     if not os.path.exists(workingDir):
       cls.logger.error('Output folder at ' + workingDir + ' doesn\'t exist. It looks like prepare is not executed. Please run prepare action.')
-      return ERROR_BUILD_OUTPUT_FOLDER_NOT_EXIST
+      return errors.ERROR_BUILD_OUTPUT_FOLDER_NOT_EXIST
     
     #Set the PATH and environment variables for command-line builds (e.g. vcvarsall.bat x64_x86)
     cls.cmdVcVarsAll = '\"' +  Settings.vcvarsallPath + '\" ' + config.WINDOWS_COMPILER_OPTIONS[System.hostCPU][cpu]
@@ -115,21 +114,19 @@ class Builder:
       
       #Copy template solution to solution folder
       if not Utility.copyFile(solutionSourcePath,solutionDestinationPath):
-        return ERROR_BUILD_BUILDING_WRAPPER_FAILED
-
-      #shutil.copyfile(solutionSourcePath,solutionDestinationPath)
+        return errors.ERROR_BUILD_BUILDING_WRAPPER_FAILED
 
       #MSBuild command for building wrapper projects
       cmdBuild = 'msbuild ' + solutionDestinationPath + ' /t:Build' + ' /p:Configuration=\"' + configuration + '\" /p:Platform=\"' + targetCPU + '\"'
       #Execute MSBuild command
       result = Utility.runSubprocess([cls.cmdVcVarsAll, cmdBuild, cls.cmdVcVarsAllClean], Settings.logLevel == 'DEBUG')
       if result != NO_ERROR:
-        ret = ERROR_BUILD_BUILDING_WRAPPER_FAILED
+        ret = errors.ERROR_BUILD_BUILDING_WRAPPER_FAILED
         cls.logger.error('Failed building ' + target + ' wrapper projects for ' + targetCPU + ' for configuration  '+ configuration)
     except Exception as error:
       cls.logger.error(str(error))
       cls.logger.error('Failed building ' + target + ' wrapper projects for ' + targetCPU + ' for configuration  '+ configuration)
-      ret = ERROR_BUILD_BUILDING_WRAPPER_FAILED
+      ret = errors.ERROR_BUILD_BUILDING_WRAPPER_FAILED
     finally:
       #Delete solution used for building wrapper projects.
       Utility.deleteFiles([solutionDestinationPath])
@@ -163,19 +160,19 @@ class Builder:
         # to have the sam BUILD.gn as in prepare process.
         if target == config.WEBRTC_TARGET:
           if not Utility.backUpAndUpdateGnFile(mainBuildGnFilePath,config.WEBRTC_TARGET,config.ADDITIONAL_TARGETS_TO_ADD):
-            ret = ERROR_BUILD_UPDATING_DEPS_FAILED
+            ret = errors.ERROR_BUILD_UPDATING_DEPS_FAILED
 
         if ret == NO_ERROR:
           #Run ninja to build targets
           cmd = Settings.localNinjaPath + '.exe ' +  target
           result = Utility.runSubprocess([cmd], Settings.logLevel == 'DEBUG', my_env)
           if result != 0:
-            ret = ERROR_BUILD_FAILED
+            ret = errors.ERROR_BUILD_FAILED
 
     except Exception as error:
       cls.logger.error(str(error))
       cls.logger.error('Build failed for following targets ' + str(targets) + ' for cpu '+ targetCPU)
-      ret = ERROR_BUILD_FAILED
+      ret = errors.ERROR_BUILD_FAILED
     finally:
       Utility.returnOriginalFile(mainBuildGnFilePath)
 
@@ -201,7 +198,7 @@ class Builder:
     if not os.path.isfile(cls.libexePath):
       cls.logger.error('Merging libraries cannot be done. Missing file ' + cls.libexePath + '!')
       cls.logger.warning('Please, install VS component Visual c++ compiler and libraries for ' + targetCPU)
-      return ERROR_BUILD_MISSING_LIB_EXECUTABLE
+      return errors.ERROR_BUILD_MISSING_LIB_EXECUTABLE
 
     #Get list of strings, with file paths total length less than 7000,,
     listOfObjesToCombine = Utility.getFilesWithExtensionsInFolder(config.COMBINE_LIB_FOLDERS, ('.obj','.o'), config.COMBINE_LIB_IGNORE_SUBFOLDERS)
@@ -209,7 +206,7 @@ class Builder:
     #Create temporary folder where will be save libs created from the obj files ^^^
     tempCombinePath = 'combine'
     if not Utility.createFolders([tempCombinePath]):
-      return ERROR_BUILD_MERGE_LIBS_FAILED
+      return errors.ERROR_BUILD_MERGE_LIBS_FAILED
 
     counter = 0
     libsToMerge = ''
@@ -258,13 +255,13 @@ class Builder:
       #result = subprocess.call(commands,stdout=FNULL, stderr=subprocess.STDOUT)
 
       if result != 0:
-        cls.logger.error(error_codes[ERROR_BUILD_MERGE_LIBS_FAILED])
-        ret = ERROR_BUILD_MERGE_LIBS_FAILED
+        cls.logger.error(error_codes[errors.ERROR_BUILD_MERGE_LIBS_FAILED])
+        ret = errors.ERROR_BUILD_MERGE_LIBS_FAILED
 
     except Exception as error:
       cls.logger.error(str(error))
       cls.logger.info('Failed combining libraries')
-      ret = ERROR_BUILD_MERGE_LIBS_FAILED
+      ret = errors.ERROR_BUILD_MERGE_LIBS_FAILED
 
     return ret
 
@@ -289,14 +286,12 @@ class Builder:
       
       for lib in listOfLibsToCopy:
         ret = Utility.copyFile(pdb, os.path.join(destinationPathPdb,os.path.basename(pdb)))
-        #shutil.copyfile(lib, os.path.join(destinationPathLib,os.path.basename(lib)))
       """
 
       listOfPdbsToCopy = Utility.getFilesWithExtensionsInFolder(['.'],('.pdb'),config.COMBINE_LIB_IGNORE_SUBFOLDERS,0)
       
       for pdb in listOfPdbsToCopy:
         ret = Utility.copyFile(pdb, os.path.join(destinationPathPdb,os.path.basename(pdb)))
-        #shutil.copyfile(pdb, os.path.join(destinationPathPdb,os.path.basename(pdb)))
     
     except Exception as error:
       cls.logger.warning(str(error))

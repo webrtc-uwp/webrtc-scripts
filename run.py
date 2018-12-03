@@ -12,6 +12,7 @@ from cleanup import Cleanup
 from errors import NO_ERROR, ERROR_TARGET_NOT_SUPPORTED, ERROR_PLATFORM_NOT_SUPPORTED
 from summary import Summary
 from backup import Backup
+from consts import *
 
 def actionClean():
   """
@@ -19,7 +20,7 @@ def actionClean():
   """
   result = NO_ERROR
 
-  Logger.printStartActionMessage('Cleanup')
+  Logger.printStartActionMessage(ACTION_CLEAN)
   #Init cleanup logger
   Cleanup.init()
 
@@ -35,7 +36,7 @@ def actionClean():
       #Perform other cleanup acrions that are not dependent of target ...
       result = Cleanup.run(action)
   if result == NO_ERROR:
-    Logger.printEndActionMessage('Cleanup')
+    Logger.printEndActionMessage(ACTION_CLEAN)
   else:
     Logger.printEndActionMessage('Cleanup failed!',ColoredFormatter.RED)
     System.stopExecution(result)
@@ -55,7 +56,11 @@ def actionPrepare():
   """
   
   #Do preparation that is common for all platforms. Pass true if ortc is one of targets
-  Preparation.setUp('ortc' in Settings.targets)
+  result = Preparation.setUp('ortc' in Settings.targets)
+  if result != NO_ERROR:
+    #Terminate execution, because prepration common for all targets and platforms has failed.
+    System.stopExecution(result)
+
   for target in Settings.targets:
     for platform in Settings.targetPlatforms:
       for cpu in Settings.targetCPUs:
@@ -63,7 +68,7 @@ def actionPrepare():
           for configuration in Settings.targetConfigurations:
             Logger.printStartActionMessage('Prepare ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration,ColoredFormatter.YELLOW)
             result = Preparation.run(target, platform, cpu, configuration)
-            Summary.addSummary('prepare', target, platform, cpu, configuration, result, Preparation.executionTime)
+            Summary.addSummary(ACTION_PREPARE, target, platform, cpu, configuration, result, Preparation.executionTime)
             if result != NO_ERROR:
               Logger.printEndActionMessage('Failed preparing ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration,ColoredFormatter.RED)
               #Terminate script execution if stopExecutionOnError is set to True in userdef
@@ -85,10 +90,10 @@ def actionBuild():
       for cpu in Settings.targetCPUs:
         if System.checkIfCPUIsSupportedForPlatform(cpu,platform):
           for configuration in Settings.targetConfigurations:
-            if not Summary.checkIfActionFailed('prepare', target, platform, cpu, configuration):
+            if not Summary.checkIfActionFailed(ACTION_PREPARE, target, platform, cpu, configuration):
               Logger.printStartActionMessage('Build ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration,ColoredFormatter.YELLOW)
               result = Builder.run(target, targetsToBuild, platform, cpu, configuration, combineLibs)
-              Summary.addSummary('build', target, platform, cpu, configuration, result, Builder.executionTime)
+              Summary.addSummary(ACTION_BUILD, target, platform, cpu, configuration, result, Builder.executionTime)
               if result != NO_ERROR:
                   Logger.printEndActionMessage('Failed building ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration,ColoredFormatter.RED)
                   #Terminate script execution if stopExecutionOnError is set to True in userdef
@@ -109,7 +114,7 @@ def actionBackup():
       for cpu in Settings.targetCPUs:
         if System.checkIfCPUIsSupportedForPlatform(cpu,platform):
           for configuration in Settings.targetConfigurations:
-            if not Summary.checkIfActionFailed('build', target, platform, cpu, configuration):
+            if not Summary.checkIfActionFailed(ACTION_BUILD, target, platform, cpu, configuration):
               Backup.run(target, platform, cpu, configuration)
 
 def actionCreateNuget():
@@ -167,28 +172,28 @@ def main():
     System.stopExecution(ERROR_PLATFORM_NOT_SUPPORTED)
 
   #Start performing actions. Actions has to be executed in right order and that is the reason why it is handled this way
-  if 'clean' in Settings.actions:
+  if ACTION_CLEAN in Settings.actions:
     actionClean()
     
-  if 'createuserdef' in Settings.actions:
+  if ACTION_CREATE_USERDEF in Settings.actions:
     actionCreateUserdef()
 
-  if 'prepare' in Settings.actions:
+  if ACTION_PREPARE in Settings.actions:
     actionPrepare()
 
-  if 'build' in Settings.actions:
+  if ACTION_BUILD in Settings.actions:
     actionBuild()
 
-  if 'backup' in Settings.actions:
+  if ACTION_BACKUP in Settings.actions:
     actionBackup()
 
-  if 'createNuget' in Settings.actions:
+  if ACTION_CREATE_NUGET in Settings.actions:
     actionCreateNuget()
 
-  if 'publishNuget' in Settings.actions:
+  if ACTION_PUBLISH_NUGET in Settings.actions:
     actionPublishNuget()
 
-  if 'updatePublishedSample' in Settings.actions:
+  if ACTION_UPDATE_SAMPLE in Settings.actions:
     actionUpdatePublishedSample()
 
   end_time = time.time()

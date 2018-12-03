@@ -34,14 +34,14 @@ targetConfigurations = [ 'Release', 'Debug' ]
 #TODO: Implement logic to update zslib_eventing_tool.gni based on list of specified programming languages.
 targetProgrammingLanguage = [ 'cx', 'cppwinrt', 'c', 'dotnet', 'python' ]
 
-#=========== Supported actions: clean, createuserdef, prepare, build, backup, createNuget. 
-# In future it will be added support publishNuget, updatePublishedSample.
+#=========== Supported actions: clean, createuserdef, prepare, build, backup, createnuget. 
+# In future it will be added support publishnuget, updatesample.
 #'clean' : Based on cleanup options set in cleanupOptions dict, it can be choosen desired cleanup actions.
 #'createuserdef' : Deletes existing userdef.py if exists and create a new from defaults.py.
 #'prepare' : Prepares developement environemnt for selected targets for choosen cpus, platforms and configurations.
 #'build' : Builds selected targets for choosen cpus, platforms and configurations.
 #'backup': Backup latest build.
-#'createNuget' : Creates nuget package.
+#'createnuget' : Creates nuget package.
 #List of actions to perform
 actions = [ 'prepare', 'build', 'backup' ]
 

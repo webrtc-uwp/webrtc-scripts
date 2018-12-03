@@ -4,11 +4,11 @@ import re
 import logging
 import subprocess
 import signal
-from shutil import copyfile, copytree, rmtree
+import shutil
 
 from logger import Logger
 from helper import convertToPlatformPath
-from errors import NO_ERROR, ERROR_SUBPROCESS_EXECUTAION_FAILED
+from errors import error_codes, NO_ERROR, ERROR_SUBPROCESS_EXECUTAION_FAILED
 import config
 class Utility:
 
@@ -99,7 +99,9 @@ class Utility:
       Creates junction link.
       :param source: Source folder.
       :param destination: Junction link to make.
+      :return ret: True if link is created.
     """
+    ret = True
     if not os.path.exists(destination):
       cls.logger.debug('Creating link ' + convertToPlatformPath(destination) + ' to point to ' + convertToPlatformPath(source))
       cmd = 'cmd ' + '/c ' + 'mklink ' + '/J ' + convertToPlatformPath(destination) + ' ' + convertToPlatformPath(source)
@@ -107,13 +109,17 @@ class Utility:
       if result == NO_ERROR:
         cls.logger.debug('Successfully created link ' + destination)
       else:
+        ret = False
         cls.logger.error('Failed creating link ' + destination)
+
+    return ret
 
   @classmethod
   def deleteLink(cls,linkToDelete):
     """
       Deletes junction link.
-      :param linkToDelete: Path to link. 
+      :param linkToDelete: Path to link.
+      :return ret: True if link is deleted.
     """
     ret = True
    
@@ -160,7 +166,7 @@ class Utility:
       for path in foldersList:
         dirPath = convertToPlatformPath(path)
         if os.path.exists(dirPath):
-          rmtree(dirPath)
+          shutil.rmtree(dirPath)
         else:
           cls.logger.warning(dirPath + ' folder doesn\'t exist.')
     except Exception as error:
@@ -169,22 +175,29 @@ class Utility:
 
     return ret
 
-  @staticmethod
-  def createFolderLinks(foldersToLink):
+  @classmethod
+  def createFolderLinks(cls, foldersToLink):
     """
       Creates links from provided dict {source : link}.
       :param foldersList: List of dictionaries with source path as key and destination path (link) as value.
+      :return ret: True if all links are created. Otherwise False.
     """
+    ret = True
     for dict in foldersToLink:
       for source, destination in dict.items():
         if os.path.exists(source):
-          Utility.makeLink(convertToPlatformPath(source), convertToPlatformPath(destination))
+          ret = cls.makeLink(convertToPlatformPath(source), convertToPlatformPath(destination))
+          if not ret:
+            break
+
+    return ret
 
   @classmethod
   def deleteFolderLinks(cls, foldersToLink):
     """
       Deletes links from provided dict {source : link}.
       :param foldersList: List of dictionaries with source path as key and destination path (link) as value.
+      :return ret: True if all links are deleted. Otherwise False.
     """
     ret = True
     for dict in foldersToLink:
@@ -200,7 +213,7 @@ class Utility:
     ret = True
     if os.path.exists(source):
       try:
-        copytree(source,destination)
+        shutil.copytree(source,destination)
       except Exception as error:
         ret = False
         cls.logger.error(str(error))
@@ -211,10 +224,15 @@ class Utility:
 
   @classmethod
   def copyFile(cls, source, destination):
+    """
+      Copies file.
+      :param source: File to copy
+      :param destination: 
+    """
     ret = True
     if os.path.isfile(source):
       try:
-        copyfile(source, destination)
+        shutil.copyfile(source, destination)
       except Exception as error:
         ret = False
         cls.logger.error(str(error))
@@ -226,6 +244,11 @@ class Utility:
 
   @classmethod
   def deleteFiles(cls, files):
+    """
+      Deletes list of files.
+      :param files. List of files to delete.
+      :return ret: True if file is deleted or if it doesn't exist.
+    """
     ret = True
     for file in files:
       if os.path.isfile(file):
@@ -244,15 +267,21 @@ class Utility:
     """
       Copies files from provided dict {sourceFilePath : destinationFilePath}.
       :param filesToCopy: List of dictionaries with source file path as key and destination path as value.
+      :return ret: True if all files are successfully copied.
     """
+    ret = True
+
     for dict in filesToCopy:
       for source, destination in dict.items():
         filePath = convertToPlatformPath(source)
         if os.path.isfile(filePath):
           try:
-            copyfile(filePath, convertToPlatformPath(destination))
+            shutil.copyfile(filePath, convertToPlatformPath(destination))
           except Exception as error:
+            ret = False
             cls.logger.error(str(error))
+
+    return ret
 
   @classmethod
   def pushd(cls, path):
@@ -260,23 +289,18 @@ class Utility:
       Changes current working directory. Push old working path to stack.
       :param path: New working path
     """
-    try:
-      cls.logger.debug('pushd ' + path)
-      cls.pushstack.append(os.getcwd())
-      os.chdir(path)
-    except Exception as error:
-      cls.logger.error(error)
+    cls.logger.debug('pushd ' + path)
+    cls.pushstack.append(os.getcwd())
+    os.chdir(path)
 
   @classmethod
   def popd(cls):
     """
       Changes current working directory to previous. Pops old working path from stack.
     """
-    try:
-      cls.logger.debug('popd ' + cls.pushstack[-1])
-      os.chdir(cls.pushstack.pop())
-    except Exception as error:
-      cls.logger.warning(error)
+    cls.logger.debug('popd ' + cls.pushstack[-1])
+    os.chdir(cls.pushstack.pop())
+
 
   @classmethod
   def getFilesWithExtensionsInFolder(cls, folders, extensions, folderToIgnores = (), stringLimit = 7000):
@@ -367,7 +391,7 @@ class Utility:
     if os.path.isfile(filePath):
       try:
         #Backup gn file
-        copyfile(filePath, filePath + '.bak')
+        shutil.copyfile(filePath, filePath + '.bak')
       except Exception as error:
         ret = False
         cls.logger.error(str(error))
@@ -387,12 +411,13 @@ class Utility:
     """
       Replace file with its backup version.
       :param filePath: Path to file to revert to original state.
+      :return ret: True if original file is recovered.
     """
     ret = True
     backupFilePath = filePath + '.bak'
     if os.path.isfile(filePath) and os.path.isfile(backupFilePath):
       try:
-        copyfile(backupFilePath, filePath)
+        shutil.copyfile(backupFilePath, filePath)
         os.remove(backupFilePath)
       except Exception as error:
         ret = False
@@ -411,6 +436,7 @@ class Utility:
       :param dict: Dictionary to extract from.
       :param target: Target name, that is the key for the inner dict.
       :param platform: Platform name, that is the key for the second inned dict.
+      :return ret: Value if found. Otherwise None.
     """
     ret = None
     if dict == None:
@@ -435,28 +461,30 @@ class Utility:
       :return result: NO_ERROR if subprocess is executed successfully. Otherwise error or subprocess returncode
     """
     result = NO_ERROR
+    tempFile = None
     commandToExecute = ''
     for command in commands:
       if len(commandToExecute) > 0:
-        commandToExecute = commandToExecute + ' && '
-      if not shouldLog:
-        commandToExecute = commandToExecute + command + ' >NUL'
+        commandToExecute = commandToExecute + ' && ' + command
       else:
         commandToExecute = commandToExecute + command
     try:
+      if not shouldLog:
+        tempFile = open(os.devnull, 'w')
       #Execute command
       cls.logger.debug('Running subprocess: \n' + commandToExecute)
       if userEnv == None:
-        process = subprocess.Popen(commandToExecute, shell=False, stderr=subprocess.PIPE)
-      else: 
-        process = subprocess.Popen(commandToExecute, shell=False, stderr=subprocess.PIPE, env=userEnv)
+        process = subprocess.Popen(commandToExecute, shell=False, stdout=tempFile, stderr=subprocess.PIPE)
+      else:
+        process = subprocess.Popen(commandToExecute, shell=False, stdout=tempFile, stderr=subprocess.PIPE, env=userEnv)
 
       #Enable showing subprocess output and responsiveness on keyboard actions (terminating script on user action) 
       stdout, stderr = process.communicate()
 
       result = process.returncode
-      if result != 0 and stderr != '':
+      if result != 0:
         result = ERROR_SUBPROCESS_EXECUTAION_FAILED
+      if stderr != '':
         cls.logger.error(str(stderr))
 
     except KeyboardInterrupt:
@@ -464,5 +492,8 @@ class Utility:
     except Exception as error:
       result = ERROR_SUBPROCESS_EXECUTAION_FAILED
       cls.logger.error(str(error))
+
+    if result != NO_ERROR:
+      cls.logger.error(error_codes[result])
 
     return result

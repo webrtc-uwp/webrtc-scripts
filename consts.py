@@ -1,0 +1,9 @@
+ACTION_CLEAN = 'clean'
+ACTION_CREATE_USERDEF = 'createuserdef'
+ACTION_PREPARE = 'prepare' 
+ACTION_BUILD = 'build'
+ACTION_BACKUP = 'backup'
+ACTION_CREATE_NUGET = 'createnuget'
+ACTION_PUBLISH_NUGET = 'publishnuget'
+ACTION_UPDATE_SAMPLE = 'updatesample'
+
