@@ -6,11 +6,15 @@
 #Filename with user default values.
 USER_DEFAULTS_FILE = 'userdef'
 
+#args.gn template path. 
+WEBRTC_GN_ARGS_TEMPLATE_PATH='./webrtc/windows/templates/gns/args.gn'
+
 #Paths are relative to the root SDK path
 TEMPLATES_PATH = './templates'
 ORTC_DEFAULTS_PATH = './ortc'
 WEBRTC_DEFAULTS_PATH = './webrtc'
 WEBRTC_SOLUTION_PATH = './webrtc/windows/solutions'
+WEBRTC_WRAPPER_PROJECTS_OUTPUT_PATH = './webrtc/windows/solutions/Build/Output/Org.WebRtc'
 WEBRTC_SOLUTION_TEMPLATES_PATH = './webrtc/windows/templates/solutions'
 RELATIVE_DEPOT_TOOLS_PATH = './webrtc/xplatform/depot_tools'
 RELATIVE_BUILD_TOOLS_PATH = './webrtc/xplatform/webrtc/buildtools'
@@ -27,6 +31,7 @@ NATIVE_LIB_TARGET = 'runtimes\\win10-[CPU]\\native'
 
 #Paths are relative to the webrtc root path
 GN_OUTPUT_PATH = './out'
+#Path where will ba saved built libs, referenced by wrapper projects
 BUILD_OUTPUT_PATH = './OUTPUT'
 
 #WebRtc build tools
@@ -203,8 +208,10 @@ COMBINE_LIB_IGNORE_SUBFOLDERS = (
 
 WINDOWS_IGNORE_WARNINGS = ( 4264, 4221, 4006 )
 
-#Path relative to webrtc root folder where will ba saved built libs, referenced by wrapper projects
+#Path relative to webrtc root folder
+#Path where will be saved .flg files that are used like flags for successfully generated files by idl compiler.
 IDL_FLAG_OUTPUT_PATH = '/third_party/idl/zsLib-eventing'
+#Path where will be saved . generated files by idl compiler.
 IDL_GENERATED_FILES_OUTPUT_PATH = '/sdk/windows/wrapper/generated'
 
 CLANG_CL_PATH = '/third_party/llvm-build/Release+Asserts/bin/clang-cl.exe'

@@ -9,7 +9,8 @@ from settings import Settings
 from system import System
 from logger import Logger
 from helper import convertToPlatformPath
-from errors import error_codes, NO_ERROR, ERROR_PREPARE_GN_GENERATION_FAILED
+from errors import error_codes, NO_ERROR, ERROR_PREPARE_GN_GENERATION_FAILED,ERROR_PREPARE_OUTPUT_FOLDER_PREPARATION_FAILED,\
+                   ERROR_PREPARE_UPDATING_DEPS_FAILED
 
 class Preparation:
   """
@@ -60,50 +61,97 @@ class Preparation:
   @classmethod
   def run(cls, target, platform, cpu, configuration):
     """
-      Start target building process.
-      :param targetName: Name of the main target (ortc or webrtc)
-      :param targets: List of the targets to build
+      Start environment preparation for specified target.
+      :param target: Name of the target
       :param platform: Platform name
       :param cpu: Target CPU
       :param configuration: Configuration to build for
-      :return: NO_ERROR if preparation was successfull. Otherwise returns error code.
+      :return ret: NO_ERROR if preparation was successfull. Otherwise returns error code.
     """
     start_time = time.time()
     ret = NO_ERROR
     cls.executionTime = 0
+    mainBuildGnFilePath = None
     isError = False
     cls.logger.info('Runnning preparation for target: ' + target + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration)
-
-    #Full path to args.gn template file
-    argsTemplatePath = os.path.join(Settings.rootSdkPath, convertToPlatformPath(Settings.webRTCGnArgsTemplatePath))
 
     #Change working directory
     Utility.pushd(Settings.webrtcPath)
 
     #Create output folder where webrtc generated projects will be saved 
     gnOutputPath = Settings.getGnOutputPath(config.GN_OUTPUT_PATH,target,platform,cpu,configuration)
+    ret = cls.__prepareOutputFolder(gnOutputPath, target, platform, cpu, configuration)
 
-    if not os.path.exists(gnOutputPath):
-      cls.logger.debug('Making ' + gnOutputPath + ' directory.')
-      os.makedirs(gnOutputPath)
+    if ret == NO_ERROR:
+      mainBuildGnFilePath = os.path.join(Settings.webrtcPath,'BUILD.gn')
+      
+      #Backup original BUILD.gn from webrtc root folder and add additional dependecies to webrtc target
+      if Utility.backUpAndUpdateGnFile(mainBuildGnFilePath,config.WEBRTC_TARGET,config.ADDITIONAL_TARGETS_TO_ADD):
+        #Generate ninja files and VS projects
+        ret = cls.__generateProjects(gnOutputPath)
+      else:
+        ret = ERROR_PREPARE_UPDATING_DEPS_FAILED
 
-    #Copy args.gn template file to output folder
-    argsPath = os.path.join(gnOutputPath, 'args.gn')
-    cls.logger.debug('Copying ' + argsPath + ' file' + ' to ' + argsTemplatePath )
-    copyfile(argsTemplatePath, argsPath)
-
-    #Update target os and cpu in copied args.gn file
-    with open(argsPath) as argsFile:
-      cls.logger.debug('Updating args.gn file. Target OS: ' + platform + '; Target CPU: ' + cpu)
-      newArgs=argsFile.read().replace('-target_os-', platform).replace('-target_cpu-', cpu).replace('-is_debug-',str(configuration.lower() == 'debug').lower())
-    with open(argsPath, 'w') as argsFile:
-      argsFile.write(newArgs)
-
-    mainBuildGnFilePath = os.path.join(Settings.webrtcPath,'BUILD.gn')
-    #Backup original BUILD.gn from webrtc root folder and add additional dependecies to webrtc target
-    Utility.backUpAndUpdateGnFile(mainBuildGnFilePath,config.WEBRTC_TARGET,config.ADDITIONAL_TARGETS_TO_ADD)
-
+    #Delete updated BUILD.gn from webrtc root folder and recover original file
+    if mainBuildGnFilePath != None:
+      Utility.returnOriginalFile(mainBuildGnFilePath)
+    Utility.popd()
     
+    if ret == NO_ERROR:
+      cls.logger.info('Successfully finished preparation for target: ' + target + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration)
+    
+    end_time = time.time()
+    cls.executionTime = end_time - start_time
+    return ret
+    
+  #---------------------------------- Private methods --------------------------------------------
+  @classmethod
+  def __prepareOutputFolder(cls, gnOutputPath, target, platform, cpu, configuration):
+    """
+      Creates gn output folders. Copies args.gn tamplate file into output folders.
+      Updates args.gn file with specified platform, cpu and configuration,
+      :param outputFolderPath: Gn output folder where generated ninja files and projects will be saved.
+      :param target: Name of the target
+      :param platform: Platform name
+      :param cpu: Target CPU
+      :param configuration: Configuration to build for
+      :return ret: NO_ERROR if preparation was successfull. Otherwise returns error code.
+    """
+    ret = NO_ERROR
+    
+    try:
+      #Full path to args.gn template file
+      argsTemplatePath = os.path.join(Settings.rootSdkPath, convertToPlatformPath(config.WEBRTC_GN_ARGS_TEMPLATE_PATH))
+
+      if not os.path.exists(gnOutputPath):
+        cls.logger.debug('Making ' + gnOutputPath + ' directory.')
+        os.makedirs(gnOutputPath)
+
+      #Copy args.gn template file to output folder
+      argsPath = os.path.join(gnOutputPath, 'args.gn')
+      cls.logger.debug('Copying ' + argsPath + ' file' + ' to ' + argsTemplatePath )
+      copyfile(argsTemplatePath, argsPath)
+
+      #Update target platform and cpu in copied args.gn file
+      with open(argsPath) as argsFile:
+        cls.logger.debug('Updating args.gn file. Target OS: ' + platform + '; Target CPU: ' + cpu)
+        newArgs=argsFile.read().replace('-target_os-', platform).replace('-target_cpu-', cpu).replace('-is_debug-',str(configuration.lower() == 'debug').lower())
+      with open(argsPath, 'w') as argsFile:
+        argsFile.write(newArgs)
+    except Exception as error:
+      cls.logger.error(str(error))
+      ret = ERROR_PREPARE_OUTPUT_FOLDER_PREPARATION_FAILED
+
+    return ret
+
+  @classmethod
+  def __generateProjects(cls, gnOutputPath):
+    """
+      Generates ninja files and VS projects.
+      :param gnOutputPath: Gn output path where will be saved generated ninja files and VS projects.
+      :return ret: NO_ERROR if preparation was successfull. Otherwise returns error code.
+    """
+    ret = NO_ERROR
     try:
       #Duplicate existing environment variables
       my_env = os.environ.copy()
@@ -112,33 +160,22 @@ class Preparation:
 
       cls.logger.debug('Output path: ' + gnOutputPath)
       cls.logger.info('Generating webrtc projects ...')
+
       #Generate Webrtc projects
       cmd = 'gn gen ' + gnOutputPath + ' --ide=' + config.VISUAL_STUDIO_VERSION
       result = Utility.runSubprocess([cmd], Settings.logLevel == 'DEBUG',my_env)
       if result != 0:
-        isError = True
-        cls.logger.error('Projects generation has failed! (' + target + ',' + platform + ',' + cpu + ',' + configuration + ')')
+        ret = ERROR_PREPARE_GN_GENERATION_FAILED
+        cls.logger.error('Projects generation has failed!')
       else:
         #Update ninja path in VS project files to point to ninja.exe in local depot_tools folder
         cls.__updateNinjaPathinProjects(gnOutputPath)
     except Exception as error:
       cls.logger.error(str(error))
-      isError = True
-    finally:
-      #Delete updated BUILD.gn from webrtc root folder and recover original file
-      Utility.returnOriginalFile(mainBuildGnFilePath)
-      Utility.popd()
-    
-    if isError:
       ret = ERROR_PREPARE_GN_GENERATION_FAILED
-    else:
-      cls.logger.info('Successfully finished preparation for target: ' + target + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration)
-    
-    end_time = time.time()
-    cls.executionTime = end_time - start_time
+
     return ret
-    
-  #---------------------------------- Private methods --------------------------------------------
+
   @classmethod
   def __updateNinjaPathinProjects(cls,folder):
     """

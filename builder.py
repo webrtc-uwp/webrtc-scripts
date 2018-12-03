@@ -3,6 +3,7 @@ import subprocess
 import shutil 
 import signal
 import time
+from datetime import datetime
 
 import config
 from logger import Logger
@@ -10,7 +11,9 @@ from system import System
 from utility import Utility
 from settings import Settings
 from helper import convertToPlatformPath
-from errors import error_codes, NO_ERROR, ERROR_BUILD_OUTPUT_FOLDER_NOT_EXIST,ERROR_BUILD_FAILED, ERROR_BUILD_MERGE_LIBS_FAILED
+from errors import error_codes, NO_ERROR, ERROR_BUILD_OUTPUT_FOLDER_NOT_EXIST, ERROR_BUILD_UPDATING_DEPS_FAILED, ERROR_BUILD_FAILED,\
+                   ERROR_BUILD_MISSING_LIB_EXECUTABLE, ERROR_BUILD_BUILDING_WRAPPER_FAILED, ERROR_BUILD_MERGE_LIBS_FAILED,\
+                   ERROR_BUILD_BACKUP_DELETION_FAILED, ERROR_BUILD_BACKUP_DELETION_FAILED, ERROR_BUILD_BACKUP_FAILED
 
 class Builder:
   @classmethod
@@ -56,37 +59,31 @@ class Builder:
     Utility.pushd(workingDir)
 
     #Start building and merging libraries
-    if cls.buildTargets(targets, cpu):
+    ret = cls.buildTargets(targets, cpu)
+
+    if ret == NO_ERROR:
       destinationPath = convertToPlatformPath(config.BUILT_LIBS_DESTINATION_PATH.replace('[BUILD_OUTPUT]',config.BUILD_OUTPUT_PATH).replace('[TARGET]',targetName).replace('[PLATFORM]',platform).replace('[CPU]',cpu).replace('[CONFIGURATION]',configuration))
       destinationPathLib = os.path.join(Settings.webrtcPath, destinationPath)
 
       #Merge libraries if it is required
       if shouldCombineLibs:
-        if not cls.mergeLibs(cpu,destinationPathLib):
-          ret = ERROR_BUILD_MERGE_LIBS_FAILED
+        ret = cls.mergeLibs(cpu,destinationPathLib)
 
       if ret == NO_ERROR:
-        #Copy merged libs to output lib folder
-        cls.copyLibsToOutput(targetName, platform, cpu, configuration, destinationPathLib)
+        #Copy merged libs to the output lib folder
+        cls.copyNativeLibPdbsToOutput(destinationPathLib)
 
-        #If enabled backup, copy libs and pdb to specified folder
-        if Settings.enableBackup and Settings.libsBackupPath != '':
-          backupPath = os.path.join(Settings.userWorkingPath,Settings.libsBackupPath)
-          #If backup folder exists delete it
-          if os.path.exists(backupPath):
-            shutil.rmtree(backupPath) 
-          shutil.copytree(destinationPathLib,backupPath)
-    else:
-      ret = ERROR_BUILD_FAILED
     #Switch to previously working directory
     Utility.popd()
   
-    if ret == NO_ERROR:
-      if Settings.buildWrapper:
-        #Build wrapper library if option is enabled
-        if not cls.buildWrapper(targetName ,platform, cpu, configuration):
-          ret = ERROR_BUILD_FAILED
-        
+    #Build wrapper library if option is enabled
+    if Settings.buildWrapper and ret == NO_ERROR:
+      ret = cls.buildWrapper(targetName ,platform, cpu, configuration)
+
+    #If enabled backup, copy libs and pdb to specified folder
+    if Settings.enabledBackup and ret == NO_ERROR:
+      cls.makeBackup(destinationPathLib, targetName, platform, cpu, configuration)
+
     if ret == NO_ERROR:
       cls.logger.info('Running build for target: ' + targetName + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration + ', finished successfully!')
     end_time = time.time()
@@ -101,16 +98,18 @@ class Builder:
       :param platform: Platform name
       :param targetCPU: Target CPU
       :param configuration: Configuration to build for
-      :return ret: True if build was successful or if there is no solution for specified target and platform, otherwise False
+      :return: NO_ERROR if build was successfull. Otherwise returns error code
     """
-    ret = True
+    ret = NO_ERROR
     cls.logger.info('Building ' + target + ' wrapper projects for ' + targetCPU + ' for configuration  '+ configuration)
 
     #Get solution to build, for specified target and platform. Solution is obtained from config.TARGET_WRAPPER_SOLUTIONS
-    solutionName = Utility.getSolutionForTargetAndPlatform(target, platform)
+    solutionName = cls.__getSolutionForTargetAndPlatform(target, platform)
+
     #If solution is not provided, return True like it was succefull
     if solutionName == '':
-      return True
+      cls.logger.warning('Solution with wrapper projects is not specified in config!')
+      return NO_ERROR
 
     try:
       #Solution template path
@@ -119,24 +118,27 @@ class Builder:
       solutionDestinationPath = os.path.join(Settings.rootSdkPath,convertToPlatformPath(config.WEBRTC_SOLUTION_PATH),solutionName)
       
       #Copy template solution to solution folder
-      shutil.copyfile(solutionSourcePath,solutionDestinationPath)
+      if not Utility.copyFile(solutionSourcePath,solutionDestinationPath):
+        return ERROR_BUILD_BUILDING_WRAPPER_FAILED
+
+      #shutil.copyfile(solutionSourcePath,solutionDestinationPath)
 
       #MSBuild command for building wrapper projects
       cmdBuild = 'msbuild ' + solutionDestinationPath + ' /t:Build' + ' /p:Configuration=\"' + configuration + '\" /p:Platform=\"' + targetCPU + '\"'
-
-      #EXecute MSBuild command
+      #Execute MSBuild command
       result = Utility.runSubprocess([cls.cmdVcVarsAll, cmdBuild, cls.cmdVcVarsAllClean], Settings.logLevel == 'DEBUG')
-      if result != 0:
-        cls.logger.error('Building ' + target + ' target has failed!')
-        ret = False
+      if result != NO_ERROR:
+        ret = ERROR_BUILD_BUILDING_WRAPPER_FAILED
+        cls.logger.error('Failed building ' + target + ' wrapper projects for ' + targetCPU + ' for configuration  '+ configuration)
     except Exception as error:
       cls.logger.error(str(error))
-      cls.logger.error('Failed building wrappers for target ' + target)
-      ret = False
+      cls.logger.error('Failed building ' + target + ' wrapper projects for ' + targetCPU + ' for configuration  '+ configuration)
+      ret = ERROR_BUILD_BUILDING_WRAPPER_FAILED
     finally:
       #Delete solution used for building wrapper projects.
-      os.remove(solutionDestinationPath) 
-    if ret:
+      Utility.deleteFiles([solutionDestinationPath])
+
+    if ret == NO_ERROR:
       cls.logger.info('Successfully finished building wrappers for target ' + target)
 
     return ret
@@ -145,8 +147,11 @@ class Builder:
   def buildTargets(cls, targets, targetCPU):
     """
       Build list of targets for specified cpu.
+      :param targets: List of targets to build.
+      :param targetCPU: Target CPU.
+      :return ret: NO_ERROR if preparation was successfull. Otherwise returns error code.
     """
-    ret = True
+    ret = NO_ERROR
     cls.logger.info('Following targets ' + str(targets) + ' will be built for cpu '+ targetCPU)
 
     mainBuildGnFilePath = os.path.join(Settings.webrtcPath,'BUILD.gn')
@@ -157,24 +162,28 @@ class Builder:
         my_env = os.environ.copy()
         my_env["DEPOT_TOOLS_WIN_TOOLCHAIN"] = "0"    
         
-        #Backup original BUILD.gn from webrtc root folder and add additional dependecies to webrtc target
+        #Backup original BUILD.gn from webrtc root folder and add additional dependecies to webrtc target.
+        #This is necessary to do, because ninja regenerates ninja files at startup, and it is required 
+        # to have the sam BUILD.gn as in prepare process.
         if target == config.WEBRTC_TARGET:
-          Utility.backUpAndUpdateGnFile(mainBuildGnFilePath,config.WEBRTC_TARGET,config.ADDITIONAL_TARGETS_TO_ADD)
+          if not Utility.backUpAndUpdateGnFile(mainBuildGnFilePath,config.WEBRTC_TARGET,config.ADDITIONAL_TARGETS_TO_ADD):
+            ret = ERROR_BUILD_UPDATING_DEPS_FAILED
 
-        #Run ninja to build targets
-        cmd = Settings.localNinjaPath + '.exe ' +  target
-        result = Utility.runSubprocess([cmd], Settings.logLevel == 'DEBUG', my_env)
-        if result != 0:
-          raise Exception('Building ' + target + ' target has failed!')
+        if ret == NO_ERROR:
+          #Run ninja to build targets
+          cmd = Settings.localNinjaPath + '.exe ' +  target
+          result = Utility.runSubprocess([cmd], Settings.logLevel == 'DEBUG', my_env)
+          if result != 0:
+            ret = ERROR_BUILD_FAILED
 
     except Exception as error:
       cls.logger.error(str(error))
       cls.logger.error('Build failed for following targets ' + str(targets) + ' for cpu '+ targetCPU)
-      ret = False
+      ret = ERROR_BUILD_FAILED
     finally:
       Utility.returnOriginalFile(mainBuildGnFilePath)
 
-    if ret:
+    if ret == NO_ERROR:
       cls.logger.info('Successfully finished building libs for target ' + target)
 
     return ret
@@ -183,26 +192,28 @@ class Builder:
   def mergeLibs(cls, targetCPU, destinationPath):
     """
       Merges obj files and creates fat webrtc library.
-      TODO: Make it returns error, instead of to terminate execution on error
+      :param targetCPU: Target CPU.
+      :param destinationPath: Folder path where will be saved merged lib.
+      :return ret: NO_ERROR if merge is completed successfully. Otherwise returns error code.
     """
-    ret = True
+    ret = NO_ERROR
     cls.logger.info('Merging libs for cpu '+ targetCPU)
 
     #Determine lib.exe path
     cls.libexePath = os.path.join(Settings.msvcToolsBinPath, targetCPU, 'lib.exe')
     
     if not os.path.isfile(cls.libexePath):
-      ret = False
       cls.logger.error('Merging libraries cannot be done. Missing file ' + cls.libexePath + '!')
       cls.logger.warning('Please, install VS component Visual c++ compiler and libraries for ' + targetCPU)
-      return ret
+      return ERROR_BUILD_MISSING_LIB_EXECUTABLE
 
     #Get list of strings, with file paths total length less than 7000,,
     listOfObjesToCombine = Utility.getFilesWithExtensionsInFolder(config.COMBINE_LIB_FOLDERS, ('.obj','.o'), config.COMBINE_LIB_IGNORE_SUBFOLDERS)
 
     #Create temporary folder where will be save libs created from the obj files ^^^
     tempCombinePath = 'combine'
-    Utility.createFolders([tempCombinePath])
+    if not Utility.createFolders([tempCombinePath]):
+      return ERROR_BUILD_MERGE_LIBS_FAILED
 
     counter = 0
     libsToMerge = ''
@@ -211,29 +222,22 @@ class Builder:
     for objs in listOfObjesToCombine:
       output = 'webrtc' + str(counter) + '.lib'
       cls.logger.debug('Creating ' + output + ' library')
-      result = cls.combineLibs(targetCPU, objs, tempCombinePath, output)
-      if result == NO_ERROR:
+      ret = cls.combineLibs(targetCPU, objs, tempCombinePath, output)
+      if ret == NO_ERROR:
         #Generated lib add to the list, which will be used for creation one fat webrtc lib
         libsToMerge += (os.path.join(tempCombinePath, output)) + ' '
         counter += 1
       else:
-        ret = False
-        cls.logger.error('Creating ' + output + ' library has failed!')
-        return ret
-        #System.stopExecution(ret)
+        break
 
      #Create webrtc lib from specified lib files
-    if len(libsToMerge) > 0:
-      result = cls.combineLibs(targetCPU, libsToMerge, destinationPath, 'webrtc.lib')
-      if result != NO_ERROR:
-        ret = False
-        cls.logger.error('Creating webrtc library has failed!')
-        return ret
-        #System.stopExecution(ret)
+    if ret == NO_ERROR and len(libsToMerge) > 0:
+      cls.logger.debug('Creating webrtc library')
+      ret = cls.combineLibs(targetCPU, libsToMerge, destinationPath, 'webrtc.lib')
     else:
       cls.logger.warning('There is no libs to merge for target CPU ' + targetCPU)
 
-    shutil.rmtree(tempCombinePath) 
+    Utility.deleteFolders([tempCombinePath])
 
     cls.logger.info('Merging libs is finished')
     return ret
@@ -269,30 +273,106 @@ class Builder:
     return ret
 
   @classmethod
-  def copyLibsToOutput(cls, target, platform, cpu, configuration, destinationPathLib):
+  def copyNativeLibPdbsToOutput(cls, destinationPathLib):
+    """
+
+    """
+    ret = True
+
     destinationPathPdb = os.path.join(destinationPathLib,'pdbs')
 
-    if not os.path.exists(destinationPathLib):
-      os.makedirs(destinationPathLib)
+    try:
+      if not os.path.exists(destinationPathLib):
+        os.makedirs(destinationPathLib)
 
-    if not os.path.exists(destinationPathPdb):
-      os.makedirs(destinationPathPdb)
+      if not os.path.exists(destinationPathPdb):
+        os.makedirs(destinationPathPdb)
 
-    listOfLibsToCopy = Utility.getFilesWithExtensionsInFolder(['.'],('.dll'),config.COMBINE_LIB_IGNORE_SUBFOLDERS,0)
+      """
+      listOfLibsToCopy = Utility.getFilesWithExtensionsInFolder(['.'],('.dll'),config.COMBINE_LIB_IGNORE_SUBFOLDERS,0)
+      
+      for lib in listOfLibsToCopy:
+        ret = Utility.copyFile(pdb, os.path.join(destinationPathPdb,os.path.basename(pdb)))
+        #shutil.copyfile(lib, os.path.join(destinationPathLib,os.path.basename(lib)))
+      """
+
+      listOfPdbsToCopy = Utility.getFilesWithExtensionsInFolder(['.'],('.pdb'),config.COMBINE_LIB_IGNORE_SUBFOLDERS,0)
+      
+      for pdb in listOfPdbsToCopy:
+        ret = Utility.copyFile(pdb, os.path.join(destinationPathPdb,os.path.basename(pdb)))
+        #shutil.copyfile(pdb, os.path.join(destinationPathPdb,os.path.basename(pdb)))
     
-    for lib in listOfLibsToCopy:
-      shutil.copyfile(lib, os.path.join(destinationPathLib,os.path.basename(lib)))
+    except Exception as error:
+      cls.logger.warning(str(error))
+      cls.logger.warning('Failed copying pdbs to output folder!')
+      ret = False
 
-    listOfPdbsToCopy = Utility.getFilesWithExtensionsInFolder(['.'],('.pdb'),config.COMBINE_LIB_IGNORE_SUBFOLDERS,0)
-    
-    for pdb in listOfPdbsToCopy:
-      shutil.copyfile(pdb, os.path.join(destinationPathPdb,os.path.basename(pdb)))
+    return ret
 
   @classmethod
-  def makeBackup(cls):
-    pass
+  def makeBackup(cls, nativeOutputPath, target, platform, cpu, configuration):
+    """
+      TODO: Add flag for overriding backup
+            Add time sufix to backup folder
+            Copy wrapper libs to Backup
+    """
+    ret = NO_ERROR
+    #Backup folder name
+    targetFolder = target + '_' + platform + '_' + cpu + '_' + configuration 
+
+    backupFolder = Settings.libsBackupPath
+    if backupFolder == '':
+      backupFolder = 'Backup'
+          
+    backupPath = os.path.join(Settings.userWorkingPath,convertToPlatformPath(backupFolder))
+    #If backup folder exists delete it, or add time suffix to folder name
+    if os.path.exists(backupPath):
+      if Settings.overwriteBackup:
+        if not Utility.deleteFolders([backupPath]):
+          ret = ERROR_BUILD_BACKUP_DELETION_FAILED
+      else:
+        timeSuffix = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        backupPath = os.path.join(Settings.userWorkingPath,convertToPlatformPath(backupFolder) + '_' + timeSuffix)
+
+    #if ret == NO_ERROR:
+      #Create backup folder
+      #if not Utility.createFolders([backupPath]):
+      #  ret = ERROR_BUILD_BACKUP_FAILED
+
+    if ret == NO_ERROR:
+      nativeDestinationPath = os.path.join(backupPath,targetFolder,'native')
+      #if Utility.createFolders([nativeDestinationPath]):
+      if not Utility.copyFolder(nativeOutputPath, nativeDestinationPath):
+        ret = ERROR_BUILD_BACKUP_FAILED
+
+    if ret == NO_ERROR:  
+      if Settings.buildWrapper:
+        #Determine wrapper projects output path
+        wrapperRootOutputPath = os.path.join(Settings.rootSdkPath,convertToPlatformPath(config.WEBRTC_WRAPPER_PROJECTS_OUTPUT_PATH))
+        wrapperOutputPath =  os.path.join(wrapperRootOutputPath, configuration, cpu)
+        wrapperDestinationPath = os.path.join(backupPath,targetFolder,'wrapper')
+        #if Utility.createFolders([wrapperDestinationPath]):
+        if not Utility.copyFolder(wrapperOutputPath, wrapperDestinationPath):
+          ret = ERROR_BUILD_BACKUP_FAILED
+
+    if ret != NO_ERROR:
+      cls.logger.warning('Backup failed!')
+
+    return ret
 
   @classmethod
   def getTargetGnPath(cls, target):
     targetsToBuild, shouldCombineLibs = config.TARGETS_TO_BUILD.get(target,(target,0))
     return targetsToBuild, shouldCombineLibs
+
+  @classmethod
+  def __getSolutionForTargetAndPlatform(cls, target, platform):
+    ret = None
+    targetDict = config.TARGET_WRAPPER_SOLUTIONS.get(target,None)
+    if targetDict != None:
+      ret = targetDict.get(platform,'')
+      if ret == '':
+        cls.logger.info('There is no Wrapper solution file for ' + target + ' ' + platform)
+      else:
+        cls.logger.info('Wrapper solution file is ' + str(ret))
+    return ret

@@ -4,7 +4,7 @@ import re
 import logging
 import subprocess
 import signal
-from shutil import copyfile, rmtree
+from shutil import copyfile, copytree, rmtree
 
 from logger import Logger
 from helper import convertToPlatformPath
@@ -115,33 +115,59 @@ class Utility:
       Deletes junction link.
       :param linkToDelete: Path to link. 
     """
+    ret = True
+   
     if os.path.exists(linkToDelete):
       cmd = 'cmd ' + '/c ' + 'rmdir ' + convertToPlatformPath(linkToDelete)
       result = Utility.runSubprocess([cmd], True)
       if result != NO_ERROR:
+        ret = False
         cls.logger.error('Failed removing link ' + linkToDelete)
+    else:
+      cls.logger.warning(linkToDelete + ' link doesn\'t exist.')
 
-  @staticmethod
-  def createFolders(foldersList):
+    return ret
+
+  @classmethod
+  def createFolders(cls, foldersList):
     """
       Creates folders specified in the list.
       :param foldersList: List of folders to create
+      :return ret: True if folder exists or if it is created.
     """
-    for path in foldersList:
-      dirPath = convertToPlatformPath(path)
-      if not os.path.exists(dirPath):
-        os.makedirs(dirPath)
+    ret = True
+    try:
+      for path in foldersList:
+        dirPath = convertToPlatformPath(path)
+        if not os.path.exists(dirPath):
+          os.makedirs(dirPath)
+    except Exception as error:
+      cls.logger.warning(str(error))
+      ret = False
 
-  @staticmethod
-  def deleteFolders(foldersList):
+    return ret
+
+
+  @classmethod
+  def deleteFolders(cls, foldersList):
     """
       Deletes folders specified in the list.
-      :param foldersList: List of folders to delete
+      :param foldersList: List of folders to delete.
+      return ret: True if folder is successfully deleted or if it doesn't exist.
     """
-    for path in foldersList:
-      dirPath = convertToPlatformPath(path)
-      if os.path.exists(dirPath):
-        rmtree(dirPath)
+    ret = True
+    try:
+      for path in foldersList:
+        dirPath = convertToPlatformPath(path)
+        if os.path.exists(dirPath):
+          rmtree(dirPath)
+        else:
+          cls.logger.warning(dirPath + ' folder doesn\'t exist.')
+    except Exception as error:
+      cls.logger.warning(str(error))
+      ret = False
+
+    return ret
 
   @staticmethod
   def createFolderLinks(foldersToLink):
@@ -160,10 +186,58 @@ class Utility:
       Deletes links from provided dict {source : link}.
       :param foldersList: List of dictionaries with source path as key and destination path (link) as value.
     """
+    ret = True
     for dict in foldersToLink:
       for source, destination in dict.items():
-        if os.path.exists(destination):
-          cls.deleteLink(convertToPlatformPath(destination))
+        ret = cls.deleteLink(convertToPlatformPath(destination))
+        if not ret:
+          break
+
+    return ret
+
+  @classmethod
+  def copyFolder(cls, source, destination):
+    ret = True
+    if os.path.exists(source):
+      try:
+        copytree(source,destination)
+      except Exception as error:
+        ret = False
+        cls.logger.error(str(error))
+    else:
+      cls.logger.error(source + ' folder doesn\'t exist.')
+      ret = False
+    return ret
+
+  @classmethod
+  def copyFile(cls, source, destination):
+    ret = True
+    if os.path.isfile(source):
+      try:
+        copyfile(source, destination)
+      except Exception as error:
+        ret = False
+        cls.logger.error(str(error))
+    else:
+      cls.logger.warning(source + ' file doesn\'t exist')
+      ret = False
+    
+    return ret
+
+  @classmethod
+  def deleteFiles(cls, files):
+    ret = True
+    for file in files:
+      if os.path.isfile(file):
+        try:
+          os.remove(file)
+        except Exception as error:
+          ret = False
+          cls.logger.error(str(error))
+      else:
+        cls.logger.warning(file + ' file doesn\'t exist')
+    
+    return ret
 
   @classmethod
   def copyFilesFromDict(cls, filesToCopy):
@@ -178,7 +252,7 @@ class Utility:
           try:
             copyfile(filePath, convertToPlatformPath(destination))
           except Exception as error:
-            cls.logger.error(error)
+            cls.logger.error(str(error))
 
   @classmethod
   def pushd(cls, path):
@@ -234,51 +308,100 @@ class Utility:
 
   @classmethod
   def importDependencyForTarget(cls, gnFile, target, dependency):
+    """
+      Insert additional dependencies for specified target.
+      :param gnFile: Gn file to update.
+      :param target: Target whose dependencies need to be updated.
+      :param dependency: Dependency to add.
+      :return ret: True if successfully update, otherwise False.
+    """
+    ret = True
     if os.path.exists(gnFile):
-      targetMark = '(\"' + target + '\")'
-      depsRegex = r'\s*deps\s*=\s*\[*'
-      depsFlag = False
-      insertFlag = False
-      with open(gnFile, 'r') as gnReadFile:
-        gnContent = gnReadFile.readlines()
-      with open(gnFile,'w') as gnWriteFile:
-        for line in gnContent:
-          gnWriteFile.write(line)
-          if targetMark in line:
-            depsFlag = True
-          else:
-            if depsFlag:
-              if re.findall(depsRegex,line) != []:
-                insertFlag = True
-                depsFlag = False
-            elif insertFlag:
-              gnWriteFile.write('"' + dependency + '",')
-              insertFlag = False
+      try:
+        #Search for "name_of_target"
+        targetMark = '(\"' + target + '\")'
+        #regex search for deps i.e. 'deps = ['. Re search for: spaces, 'deps', spaces, '=', spaces, '[' 
+        depsRegex = r'\s*deps\s*=\s*\[*'
+        depsFlag = False
+        insertFlag = False
+        #Read gn file content
+        with open(gnFile, 'r') as gnReadFile:
+          gnContent = gnReadFile.readlines()
+        #Open file for writing
+        with open(gnFile,'w') as gnWriteFile:
+          for line in gnContent:
+            gnWriteFile.write(line)
+            #Check if read line contains 'name_of_target', and set depsFlag to true if contains
+            if targetMark in line:
+              depsFlag = True
+            else:
+              if depsFlag:
+                #If desired target is found, search fo deps and set insertFlag to true if found
+                if re.findall(depsRegex,line) != []:
+                  insertFlag = True
+                  depsFlag = False
+              elif insertFlag:
+                #If deps is found insert new dependecy
+                gnWriteFile.write('"' + dependency + '",')
+                insertFlag = False
+      except Exception as error:
+        ret = False
+        cls.logger.error(str(error))
+        cls.logger.error('Failed updating target ' + target + ' with dependency ' + dependency + ' in gn file ' + gnFile)
+    else:
+      ret = False
+      cls.logger.error('Gn file ' + gnFile + ' doesn\'t exist')
+
+    return ret
 
   @classmethod
   def backUpAndUpdateGnFile(cls, filePath, targetToUpdate, dependencyToAdd):
+    """
+      Backups specified gn files and updates dependency for target in that file.
+      :param filePath: Gn file path.
+      :param targetToUpdate: Name of the target to update.
+      :param dependencyToAdd: List of dependecies to add.
+      :return ret: True if successfully updated.
+    """
+    ret = True
     if os.path.isfile(filePath):
-      copyfile(filePath, filePath + '.bak')
-      for dependecy in dependencyToAdd:
-        cls.importDependencyForTarget(filePath, targetToUpdate, dependecy)
+      try:
+        #Backup gn file
+        copyfile(filePath, filePath + '.bak')
+      except Exception as error:
+        ret = False
+        cls.logger.error(str(error))
+        cls.logger.error('Failed creating ' + filePath + ' backup file')
+      if ret:
+        #Add dependencies
+        for dependecy in dependencyToAdd:
+          ret = cls.importDependencyForTarget(filePath, targetToUpdate, dependecy)
+    else:
+      ret = False
+      cls.logger.warning(filePath + ' doesn\'t exist.')
+    
+    return ret
 
   @classmethod
   def returnOriginalFile(cls, filePath):
+    """
+      Replace file with its backup version.
+      :param filePath: Path to file to revert to original state.
+    """
+    ret = True
     backupFilePath = filePath + '.bak'
-    if os.path.isfile(backupFilePath):
-      copyfile(backupFilePath, filePath)
-      os.remove(backupFilePath) 
-
-  @classmethod
-  def getSolutionForTargetAndPlatform(cls, target, platform):
-    ret = None
-    targetDict = config.TARGET_WRAPPER_SOLUTIONS.get(target,None)
-    if targetDict != None:
-      ret = targetDict.get(platform,'')
-      if ret == '':
-        cls.logger.info('There is no Wrapper solution file for ' + target + ' ' + platform)
-      else:
-        cls.logger.info('Wrapper solution file is ' + str(ret))
+    if os.path.isfile(filePath) and os.path.isfile(backupFilePath):
+      try:
+        copyfile(backupFilePath, filePath)
+        os.remove(backupFilePath)
+      except Exception as error:
+        ret = False
+        cls.logger.error(str(error))
+        cls.logger.error('Failed replacing ' + filePath + ' with its backup version.')
+    else:
+      ret = False
+      cls.logger.warning(filePath + ' or its backup doesn\'t exist.')
+    
     return ret
 
   @classmethod
@@ -308,9 +431,12 @@ class Utility:
         process = subprocess.Popen(commandToExecute, shell=False, stderr=subprocess.PIPE, env=userEnv)
 
       #Enable showing subprocess output and responsiveness on keyboard actions (terminating script on user action) 
-      process.communicate()
+      stdout, stderr = process.communicate()
 
       result = process.returncode
+      if result != 0 and stderr != '':
+        result = ERROR_SUBPROCESS_EXECUTAION_FAILED
+        cls.logger.error(str(stderr))
 
     except KeyboardInterrupt:
       os.kill(process.pid, signal.SIGTERM)

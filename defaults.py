@@ -14,8 +14,8 @@ nugetVersionInfo = {
                       #False if not prerelease, Default is based on previous version, False if not prerelease
                       'prerelease': 'Default'
                    }
-
-#gnOutputPath = r'[GN_OUT]/[TARGET]_[PLATFORM]_[CPU]_[CONFIGURATION]'
+#Imput NuGet package version number manualy, used if selected version number does not exist on nuget.org
+manualNugetVersionNumber = False
 
 #Output path where will be stored nuget package as well as libs and pdbs
 #releaseOutputPath = '.'
@@ -27,7 +27,7 @@ supportedPlatformsForHostOs = {
                                 'linux' : ['android', 'linux']
                               }
 
-#Supported cpus for specific target
+#Supported cpus for specific platform
 supportedCPUsForPlatform = { 
                               'winuwp'  : ['arm', 'x86', 'x64'],
                               'win'     : ['x86', 'x64'],
@@ -37,15 +37,29 @@ supportedCPUsForPlatform = {
                               'linux'   : [ 'x86', 'x64'],
                             }
 
-#TODO: Add dictionary with supported cpus for targetPlatform
+#List of targets for which will be performed specified actions. Supported target is webrtc. In future it will be added support for ortc.
 targets = [ 'webrtc' ]
+#List of target cpus. Supported cpus are arm, x86 and x64
 targetCPUs = [ 'arm', 'x86', 'x64' ]
+#List of target platforms. Supported cpus are win and winuwp
 targetPlatforms = [ 'win', 'winuwp' ]
+#List of target configurations. Supported cpus are Release and Debug
 targetConfigurations = [ 'Release', 'Debug' ]
+#TODO: Implement logic to update zslib_eventing_tool.gni based on list of specified programming languages.
 targetProgrammingLanguage = [ 'cx', 'cppwinrt', 'c', 'dotnet', 'python' ]
 
-#Supported actions: clean, createuserdef, prepare, build, createNuget, publishNuget, updatePublishedSample 
+#=========== Supported actions: clean, createuserdef, prepare, build, createNuget. 
+# In future it will be added support publishNuget, updatePublishedSample.
+#'clean' : Based on cleanup options set in cleanupOptions dict, it can be choosen desired cleanup actions.
+#'createuserdef' : Deletes existing userdef.py if exists and create a new from defaults.py.
+#'prepare' : Prepares developement environemnt for selected targets for choosen cpus, platforms and configurations.
+#'build' : Builds selected targets for choosen cpus, platforms and configurations.
+#'createNuget' : Creates nuget package.
+#List of actions to perform
 actions = [ 'prepare', 'build' ]
+
+#Flag if wrapper library should be built. If it is False, it will be built only native libraries
+buildWrapper = True  
 
 #=========== cleanupOptions
 #'actions' : ['cleanOutput', 'cleanIdls', 'cleanUserDef','cleanPrepare'],
@@ -68,29 +82,43 @@ cleanupOptions = {
                 'platforms' : [],
                 'configurations' : []
               }
-
-buildWrapper = True     
+   
 """
 Supported formats: %(funcName)s - function name, %(levelname)s - log level name, %(asctime)s - time, %(message)s - log message, %(filename)s - curremt python filename, %(lineno)d - log message line no, %(name)d - module name
 For the rest of available attributes you can check on https://docs.python.org/3/library/logging.html#logrecord-attributes
-
 """
 #logFormat = '[%(levelname)-17s] - %(asctime)s - %(message)s (%(filename)s:%(lineno)d)'
 logFormat = '[%(levelname)-17s] - [%(name)-15s] - %(funcName)-30s - %(message)s (%(filename)s:%(lineno)d)'
 
 #Supported log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL (case sensitive)
 logLevel = 'DEBUG'
+
+#Log filename. If it is empty string, log will be shown in console. 
+#In other case, it will log to specified file in folder from where script is run.
 logToFile = ''
+#If true overwrite old log file, otherwise it will create a new log file with time suffix.
 overwriteLogFile = False
+
+#If set to False, log messages for different log levels will be shown colorized.
 noColoredOutput = False
 
+#If set to True script execution will be stopped on error.
 stopExecutionOnError = False
+
+#If set to True, shows trace log when script execution is stopped on error
 showTraceOnError = True
+#If set to True, shows all settings values when script execution is stopped on error
 showSettingsValuesOnError = True
+#If set to True, shows PATH variable when script execution is stopped on error
 showPATHOnError = True
 
 #Windows specific variables
+#If VS is installed but it is not found,, it is required to set msvsPath variable
 msvsPath = ''
 
-enableBackup = False
-libsBackupPath = 'Backup'
+#If set to True, output libraries and pdbs will be stored in Backup folder
+enabledBackup = False
+#Backup folder, in user working directory (folder from where script is run)
+libsBackupPath = './Backup'
+#Flag for overwriting current backup folder
+overwriteBackup = False

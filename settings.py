@@ -123,16 +123,16 @@ class Settings:
     cls.showSettingsValuesOnError = showSettingsValuesOnError
     cls.showPATHOnError = showPATHOnError
 
-    cls.webRTCGnArgsTemplatePath = webRTCGnArgsTemplatePath
-
     cls.nugetFolderPath = nugetFolderPath
     cls.nugetVersionInfo = nugetVersionInfo
+    cls.manualNugetVersionNumber = manualNugetVersionNumber
 
     cls.msvsPath = msvsPath
 
-    cls.enableBackup = enableBackup
+    cls.enabledBackup = enabledBackup
     cls.libsBackupPath = libsBackupPath
-    
+    cls.overwriteBackup = overwriteBackup
+
     #This value will be set during VS path check
     cls.msvcToolsPath = ''
     cls.msvcToolsBinPath = ''

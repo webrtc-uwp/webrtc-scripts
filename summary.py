@@ -20,6 +20,17 @@ class Summary:
 
     cls.action_results[action] = resultActionDict
 
+  @classmethod
+  def addNugetSummary(cls, target, result, time = 0):
+    key = target
+
+    resultActionDict =  cls.action_results.get('createNuget',dict())
+    resultDict = resultActionDict.get(key,dict())
+    resultDict['result'] = result
+    resultDict['time'] = time 
+    resultActionDict[key] = resultDict
+
+    cls.action_results['createNuget'] = resultActionDict
 
   @classmethod
   def printSummary(cls, executionTime = 0):
