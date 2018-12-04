@@ -22,6 +22,13 @@ PREPRATARION_WORKING_PATH = './webrtc/xplatform/webrtc'
 GN_TARGET_OUTPUT_PATH = '[GN_OUT]/[TARGET]_[PLATFORM]_[CPU]_[CONFIGURATION]'
 BUILT_LIBS_DESTINATION_PATH = '/[BUILD_OUTPUT]/[TARGET]/[PLATFORM]/[CPU]/[CONFIGURATION]/'
 
+#Paths are relative to the root SDK path
+NUGET_TEMPLATES_FOLDER = './scripts/templates/'
+NUGET_LIBRARIES = '/libraries/[TARGET]/[PLATFORM]/[CPU]/[CONFIGURATION]/'
+NUGET_URL = 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe'
+NATIVE_LIB_SRC = './[TARGET]/windows/solutions/Build/Output/Org.[TARGET]/[CONFIGURATION]/[CPU]/[FILE]'
+NATIVE_LIB_TARGET = 'runtimes\\win10-[CPU]\\native'
+
 #Paths are relative to the webrtc root path
 GN_OUTPUT_PATH = './out'
 #Path where will ba saved built libs, referenced by wrapper projects

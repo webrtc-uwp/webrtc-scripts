@@ -3,6 +3,20 @@
   If you want to change any variable listed below do that in generated userdef.py file.
 """
 
+#args.gn template path
+webRTCGnArgsTemplatePath='./webrtc/windows/templates/gns/args.gn'
+
+#Path where nuget package and all of the fil
+nugetFolderPath = './webrtc/windows/nuget'
+nugetVersionInfo = {
+                      #Main version number of the NuGet package 
+                      'number': '66',
+                      #False if not prerelease, Default is based on previous version, False if not prerelease
+                      'prerelease': 'Default'
+                   }
+#Imput NuGet package version number manualy, used if selected version number does not exist on nuget.org
+manualNugetVersionNumber = False
+
 #Output path where will be stored nuget package as well as libs and pdbs
 #releaseOutputPath = '.'
 

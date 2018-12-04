@@ -9,6 +9,7 @@ from logger import Logger,ColoredFormatter
 from prepare import Preparation
 from builder import Builder
 from cleanup import Cleanup
+from createNuget import CreateNuget
 from errors import NO_ERROR, ERROR_TARGET_NOT_SUPPORTED, ERROR_PLATFORM_NOT_SUPPORTED
 from summary import Summary
 from backup import Backup
@@ -118,7 +119,20 @@ def actionBackup():
               Backup.run(target, platform, cpu, configuration)
 
 def actionCreateNuget():
-    pass
+  CreateNuget.init()
+
+  for target in Settings.targets:
+    result = CreateNuget.run(
+      target, Settings.targetPlatforms, Settings.targetCPUs, 
+      Settings.targetConfigurations, Settings.nugetFolderPath, Settings.nugetVersionInfo
+    )
+    Summary.addNugetSummary(target, result, CreateNuget.executionTime)
+    if result != NO_ERROR:
+        Logger.printEndActionMessage('Failed to create NuGet package ' + target,ColoredFormatter.RED)
+        #Terminate script execution if stopExecutionOnError is set to True in userdef
+        shouldEndOnError(result)
+    else:
+        Logger.printEndActionMessage('CreateNuget ' + target)
 
 def actionPublishNuget():
   pass

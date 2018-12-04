@@ -123,6 +123,10 @@ class Settings:
     cls.showSettingsValuesOnError = showSettingsValuesOnError
     cls.showPATHOnError = showPATHOnError
 
+    cls.nugetFolderPath = nugetFolderPath
+    cls.nugetVersionInfo = nugetVersionInfo
+    cls.manualNugetVersionNumber = manualNugetVersionNumber
+
     cls.msvsPath = msvsPath
 
     cls.enabledBackup = enabledBackup
