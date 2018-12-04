@@ -122,6 +122,7 @@ def actionCreateNuget():
   CreateNuget.init()
 
   for target in Settings.targets:
+    Logger.printStartActionMessage(ACTION_CREATE_NUGET)
     result = CreateNuget.run(
       target, Settings.targetPlatforms, Settings.targetCPUs, 
       Settings.targetConfigurations, Settings.nugetFolderPath, Settings.nugetVersionInfo
