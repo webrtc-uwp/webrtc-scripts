@@ -7,3 +7,5 @@ ACTION_CREATE_NUGET = 'createnuget'
 ACTION_PUBLISH_NUGET = 'publishnuget'
 ACTION_UPDATE_SAMPLE = 'updatesample'
 
+MAX_SDK_ROOT_PATH_LENGTH = 64
+

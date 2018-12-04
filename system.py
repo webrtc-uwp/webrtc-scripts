@@ -12,7 +12,7 @@ from logger import Logger
 import errors
 from errors import error_codes, NO_ERROR
 from helper import convertToPlatformPath, getCPUFamily
-
+from consts import MAX_SDK_ROOT_PATH_LENGTH
 
 class System:
   """
@@ -81,6 +81,10 @@ class System:
 
     #Install missing python packages
     cls.installPythonModules(config.PYTHON_PACKAGES_TO_INSTALL)
+
+    #Show warning if root sdk path is longer than MAX_SDK_ROOT_PATH_LENGTH = 65
+    if len(Settings.rootSdkPath) > MAX_SDK_ROOT_PATH_LENGTH:
+      cls.logger.warning(Settings.rootSdkPath + ' is longer than ' + str(MAX_SDK_ROOT_PATH_LENGTH) + '. That may cause build issues for webrtc libraries!')
 
   @classmethod
   def updatePythonTools(cls):
