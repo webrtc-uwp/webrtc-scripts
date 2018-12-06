@@ -227,7 +227,8 @@ class Utility:
     """
       Copies file.
       :param source: File to copy
-      :param destination: 
+      :param destination: PAth to folder where file will be copied.
+      :return ret: True if file successfully copied.
     """
     ret = True
     if os.path.isfile(source):
@@ -497,3 +498,30 @@ class Utility:
       cls.logger.error(error_codes[result])
 
     return result
+
+  @classmethod
+  def filesInFolder(cls,path):  
+    for file in os.listdir(path):
+        if os.path.isfile(os.path.join(path, file)):
+            yield file
+
+  @classmethod
+  def copyAllFilesFromFolder(cls, source, destination):
+    """
+      Copies all file from source folder (subfolders are ignored) to destination folder.
+      :param source: Path to folder from where all file will be copied.
+      :param destination: Path to folder where files will be copied.
+      :return ret: True if all files are copied.
+    """
+    ret = True
+
+    if os.path.exists(source):
+      for file in cls.filesInFolder(source):
+        if file not in config.FILES_TO_IGNORE_FOR_COPYING:
+          if not os.path.exists(destination):
+            cls.createFolders([destination])
+          ret = cls.copyFile(os.path.join(source,file), os.path.join(destination,file))
+          if not ret:
+            break
+    
+    return ret

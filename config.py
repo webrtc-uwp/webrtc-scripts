@@ -68,6 +68,7 @@ FOLDERS_TO_GENERATE_ORTC =  [
 FOLDERS_TO_LINK = [
                    {'../buildtools' : './buildtools'},
                    {'../chromium/build' : './build'},
+                   {'../chromium/third_party/abseil-cpp' : './chromium/src/third_party/abseil-cpp' },
                    {'../chromium/third_party/jsoncpp' : './chromium/src/third_party/jsoncpp'},
                    {'../chromium/third_party/jsoncpp' : './third_party/jsoncpp'},
                    {'../jsoncpp' : './chromium/src/third_party/jsoncpp/source'},
@@ -86,6 +87,7 @@ FOLDERS_TO_LINK = [
                    {'../usrsctp' : './third_party/usrsctp/usrsctplib'},
                    {'../chromium/third_party/libvpx' : './chromium/src/third_party/libvpx'},
                    {'../libvpx' : './chromium/src/third_party/libvpx/source/libvpx'},
+                   {'../chromium/third_party/rnnoise' : './chromium/src/third_party/rnnoise'},
                    {'../chromium/testing' : './chromium/src/testing'},
                    {'../chromium/testing' : './testing'},
                    {'../chromium/base' : './base'},
@@ -103,6 +105,8 @@ FOLDERS_TO_LINK = [
                    {'../libyuv' : './third_party/libyuv'},
                    {'../openmax' : './third_party/openmax_dl'},
                    {'../libjpeg_turbo' : './third_party/libjpeg_turbo'},
+                   {'../chromium/third_party/abseil-cpp' : './third_party/abseil-cpp'},
+                   {'../chromium/third_party/rnnoise' : './third_party/rnnoise'},
                    {'../../windows/third_party/winuwp_compat' : './third_party/winuwp_compat'},
                    {'../../windows/third_party/winuwp_h264' : './third_party/winuwp_h264'},
                    {'../gflags-build' : './third_party/gflags'},
@@ -145,7 +149,14 @@ FILES_TO_COPY = [
                   {'../templates/gn/tool_build.gni' : './third_party/idl/tool_build.gni'},
                 ]
 
+FOLDERS_CONTENT_TO_COPY = [
+                            {'../chromium/third_party' : './third_party/'}
+                          ]
 
+FILES_TO_IGNORE_FOR_COPYING = [
+                              '.git',
+                              '.gitignore'
+                            ]
 #VS2017 folders name to append to Program files or Program Files (x86) parent folder
 MSVS_FOLDER_NAME = '/Microsoft Visual Studio/2017'
 
@@ -217,6 +228,9 @@ IDL_GENERATED_FILES_OUTPUT_PATH = '/sdk/windows/wrapper/generated'
 CLANG_CL_PATH = '/third_party/llvm-build/Release+Asserts/bin/clang-cl.exe'
 CLANG_UPDATE_SCRIPT_PATH = '/tools/clang/scripts/update.py'
     
+#lastcghange.py path
+LAST_CHANGE_MODULE_PATH = '/build/util'
+
 PYTHON_PACKAGES_TO_INSTALL = {
                               'win32file' : 'pywin32'
                             }

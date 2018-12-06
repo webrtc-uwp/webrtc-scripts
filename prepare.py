@@ -8,7 +8,7 @@ from utility import Utility
 from settings import Settings
 from system import System
 from logger import Logger
-from helper import convertToPlatformPath
+from helper import convertToPlatformPath, iterateDict
 import errors
 from errors import NO_ERROR
 
@@ -49,9 +49,17 @@ class Preparation:
         if not Utility.createFolderLinks(config.FOLDERS_TO_LINK_ORTC) and ret == NO_ERROR:
           ret = errors.ERROR_PREPARE_CREATING_LINKS_FAILED
 
+    #Copy all files from specified folder (key) to destination (value)
+      for dict in config.FOLDERS_CONTENT_TO_COPY:
+        for key, value in iterateDict(dict):
+          result = Utility.copyAllFilesFromFolder(convertToPlatformPath(key), convertToPlatformPath(value))
+          if not result:
+            ret = errors.ERROR_PREPARE_COPYING_FILES_FAILED
+            break
+
       #Copy files whose paths and destinations are in dictionary { file_path : destination_path }
-      if not Utility.copyFilesFromDict(config.FILES_TO_COPY) and ret == NO_ERROR:
-        ret = errors.ERROR_PREPARE_COPYING_FILES_FAILED
+      """if not Utility.copyFilesFromDict(config.FILES_TO_COPY) and ret == NO_ERROR:
+        ret = errors.ERROR_PREPARE_COPYING_FILES_FAILED"""
 
       #If win is one of the selected platforms it is required to have clang-cl.
       #It is called here becuae proper folders structure is required to execute update script
@@ -62,6 +70,9 @@ class Preparation:
       #Download missing build tools
       if not System.downloadBuildToolsIfNeeded() and ret == NO_ERROR:
         ret = errors.ERROR_PREPARE_INSTALLING_CLANG_FAILED
+
+      if ret == NO_ERROR:
+        ret = cls.__updateChangeTimeStamp()
 
     except Exception as error:
       ret = errors.ERROR_PREPARE_SET_UP_FAILED
@@ -207,3 +218,28 @@ class Preparation:
               projectFile.write(updatedProject)
           except Exception as error:
             cls.logger.warning(str(error))
+
+  @classmethod
+  def __updateChangeTimeStamp(cls):
+    """
+      Creates or uptades LASTCHANGE.committime, required by gn.
+      :return ret: NO_ERROR if timestamp is successfully updated. Otherwise error code.
+    """
+    ret = NO_ERROR
+
+    try:
+      lastchangeModulePath = convertToPlatformPath(config.LAST_CHANGE_MODULE_PATH)
+      Utility.pushd(lastchangeModulePath)
+
+      Utility.addModulePath(os.getcwd())
+      
+      import lastchange
+
+      lastchange.main(['','-o','LASTCHANGE'])
+    except Exception as error:
+      ret = errors.ERROR_PREPARE_UPDATING_TIMESTEMP_FAILED
+      cls.logger.error(str(error))
+    finally:
+      Utility.popd()
+
+    return ret
