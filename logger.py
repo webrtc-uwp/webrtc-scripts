@@ -97,14 +97,14 @@ class Logger:
 
   @classmethod
   def printColorMessage(cls, message,textColor = ColoredFormatter.RED, background = None):
-    if cls.basicLogger == None:
-      cls.initBasicLogger()
+    #if cls.basicLogger == None:
+    #  cls.initBasicLogger()
     
     coloredMessage = ''.join((ColoredFormatter.CSI_SEQUENCE, (str(textColor + 30)),
                             'm', message, ColoredFormatter.RESET_SEQUECE))
     
-    #print(coloredMessage)
-    cls.basicLogger.debug(coloredMessage)
+    print(coloredMessage)
+    #cls.basicLogger.debug(coloredMessage)
 
   @classmethod
   def printStartActionMessage(cls, action, textColor = ColoredFormatter.GREEN):
