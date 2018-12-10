@@ -126,6 +126,7 @@ class Settings:
     cls.nugetFolderPath = nugetFolderPath
     cls.nugetVersionInfo = nugetVersionInfo
     cls.manualNugetVersionNumber = manualNugetVersionNumber
+    cls.nugetPackagesToPublish = nugetPackagesToPublish
 
     cls.msvsPath = msvsPath
 
