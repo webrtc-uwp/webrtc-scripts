@@ -63,8 +63,7 @@ class Preparation:
 
       #If win is one of the selected platforms it is required to have clang-cl.
       #It is called here becuae proper folders structure is required to execute update script
-      if 'win' in Settings.targetPlatforms:
-        if not System.downloadClangClIfMissing() and ret == NO_ERROR:
+      if not System.downloadClangClIfMissing() and ret == NO_ERROR:
          ret = errors.ERROR_PREPARE_INSTALLING_CLANG_FAILED
         
       #Download missing build tools
