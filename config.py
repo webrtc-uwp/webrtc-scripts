@@ -141,10 +141,6 @@ FOLDERS_TO_LINK_LLVM = [
 
 #List of filse and its destinations for copying during preparation process
 FILES_TO_COPY = [
-                  {'../chromium/third_party/BUILD.gn' : './third_party/BUILD.gn'},
-                  {'../chromium/third_party/DEPS' : './third_party/DEPS'},
-                  {'../chromium/third_party/OWNERS' : './third_party/OWNERS'},
-                  {'../chromium/third_party/PRESUBMIT.py' : './third_party/PRESUBMIT.py'},
                   {'../templates/gn/idl_BUILD.gn' : './third_party/idl/BUILD.gn'},
                   {'../templates/gn/tool_build.gni' : './third_party/idl/tool_build.gni'},
                 ]

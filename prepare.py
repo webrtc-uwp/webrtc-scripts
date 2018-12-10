@@ -58,8 +58,8 @@ class Preparation:
             break
 
       #Copy files whose paths and destinations are in dictionary { file_path : destination_path }
-      """if not Utility.copyFilesFromDict(config.FILES_TO_COPY) and ret == NO_ERROR:
-        ret = errors.ERROR_PREPARE_COPYING_FILES_FAILED"""
+      if not Utility.copyFilesFromDict(config.FILES_TO_COPY) and ret == NO_ERROR:
+        ret = errors.ERROR_PREPARE_COPYING_FILES_FAILED
 
       #If win is one of the selected platforms it is required to have clang-cl.
       #It is called here becuae proper folders structure is required to execute update script
