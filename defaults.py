@@ -6,7 +6,7 @@
 #args.gn template path
 webRTCGnArgsTemplatePath='./webrtc/windows/templates/gns/args.gn'
 
-#Path where nuget package and all of the fil
+#Path where nuget package and all of the files used to create the package are stored
 nugetFolderPath = './webrtc/windows/nuget'
 nugetVersionInfo = {
                       #Main version number of the NuGet package 
@@ -16,6 +16,10 @@ nugetVersionInfo = {
                    }
 #Imput NuGet package version number manualy, used if selected version number does not exist on nuget.org
 manualNugetVersionNumber = False
+
+#List of NuGet packages used to manualy publish nuget packages, package example: 'webrtc.1.66.0.3-Alpha.nupkg'
+#Packages must be placed in a folder referenced in nugetFolderPath variable
+nugetPackagesToPublish = []
 
 #Output path where will be stored nuget package as well as libs and pdbs
 #releaseOutputPath = '.'

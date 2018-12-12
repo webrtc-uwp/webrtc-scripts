@@ -7,6 +7,7 @@ from importlib import import_module
 
 import config
 from utility import Utility
+from nugetUtility import NugetUtility
 from settings import Settings
 from logger import Logger
 import errors
@@ -71,6 +72,9 @@ class System:
     
     #Set utility logger
     Utility.setUp()
+
+    #Set up nuget utility
+    NugetUtility.setUp()
 
     #Remove Google's depot tools from the PATH and add local depot tool path.
     cls.__updateDepotToolsPath()

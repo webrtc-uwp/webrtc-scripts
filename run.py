@@ -10,6 +10,7 @@ from prepare import Preparation
 from builder import Builder
 from cleanup import Cleanup
 from createNuget import CreateNuget
+from publishNuget import PublishNuget
 from errors import NO_ERROR, ERROR_TARGET_NOT_SUPPORTED, ERROR_PLATFORM_NOT_SUPPORTED
 from summary import Summary
 from backup import Backup
@@ -122,7 +123,7 @@ def actionCreateNuget():
   CreateNuget.init()
 
   for target in Settings.targets:
-    Logger.printStartActionMessage(ACTION_CREATE_NUGET)
+    Logger.printStartActionMessage('Create Nuget for ' + target)
     result = CreateNuget.run(
       target, Settings.targetPlatforms, Settings.targetCPUs, 
       Settings.targetConfigurations, Settings.nugetFolderPath, Settings.nugetVersionInfo
@@ -133,10 +134,19 @@ def actionCreateNuget():
         #Terminate script execution if stopExecutionOnError is set to True in userdef
         shouldEndOnError(result)
     else:
-        Logger.printEndActionMessage('CreateNuget ' + target)
+        Logger.printEndActionMessage('Create Nuget for ' + target)
 
 def actionPublishNuget():
-  pass
+  PublishNuget.init()
+  for target in Settings.targets:
+    Logger.printStartActionMessage("Publish Nuget for " + target)
+    result = PublishNuget.run()
+    if result != NO_ERROR:
+        Logger.printEndActionMessage('Failed to publish NuGet package ' + target,ColoredFormatter.RED)
+        #Terminate script execution if stopExecutionOnError is set to True in userdef
+        shouldEndOnError(result)
+    else:
+        Logger.printEndActionMessage('Publish Nuget for ' + target)
 
 def actionUpdatePublishedSample():
   pass

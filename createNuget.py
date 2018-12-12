@@ -1,21 +1,20 @@
 import os
-import subprocess
 import shutil
 import itertools
 import json
 import time
 from xml.etree import ElementTree as ET
 
-from errors import NO_ERROR, ERROR_NUGET_CREATION_MISSING_FILE, ERROR_ACQUIRE_NUGET_EXE_FAILED,\
-ERROR_GET_NUGET_PACKAGE_VERSIONS_FAILED, ERROR_PACKAGE_VERSION_NOT_SUPPORTED, ERROR_CREATE_NUGET_FILE_FAILED,\
+from errors import NO_ERROR, ERROR_NUGET_CREATION_MISSING_FILE, ERROR_GET_NUGET_PACKAGE_VERSIONS_FAILED,\
+ERROR_PACKAGE_VERSION_NOT_SUPPORTED, ERROR_CREATE_NUGET_FILE_FAILED,\
 ERROR_CHANGE_NUSPEC_FAILED
 import config
 from logger import Logger,ColoredFormatter
 from settings import Settings
-from helper import convertToPlatformPath
+from helper import convertToPlatformPath, module_exists
 from utility import Utility
 from summary import Summary
-import defaults
+from nugetUtility import NugetUtility
 
 
 class CreateNuget:
@@ -34,7 +33,7 @@ class CreateNuget:
         """
         Initiates logger object.
         """
-        cls.logger = Logger.getLogger('createNuget')
+        cls.logger = Logger.getLogger('CreateNuget')
 
     @classmethod
     def run(cls, target, platforms, cpus, configurations, targetFolder, versionInfo):
@@ -48,11 +47,11 @@ class CreateNuget:
         :param configurations: Debug/Release.
         :param targetFolder: base folder where all files will be placed including created package
         :param versionInfo: Dictionary with the basic information about NuGet version number
+        :return: NO_ERROR if successfull. Otherwise returns error code
         """
         start_time = time.time()
         
         cls.nugetFolderPath = targetFolder
-        cls.nugetExePath = cls.nugetFolderPath + '/nuget.exe'
         cls.nuspec_file = cls.nugetFolderPath + '/[TARGET].nuspec'
         cls.targets_file = cls.nugetFolderPath + '/[TARGET].targets'
         cls.versions_file = cls.nugetFolderPath + '/versions.json'
@@ -86,7 +85,7 @@ class CreateNuget:
                 # return to the base directory
                 Utility.popd()
         if ret == NO_ERROR:
-            ret = cls.nuget_cli('pack', cls.nugetFolderPath + '/webrtc.nuspec')
+            ret = NugetUtility.nuget_cli('pack', cls.nugetFolderPath + '/webrtc.nuspec')
         if ret == NO_ERROR:
             cls.check_and_move(target, cls.version)
             cls.logger.info('NuGet package created succesfuly: ' + cls.nugetFolderPath + '/' + cls.version)
@@ -94,70 +93,6 @@ class CreateNuget:
         cls.executionTime = end_time - start_time
         
         return ret
-
-    @classmethod
-    def nuget_cli(cls, nuget_command, *args):
-        """
-        Adds nuget cli functionality to python script trough nuget.exe
-        If nuget.exe is not available, download_nuget method is called
-
-        :param nuget_command: nuget cli command can be writtenwith or without nuget prefix.
-        :param *args: aditional options and arguments for the nuget cli command
-            example: CreateNuget.nuget_cli('help', '-All', '-Markdown')
-        """
-        ret = NO_ERROR
-        if not os.path.exists(cls.nugetExePath):
-            cls.download_nuget()
-
-        # allows nuget command to be written with or wihout 'nuget ' prefix
-        if 'nuget ' in nuget_command:
-            nuget_command = nuget_command.replace('nuget ', '')
-        try:
-            # absolute path to nuget.exe
-            exe_path = convertToPlatformPath(cls.nugetExePath)
-            full_command = [exe_path, nuget_command]
-            cls.logger.info(exe_path)
-            # add options or other arguments to the nuget command
-            for cmd in args:
-                full_command.append(cmd)
-            subprocess.call(full_command)
-        except Exception as errorMessage:
-            cls.logger.error(errorMessage)
-            ret = ERROR_ACQUIRE_NUGET_EXE_FAILED
-        return ret
-
-    @classmethod
-    def download_nuget(cls):
-        """
-        Download latest nuget.exe file from nuget.org
-        """
-        # Python 3:
-        if CreateNuget.module_exists('urllib.request'):
-            import urllib
-            cls.logger.info('Downloading NuGet.exe file with urllib.request...')
-            urllib.request.urlretrieve(config.NUGET_URL, cls.nugetExePath)
-
-        # Python 2:
-        if CreateNuget.module_exists('urllib2'):
-            import urllib2
-            cls.logger.info('Downloading NuGet.exe file with urllib2...')
-            with open(cls.nugetExePath, 'wb') as f:
-                f.write(urllib2.urlopen(config.NUGET_URL).read())
-                f.close()
-        cls.logger.info("Download Complete!")
-
-    @staticmethod
-    def module_exists(module_name):
-        """
-        :param module_name: name of the module that needs to be checked.
-        :return: True/False based on if the input module exists or not
-        """
-        try:
-            __import__(module_name)
-        except ImportError:
-            return False
-        else:
-            return True
 
     @classmethod
     def get_versions(cls, target):
@@ -173,12 +108,12 @@ class CreateNuget:
         cls.logger.info('Colecting ' + target + ' NuGet package versions from nuget.org...')
         try:
             # Python 3:
-            if CreateNuget.module_exists('urllib.request'):
+            if module_exists('urllib.request'):
                 import urllib.request
                 with urllib.request.urlopen(search) as url:
                     data = json.loads(url.read().decode())
             # Python 2:
-            if CreateNuget.module_exists('urllib.request') is False:
+            if module_exists('urllib.request') is False:
                 import urllib
                 response = urllib.urlopen(search)
                 data = json.loads(response.read())
