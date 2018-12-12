@@ -32,3 +32,15 @@ def iterateDict(dictonary):
     return dictonary.iteritems() 
   else: 
     return iter(dictonary.items())
+
+def module_exists(module_name):
+    """
+    :param module_name: name of the module that needs to be checked.
+    :return: True/False based on if the input module exists or not
+    """
+    try:
+        __import__(module_name)
+    except ImportError:
+        return False
+    else:
+        return True

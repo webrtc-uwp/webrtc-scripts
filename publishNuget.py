@@ -1,4 +1,5 @@
 import os
+import time
 
 from logger import Logger
 from settings import Settings
@@ -25,6 +26,7 @@ class PublishNuget:
         Start publish NuGet package process
         :return: NO_ERROR if successfull. Otherwise returns error code
         """
+        start_time = time.time()
         ret =  NO_ERROR
         #Select package that was just created.
         if hasattr(CreateNuget, 'version'):
@@ -42,6 +44,8 @@ class PublishNuget:
                 packagePath = convertToPlatformPath(cls.nugetFolderPath+'/'+package['fullName'])
                 #Api key needs to be placed diferently
                 cls.publish(packagePath, 'NLlP8fkkf2ij', cls.serverURL)
+        end_time = time.time()
+        cls.executionTime = end_time - start_time
         return ret
 
     @classmethod

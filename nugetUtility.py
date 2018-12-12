@@ -3,7 +3,7 @@ import subprocess
 
 from errors import NO_ERROR, ERROR_ACQUIRE_NUGET_EXE_FAILED
 from settings import Settings
-from helper import convertToPlatformPath
+from helper import convertToPlatformPath, module_exists
 from logger import Logger,ColoredFormatter
 import config
 
@@ -50,29 +50,16 @@ class NugetUtility:
         Download latest nuget.exe file from nuget.org
         """
         # Python 3:
-        if NugetUtility.module_exists('urllib.request'):
+        if module_exists('urllib.request'):
             import urllib
             cls.logger.info('Downloading NuGet.exe file with urllib.request...')
             urllib.request.urlretrieve(config.NUGET_URL, cls.nugetExePath)
 
         # Python 2:
-        if NugetUtility.module_exists('urllib2'):
+        if module_exists('urllib2'):
             import urllib2
             cls.logger.info('Downloading NuGet.exe file with urllib2...')
             with open(cls.nugetExePath, 'wb') as f:
                 f.write(urllib2.urlopen(config.NUGET_URL).read())
                 f.close()
         cls.logger.info("Download Complete!")
-
-    @staticmethod
-    def module_exists(module_name):
-        """
-        :param module_name: name of the module that needs to be checked.
-        :return: True/False based on if the input module exists or not
-        """
-        try:
-            __import__(module_name)
-        except ImportError:
-            return False
-        else:
-            return True

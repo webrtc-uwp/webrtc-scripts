@@ -11,7 +11,7 @@ ERROR_CHANGE_NUSPEC_FAILED
 import config
 from logger import Logger,ColoredFormatter
 from settings import Settings
-from helper import convertToPlatformPath
+from helper import convertToPlatformPath, module_exists
 from utility import Utility
 from summary import Summary
 from nugetUtility import NugetUtility
@@ -108,12 +108,12 @@ class CreateNuget:
         cls.logger.info('Colecting ' + target + ' NuGet package versions from nuget.org...')
         try:
             # Python 3:
-            if NugetUtility.module_exists('urllib.request'):
+            if module_exists('urllib.request'):
                 import urllib.request
                 with urllib.request.urlopen(search) as url:
                     data = json.loads(url.read().decode())
             # Python 2:
-            if NugetUtility.module_exists('urllib.request') is False:
+            if module_exists('urllib.request') is False:
                 import urllib
                 response = urllib.urlopen(search)
                 data = json.loads(response.read())
