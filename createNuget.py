@@ -11,10 +11,11 @@ ERROR_CHANGE_NUSPEC_FAILED
 import config
 from logger import Logger,ColoredFormatter
 from settings import Settings
-from helper import convertToPlatformPath, module_exists
+from helper import convertToPlatformPath, module_exists, yes_no
 from utility import Utility
 from summary import Summary
 from nugetUtility import NugetUtility
+from releaseNotes import ReleaseNotes
 
 
 class CreateNuget:
@@ -36,7 +37,7 @@ class CreateNuget:
         cls.logger = Logger.getLogger('CreateNuget')
 
     @classmethod
-    def run(cls, target, platforms, cpus, configurations, targetFolder, versionInfo):
+    def run(cls, target, platform, cpus, configurations, targetFolder, versionInfo):
         """
         Method used to call all other methods in order necessary to create NuGet package
         First creates .nuspec, then .targets then adds files to .nuspec
@@ -53,10 +54,12 @@ class CreateNuget:
         
         cls.nugetFolderPath = targetFolder
         cls.nuspec_file = cls.nugetFolderPath + '/[TARGET].nuspec'
+        cls.changelog_file = cls.nugetFolderPath + '/[TARGET].[VERSION]-changelog.txt'
         cls.targets_file = cls.nugetFolderPath + '/[TARGET].targets'
         cls.versions_file = cls.nugetFolderPath + '/versions.json'
         cls.destinationLibPath = cls.nugetFolderPath + config.NUGET_LIBRARIES
         ret = NO_ERROR
+        release_note = ''
         if Settings.manualNugetVersionNumber is False:
             ret = cls.get_versions(target)
             if ret == NO_ERROR:
@@ -66,11 +69,13 @@ class CreateNuget:
         else:
             cls.version = Settings.manualNugetVersionNumber
         if ret == NO_ERROR:
-            ret = cls.create_nuspec(cls.version, target)
+            if os.path.isfile(Settings.releaseNotePath):
+                release_note = ReleaseNotes.run(Settings.releaseNotePath, target, platform, cls.version)
+            ret = cls.create_nuspec(cls.version, target, release_note)
         if ret == NO_ERROR:
             ret = cls.create_targets(target)
         if ret == NO_ERROR:
-            for platform, cpu, configuration in itertools.product(platforms, cpus, configurations):                
+            for cpu, configuration in itertools.product(cpus, configurations):                
                 # check and copy all lib files to the specified folder 
                 ret = cls.copy_files(target, platform, configuration, cpu)
                 
@@ -553,7 +558,7 @@ class CreateNuget:
             cls.logger.error(str(error))
 
     @classmethod
-    def create_nuspec(cls, version, target):
+    def create_nuspec(cls, version, target, release_note = False):
         """
         Create .nuspec file based on a template with default values
         :param version: version of the nuget package must be specified when
@@ -571,6 +576,12 @@ class CreateNuget:
                     for line in source:
                         if '<version>' in line:
                             destination.write('\t\t<version>' + version + '</version>\n')
+                            if release_note is not False:
+                                cls.logger.debug('Release note added: ' + release_note)
+                                # Template .nuspec file
+                                with open(cls.changelog_file.replace('[TARGET]', target).replace('[VERSION]', version), 'w') as changelog:
+                                    changelog.write(release_note)
+                                destination.write('\t\t<releaseNotes>' + release_note + '</releaseNotes>\n')
                         else:
                             destination.write(line)
             cls.logger.debug('Nuspec file created successfuly!')

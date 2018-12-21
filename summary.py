@@ -21,8 +21,8 @@ class Summary:
     cls.action_results[action] = resultActionDict
 
   @classmethod
-  def addNugetSummary(cls, target, result, time = 0):
-    key = target
+  def addNugetSummary(cls, target, platform, result, time = 0):
+    key = target + '___' + platform
 
     resultActionDict =  cls.action_results.get('createNuget',dict())
     resultDict = resultActionDict.get(key,dict())

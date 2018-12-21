@@ -14,8 +14,11 @@ nugetVersionInfo = {
                       #False if not prerelease, Default is based on previous version, False if not prerelease
                       'prerelease': 'Default'
                    }
-#Imput NuGet package version number manualy, used if selected version number does not exist on nuget.org
+#Imput NuGet package version number manualy, used if selected version number does not exist on nuget.org, example: '1.66.0.3-Alpha'
 manualNugetVersionNumber = False
+
+#Path to a release notes file
+releaseNotePath = 'releases.txt'
 
 #List of NuGet packages used to manualy publish nuget packages, package example: 'webrtc.1.66.0.3-Alpha.nupkg'
 #Packages must be placed in a folder referenced in nugetFolderPath variable

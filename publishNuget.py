@@ -18,6 +18,7 @@ class PublishNuget:
         cls.nugetFolderPath = Settings.nugetFolderPath
         cls.nugetExePath = cls.nugetFolderPath + '/nuget.exe'
         cls.serverURL = 'http://localhost:63390/nuget'
+        cls.serverKey = 'NLlP8fkkf2ij'
         cls.packages = []
 
     @classmethod
@@ -28,6 +29,7 @@ class PublishNuget:
         """
         start_time = time.time()
         ret =  NO_ERROR
+
         #Select package that was just created.
         if hasattr(CreateNuget, 'version'):
             ret = cls.load_packages(['webrtc.'+CreateNuget.version+'.nupkg'])
@@ -43,7 +45,7 @@ class PublishNuget:
             for package in cls.packages:
                 packagePath = convertToPlatformPath(cls.nugetFolderPath+'/'+package['fullName'])
                 #Api key needs to be placed diferently
-                cls.publish(packagePath, 'NLlP8fkkf2ij', cls.serverURL)
+                cls.publish(packagePath, cls.serverKey, cls.serverURL)
         end_time = time.time()
         cls.executionTime = end_time - start_time
         return ret

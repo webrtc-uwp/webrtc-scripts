@@ -11,6 +11,7 @@ from builder import Builder
 from cleanup import Cleanup
 from createNuget import CreateNuget
 from publishNuget import PublishNuget
+from releaseNotes import ReleaseNotes
 from errors import NO_ERROR, ERROR_TARGET_NOT_SUPPORTED, ERROR_PLATFORM_NOT_SUPPORTED
 from summary import Summary
 from backup import Backup
@@ -123,30 +124,35 @@ def actionCreateNuget():
   CreateNuget.init()
 
   for target in Settings.targets:
-    Logger.printStartActionMessage('Create Nuget for ' + target)
-    result = CreateNuget.run(
-      target, Settings.targetPlatforms, Settings.targetCPUs, 
-      Settings.targetConfigurations, Settings.nugetFolderPath, Settings.nugetVersionInfo
-    )
-    Summary.addNugetSummary(target, result, CreateNuget.executionTime)
-    if result != NO_ERROR:
-        Logger.printEndActionMessage('Failed to create NuGet package ' + target,ColoredFormatter.RED)
-        #Terminate script execution if stopExecutionOnError is set to True in userdef
-        shouldEndOnError(result)
-    else:
-        Logger.printEndActionMessage('Create Nuget for ' + target)
+    for platform in Settings.targetPlatforms:
+      Logger.printStartActionMessage('Create Nuget for ' + target)
+      result = CreateNuget.run(
+        target, platform, Settings.targetCPUs, 
+        Settings.targetConfigurations, Settings.nugetFolderPath, Settings.nugetVersionInfo
+      )
+      Summary.addNugetSummary(target, platform, result, CreateNuget.executionTime)
+      if result != NO_ERROR:
+          Logger.printEndActionMessage('Failed to create NuGet package ' + target + ' ' + platform,ColoredFormatter.RED)
+          #Terminate script execution if stopExecutionOnError is set to True in userdef
+          shouldEndOnError(result)
+      else:
+          Logger.printEndActionMessage('Create Nuget for ' + target + ' ' + platform)
 
 def actionPublishNuget():
   PublishNuget.init()
   for target in Settings.targets:
-    Logger.printStartActionMessage("Publish Nuget for " + target)
-    result = PublishNuget.run()
-    if result != NO_ERROR:
-        Logger.printEndActionMessage('Failed to publish NuGet package ' + target,ColoredFormatter.RED)
-        #Terminate script execution if stopExecutionOnError is set to True in userdef
-        shouldEndOnError(result)
-    else:
-        Logger.printEndActionMessage('Publish Nuget for ' + target)
+    for platform in Settings.targetPlatforms:
+      Logger.printStartActionMessage("Publish Nuget for " + target + ' ' + platform)
+      result = PublishNuget.run()
+      if result != NO_ERROR:
+          Logger.printEndActionMessage('Failed to publish NuGet package ' + target + ' ' + platform,ColoredFormatter.RED)
+          #Terminate script execution if stopExecutionOnError is set to True in userdef
+          shouldEndOnError(result)
+      else:
+          Logger.printEndActionMessage('Publish Nuget for ' + target + ' ' + platform)
+
+def actionReleaseNotes():
+  ReleaseNotes.select_input()
 
 def actionUpdatePublishedSample():
   pass
@@ -214,6 +220,9 @@ def main():
 
   if ACTION_CREATE_NUGET in Settings.actions:
     actionCreateNuget()
+    
+  if ACTION_RELEASE_NOTES in Settings.actions:
+    actionReleaseNotes()
 
   if ACTION_PUBLISH_NUGET in Settings.actions:
     actionPublishNuget()

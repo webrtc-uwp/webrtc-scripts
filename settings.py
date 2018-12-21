@@ -127,6 +127,7 @@ class Settings:
     cls.nugetVersionInfo = nugetVersionInfo
     cls.manualNugetVersionNumber = manualNugetVersionNumber
     cls.nugetPackagesToPublish = nugetPackagesToPublish
+    cls.releaseNotePath = releaseNotePath
 
     cls.msvsPath = msvsPath
 
