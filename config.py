@@ -172,12 +172,14 @@ WINDOWS_COMPILER_OPTIONS = {
                               'x64' : {
                                         'x64' : 'amd64',
                                         'x86' : 'amd64_x86',
-                                        'arm' : 'amd64_arm'
+                                        'arm' : 'amd64_arm',
+                                        'arm64' : 'amd64_arm64'
                                       },
                               'x86' : {
                                         'x64' : 'x86_amd64',
                                         'x86' : 'x86',
-                                        'arm' : 'x86_arm'
+                                        'arm' : 'x86_arm',
+                                        'arm64' : 'x86_arm64'
                                       }
                             }
 

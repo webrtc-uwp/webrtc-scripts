@@ -29,7 +29,7 @@ supportedPlatformsForHostOs = {
 
 #Supported cpus for specific platform
 supportedCPUsForPlatform = { 
-                              'winuwp'  : ['arm', 'x86', 'x64'],
+                              'winuwp'  : ['arm', 'arm64', 'x86', 'x64'],
                               'win'     : ['x86', 'x64'],
                               'ios'     : ['arm'],
                               'mac'     : [ 'x86', 'x64'],
@@ -59,6 +59,7 @@ targetProgrammingLanguage = [ 'cx', 'cppwinrt', 'c', 'dotnet', 'python' ]
 #List of actions to perform
 actions = [ 'prepare', 'build', 'backup' ]
 
+buildWithClang = True
 #Flag if wrapper library should be built. If it is False, it will be built only native libraries
 buildWrapper = True  
 

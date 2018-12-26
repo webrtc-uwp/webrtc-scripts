@@ -32,3 +32,16 @@ def iterateDict(dictonary):
     return dictonary.iteritems() 
   else: 
     return iter(dictonary.items())
+
+
+def str_to_bool(value):
+  if value.lower() == 'true':
+    return True
+  else:
+    return False
+
+def bool_to_str(value):
+  if value:
+    return 'True'
+  else:
+    return 'False'

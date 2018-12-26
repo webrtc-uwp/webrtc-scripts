@@ -99,6 +99,7 @@ class Settings:
       cls.targetConfigurations = targetConfigurations
 
     cls.targetProgrammingLanguage = targetProgrammingLanguage
+    cls.buildWithClang = buildWithClang
     cls.buildWrapper = buildWrapper
 
     cls.logFormat = logFormat

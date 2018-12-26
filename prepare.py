@@ -8,7 +8,7 @@ from utility import Utility
 from settings import Settings
 from system import System
 from logger import Logger
-from helper import convertToPlatformPath, iterateDict
+from helper import convertToPlatformPath, iterateDict, bool_to_str
 import errors
 from errors import NO_ERROR
 
@@ -158,7 +158,8 @@ class Preparation:
       #Update target platform and cpu in copied args.gn file
       with open(argsPath) as argsFile:
         cls.logger.debug('Updating args.gn file. Target OS: ' + platform + '; Target CPU: ' + cpu)
-        newArgs=argsFile.read().replace('-target_os-', platform).replace('-target_cpu-', cpu).replace('-is_debug-',str(configuration.lower() == 'debug').lower())
+        newArgs=argsFile.read().replace('-target_os-', platform).replace('-target_cpu-', cpu)
+        newArgs=newArgs.replace('-is_debug-',str(configuration.lower() == 'debug').lower()).replace('-is_clang-',bool_to_str(Settings.buildWithClang).lower())
       with open(argsPath, 'w') as argsFile:
         argsFile.write(newArgs)
     except Exception as error:
