@@ -17,8 +17,8 @@ class PublishNuget:
         cls.logger = Logger.getLogger("PublishNuget")
         cls.nugetFolderPath = Settings.nugetFolderPath
         cls.nugetExePath = cls.nugetFolderPath + '/nuget.exe'
-        cls.serverURL = 'http://localhost:63390/nuget'
-        cls.serverKey = 'NLlP8fkkf2ij'
+        cls.serverURL = Settings.nugetServerURL
+        cls.serverKey = Settings.nugetAPIKey
         cls.packages = []
 
     @classmethod
@@ -30,6 +30,9 @@ class PublishNuget:
         start_time = time.time()
         ret =  NO_ERROR
 
+        if Settings.nugetAPIKey != '':
+            cls.set_api_key(cls.serverKey, cls.serverURL)
+        
         #Select package that was just created.
         if hasattr(CreateNuget, 'version'):
             ret = cls.load_packages(['webrtc.'+CreateNuget.version+'.nupkg'])
@@ -45,7 +48,7 @@ class PublishNuget:
             for package in cls.packages:
                 packagePath = convertToPlatformPath(cls.nugetFolderPath+'/'+package['fullName'])
                 #Api key needs to be placed diferently
-                cls.publish(packagePath, cls.serverKey, cls.serverURL)
+                cls.publish(packagePath, cls.serverURL)
         end_time = time.time()
         cls.executionTime = end_time - start_time
         return ret
@@ -111,22 +114,36 @@ class PublishNuget:
         return ret
 
     @classmethod
-    def publish(cls, nuget_package, key, address):
+    def set_api_key(cls, key, address = 'default'):
+        """
+        Sets the api key for the nuget server
+        :param key: key in a form of a string
+        :param address: server URL address (optional) if left out nuget.org is assumed
+        """
+        if address is 'default':
+            NugetUtility.nuget_cli('setapikey', key)
+        else:
+            NugetUtility.nuget_cli('setapikey', key, '-Source', address)
+
+
+    @classmethod
+    def publish(cls, nuget_package, address = 'default'):
         """
         Publishes NuGet package on a server of choice.
         :param nuget_package: full name of the nuget package to be published.
-        :param key: server api key.
         :param address: server address.
         """
-        NugetUtility.nuget_cli('push', nuget_package, key, '-Source', address)
+        if address is 'default':
+            NugetUtility.nuget_cli('push', nuget_package)
+        else:
+            NugetUtility.nuget_cli('push', nuget_package, '-Source', address)
 
     @classmethod
-    def delete(cls, package_id, package_veresion, key, address):
+    def delete(cls, package_id, package_veresion, address):
         """
         Deletes NuGet package from the server.
         :param package_id: id of the package to be deleted from server.
         :param package_veresion: version number of the package to be deleted from server.
-        :param key: server api key.
         :param address: server address.
         """
-        NugetUtility.nuget_cli('delete', package_id, package_veresion, key, '-Source', address)
+        NugetUtility.nuget_cli('delete', package_id, package_veresion, '-Source', address)

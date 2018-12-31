@@ -12,6 +12,7 @@ from cleanup import Cleanup
 from createNuget import CreateNuget
 from publishNuget import PublishNuget
 from releaseNotes import ReleaseNotes
+from uploadBackup import UploadBackup
 from errors import NO_ERROR, ERROR_TARGET_NOT_SUPPORTED, ERROR_PLATFORM_NOT_SUPPORTED
 from summary import Summary
 from backup import Backup
@@ -154,6 +155,24 @@ def actionPublishNuget():
 def actionReleaseNotes():
   ReleaseNotes.select_input()
 
+def actionSetNugetKey():
+  PublishNuget.set_api_key(Settings.nugetAPIKey)
+
+def actionUploadBackup():
+  UploadBackup.init()
+  need_to_run_backup = UploadBackup.checkBackup()
+  if need_to_run_backup is True:
+    actionBackup()
+  UploadBackup.run()
+  Logger.printStartActionMessage("Upload Backup")
+  result = UploadBackup.run()
+  if result != NO_ERROR:
+      Logger.printEndActionMessage('Failed to upload backup')
+      #Terminate script execution if stopExecutionOnError is set to True in userdef
+      shouldEndOnError(result)
+  else:
+      Logger.printEndActionMessage('Backup uploaded')
+
 def actionUpdatePublishedSample():
   pass
 
@@ -224,11 +243,17 @@ def main():
   if ACTION_RELEASE_NOTES in Settings.actions:
     actionReleaseNotes()
 
+  if ACTION_UPLOAD_BACKUP in Settings.actions:
+    actionUploadBackup()
+
   if ACTION_PUBLISH_NUGET in Settings.actions:
     actionPublishNuget()
 
   if ACTION_UPDATE_SAMPLE in Settings.actions:
     actionUpdatePublishedSample()
+  
+  if Settings.runSetNugetKey is True:
+    actionSetNugetKey()
 
   end_time = time.time()
   Summary.printSummary(end_time - start_time)

@@ -1,5 +1,5 @@
 import os
-import subprocess
+from subprocess import Popen, PIPE, call
 
 from errors import NO_ERROR, ERROR_ACQUIRE_NUGET_EXE_FAILED
 from settings import Settings
@@ -8,6 +8,16 @@ from logger import Logger,ColoredFormatter
 import config
 
 class NugetUtility:
+    api_key_instruction = '\033[94m' + r"""
+===================================================================================================================
+Nuget server API key not set or not valid. To set the api key do the following:
+1) Get the API key from nuget.org
+2) Set the API key by eather:
+    a) Changing the value of the nugetAPIKey variable inside userdef.py
+    b) running command 'python .\scripts\run.py -setnugetkey <key>' from the command line (webrtc-uwp-sdk folder)
+    c) running command nuget 'nuget setapikey <key>' from the command line (assuming you have nuget cli installed)
+===================================================================================================================
+""" + '\033[0m'
     @classmethod
     def setUp(cls):
         cls.nugetExePath = Settings.nugetFolderPath + '/nuget.exe'
@@ -38,7 +48,15 @@ class NugetUtility:
             # add options or other arguments to the nuget command
             for cmd in args:
                 full_command.append(cmd)
-            subprocess.call(full_command)
+            
+            p = Popen(full_command, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+            output, err = p.communicate()
+
+            print(output)
+            if err:                
+                cls.logger.error(err)
+            if '403 (Forbidden)' in err:
+                print(cls.api_key_instruction)
         except Exception as errorMessage:
             cls.logger.error(errorMessage)
             ret = ERROR_ACQUIRE_NUGET_EXE_FAILED

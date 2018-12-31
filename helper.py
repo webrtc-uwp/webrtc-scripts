@@ -4,6 +4,8 @@
 import os
 import platform
 import sys
+import pip
+
 try:
     input = raw_input
 except NameError:
@@ -49,6 +51,14 @@ def module_exists(module_name):
     return False
   else:
     return True
+
+def install(package):
+    try:
+        import package
+    except:
+        import sys
+        import subprocess
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', package])
 
 def yes_no(question):
   """
