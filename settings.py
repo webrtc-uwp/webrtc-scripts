@@ -130,8 +130,6 @@ class Settings:
     cls.releaseNotePath = releaseNotePath
     cls.nugetAPIKey = nugetAPIKey
     cls.nugetServerURL = nugetServerURL
-    cls.onedrive_client_id = onedrive_client_id
-    cls.onedrive_client_secret = onedrive_client_secret
 
     # If url is passed like input argument use that url instead of the one from userdef
     if cls.inputArgs.uploadBackupURL:

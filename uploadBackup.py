@@ -173,62 +173,46 @@ class UploadBackup:
         :return ret: NO_ERROR if upload was successfull. Otherwise returns error code
         """
         ret = NO_ERROR
+        
+        from subprocess import Popen, PIPE, call
 
         # Install onedrivesdk package if not installed, and import it
-        if module_exists('onedrivesdk'):
+        if module_exists('onedrivesdk') and module_exists('onedrivecmd') and module_exists('progress') and module_exists('requests'):
             import onedrivesdk
-            from onedrivesdk.helpers import GetAuthCodeServer
+            import onedrivecmd
+            import progress
+            import requests
         else:
             install('onedrivesdk')
+            install('onedrivecmd')
+            install('progress')
+            install('requests')
             import onedrivesdk
-            from onedrivesdk.helpers import GetAuthCodeServer
+            import onedrivecmd
+            import progress
+            import requests
 
-        #Redirect url for the authentication application
-        redirect_uri = "http://localhost:8080/"
-        client_id = Settings.onedrive_client_id
-        client_secret = Settings.onedrive_client_secret
-
-        client = onedrivesdk.get_default_client(client_id=client_id,
-                                                scopes=['wl.signin',
-                                                        'wl.offline_access',
-                                                        'onedrive.readwrite'])
-        auth_url = client.auth_provider.get_auth_url(redirect_uri)
-
-        # Block thread until we have the code
-        code = GetAuthCodeServer.get_auth_code(auth_url, redirect_uri)
-        # Finally, authenticate!
-        client.auth_provider.authenticate(code, redirect_uri, client_secret)
-        item_id = "root"
-
-        directory_id = ''
-        # Get all items inside root folder
-        items = client.item(id=item_id).children.get()
-        
-        # Name of the folder inside onedrive to be uploaded to
-        dir_name_onedrive = 'WebRTC'
-        for count, item in enumerate(items):
-            if dir_name_onedrive in item.name and item.folder:
-                # Id of the folder inside onedrive to be uploaded to
-                directory_id = item.id
-
-        # File to be uploaded
         file_name = cls.zip_name
         # Full path of the file to be uploaded
         file_path = r'./' + file_name
-        print('Uploading file...')
+        dir_name_onedrive = 'WebRTC'
 
-        # uploads file
-        client.item(id = directory_id).children[file_name].upload_async(file_path)
+        init = ['onedrivecmd', 'init']
+        upload = ['onedrivecmd', 'put', file_path, 'od:/'+dir_name_onedrive+'/']
+        list_files = ['onedrivecmd', 'list', 'od:/'+dir_name_onedrive+'/']
 
-        # Get all items inside selected folder
-        directory_items = client.item(id=directory_id).children.get()
+        call(init)
+        call(upload)
 
-        ret = ERROR_UPLOAD_BACKUP_FAILED
-        for count, item in enumerate(directory_items):
-            # Check if selected folder on onedrive has the uploaded file 
-            if file_name in item.name:
-                ret = NO_ERROR
+        p = Popen(list_files, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        output, err = p.communicate()
 
-        if ret == NO_ERROR:
-            cls.logger.info('Upload Successful!')
+        if err:
+            ret = ERROR_UPLOAD_BACKUP_FAILED
+            cls.logger.error(err)
+        if file_name in output:
+            ret = NO_ERROR
+        else:
+            ret = ERROR_UPLOAD_BACKUP_FAILED
+    
         return ret

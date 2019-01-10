@@ -30,10 +30,6 @@ nugetAPIKey = ''
 #URL for the nuget server, if 'default' nuget.org is used
 nugetServerURL = 'default'
 
-#Client id and client secret of the app used for authentication for the OneDrive
-onedrive_client_id = ''
-onedrive_client_secret = ''
-
 #Output path where will be stored nuget package as well as libs and pdbs
 #releaseOutputPath = '.'
 
