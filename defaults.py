@@ -14,12 +14,21 @@ nugetVersionInfo = {
                       #False if not prerelease, Default is based on previous version, False if not prerelease
                       'prerelease': 'Default'
                    }
-#Imput NuGet package version number manualy, used if selected version number does not exist on nuget.org
+#Imput NuGet package version number manualy, used if selected version number does not exist on nuget.org, E.g., '1.66.0.3-Alpha'
 manualNugetVersionNumber = False
 
-#List of NuGet packages used to manualy publish nuget packages, package example: 'webrtc.1.66.0.3-Alpha.nupkg'
+#Path to a release notes file
+releaseNotePath = 'releases.txt'
+
+#List of NuGet packages used to manualy publish nuget packages, E.g., 'webrtc.1.66.0.3-Alpha.nupkg'
 #Packages must be placed in a folder referenced in nugetFolderPath variable
 nugetPackagesToPublish = []
+
+#API key used to publish nuget packages nuget.org
+nugetAPIKey = ''
+
+#URL for the nuget server, if 'default' nuget.org is used
+nugetServerURL = 'default'
 
 #Output path where will be stored nuget package as well as libs and pdbs
 #releaseOutputPath = '.'
@@ -60,6 +69,7 @@ targetProgrammingLanguage = [ 'cx', 'cppwinrt', 'c', 'dotnet', 'python' ]
 #'build' : Builds selected targets for choosen cpus, platforms and configurations.
 #'backup': Backup latest build.
 #'createnuget' : Creates nuget package.
+#'uploadbackup' : Creates a zipp file with pdb files and nuget package based on configuration and uploads it to onedrive
 #List of actions to perform
 actions = [ 'prepare', 'build', 'backup' ]
 

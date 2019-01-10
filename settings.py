@@ -127,6 +127,19 @@ class Settings:
     cls.nugetVersionInfo = nugetVersionInfo
     cls.manualNugetVersionNumber = manualNugetVersionNumber
     cls.nugetPackagesToPublish = nugetPackagesToPublish
+    cls.releaseNotePath = releaseNotePath
+    cls.nugetAPIKey = nugetAPIKey
+    cls.nugetServerURL = nugetServerURL
+
+    # If url is passed like input argument use that url instead of the one from userdef
+    if cls.inputArgs.uploadBackupURL:
+      cls.uploadBackupURL = cls.inputArgs.uploadBackupURL
+    
+    # If true API key is set for nuget.org server
+    cls.runSetNugetKey = False
+    if cls.inputArgs.setnugetkey:
+      cls.nugetAPIKey = cls.inputArgs.setnugetkey
+      cls.runSetNugetKey = True
 
     cls.msvsPath = msvsPath
 

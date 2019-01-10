@@ -13,7 +13,7 @@ class Input:
     parser = argparse.ArgumentParser()
     parser.add_argument('template', nargs='?', help='Template name, where default settings are overwritten')
     
-    parser.add_argument('-a','--actions', nargs='*', choices=['clean','createuserdef', 'prepare', 'build', 'backup', 'createnuget'], type=str.lower, help='Actions to perform')
+    parser.add_argument('-a','--actions', nargs='*', choices=['clean', 'createuserdef', 'prepare', 'build', 'backup', 'uploadbackup', 'createnuget', 'releasenotes'], type=str.lower, help='Actions to perform')
 
     if System.checkIfTargetIsSupported('ortc'):
       parser.add_argument('-t','--targets', nargs='*', choices=['ortc', 'webrtc'], help='Target')
@@ -34,5 +34,9 @@ class Input:
     parser.add_argument('--noColor', action='store_true', help='Do not colorize output')
 
     parser.add_argument('--noWrapper', action='store_true', help='Do not build wrapper projects')
+
+    parser.add_argument('-uploadurl', nargs='?', action='store', dest='uploadBackupURL', help='Cloud storrage URL to wich backup will be uploaded')
+
+    parser.add_argument('-setnugetkey', nargs='?', action='store', dest='setnugetkey', help='Set the api key for the nuget server')
     
     Settings.inputArgs = parser.parse_args()
