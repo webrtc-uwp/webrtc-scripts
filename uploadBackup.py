@@ -6,6 +6,7 @@ import shutil
 import glob
 import sys
 from datetime import datetime
+from subprocess import Popen, PIPE, call
 
 from helper import convertToPlatformPath, module_exists, install
 from errors import NO_ERROR, ERROR_UPLOAD_BACKUP_FAILED, ERROR_UPLOAD_BACKUP_FILES_MISSING
@@ -21,8 +22,28 @@ class UploadBackup:
     def init(cls):
         """
         Initiates logger object.
+        Starts the authentication process.
         """
         cls.logger = Logger.getLogger('UploadBackup')
+        cls.logger.warning("The authentication process for uploading backup to OneDrive will be started, please follow the instructions.")
+        # Install onedrivesdk package if not installed, and import it
+        if module_exists('onedrivesdk') and module_exists('onedrivecmd') and module_exists('progress') and module_exists('requests'):
+            import onedrivesdk
+            import onedrivecmd
+            import progress
+            import requests
+        else:
+            install('onedrivesdk')
+            install('onedrivecmd')
+            install('progress')
+            install('requests')
+            import onedrivesdk
+            import onedrivecmd
+            import progress
+            import requests
+
+        init = ['onedrivecmd', 'init']
+        call(init)
 
     @classmethod
     def run(cls):
@@ -173,35 +194,18 @@ class UploadBackup:
         :return ret: NO_ERROR if upload was successfull. Otherwise returns error code
         """
         ret = NO_ERROR
+
+        if not (module_exists('onedrivesdk') and module_exists('onedrivecmd') and module_exists('progress') and module_exists('requests')):
+            cls.init()
         
-        from subprocess import Popen, PIPE, call
-
-        # Install onedrivesdk package if not installed, and import it
-        if module_exists('onedrivesdk') and module_exists('onedrivecmd') and module_exists('progress') and module_exists('requests'):
-            import onedrivesdk
-            import onedrivecmd
-            import progress
-            import requests
-        else:
-            install('onedrivesdk')
-            install('onedrivecmd')
-            install('progress')
-            install('requests')
-            import onedrivesdk
-            import onedrivecmd
-            import progress
-            import requests
-
         file_name = cls.zip_name
         # Full path of the file to be uploaded
         file_path = r'./' + file_name
         dir_name_onedrive = 'WebRTC'
 
-        init = ['onedrivecmd', 'init']
         upload = ['onedrivecmd', 'put', file_path, 'od:/'+dir_name_onedrive+'/']
         list_files = ['onedrivecmd', 'list', 'od:/'+dir_name_onedrive+'/']
 
-        call(init)
         call(upload)
 
         p = Popen(list_files, stdin=PIPE, stdout=PIPE, stderr=PIPE)

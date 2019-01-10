@@ -159,7 +159,6 @@ def actionSetNugetKey():
   PublishNuget.set_api_key(Settings.nugetAPIKey)
 
 def actionUploadBackup():
-  UploadBackup.init()
   need_to_run_backup = UploadBackup.checkBackup()
   if need_to_run_backup is True:
     actionBackup()
@@ -221,6 +220,10 @@ def main():
     System.stopExecution(ERROR_PLATFORM_NOT_SUPPORTED)
 
   #Start performing actions. Actions has to be executed in right order and that is the reason why it is handled this way
+  #If uploadbackup is selected start the authentication process first
+  if ACTION_UPLOAD_BACKUP in Settings.actions:
+    UploadBackup.init()
+  
   if ACTION_CLEAN in Settings.actions:
     actionClean()
     
