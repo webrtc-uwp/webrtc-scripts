@@ -163,7 +163,6 @@ def actionUploadBackup():
   need_to_run_backup = UploadBackup.checkBackup()
   if need_to_run_backup is True:
     actionBackup()
-  UploadBackup.run()
   Logger.printStartActionMessage("Upload Backup")
   result = UploadBackup.run()
   if result != NO_ERROR:

@@ -4,6 +4,7 @@ import time
 import tempfile
 import shutil
 import glob
+import sys
 from datetime import datetime
 
 from helper import convertToPlatformPath, module_exists, install
@@ -49,9 +50,9 @@ class UploadBackup:
         """
         Zip pdb files and nuget package if available
         :param path: path to the backup file that needs to be zipped.
+        :return ret: NO_ERROR if zipp was successfull. Otherwise returns error code
         """
         ret = NO_ERROR
-        # ziph is zipfile handle
         cls.zip_name = datetime.now().strftime('Backup_%Y-%m-%d_%H-%M-%S') + '.zip'
         zipf = zipfile.ZipFile(cls.zip_name, 'w', zipfile.ZIP_DEFLATED)
         count = 0
@@ -63,8 +64,10 @@ class UploadBackup:
         nugetPackage = False
         #Get nuget package that was just created
         if hasattr(CreateNuget, 'version'):
-            if CreateNuget.version + '.nupkg' in Settings.nugetFolderPath:
-                nugetPackage = Settings.nugetFolderPath + '/' + CreateNuget.version
+            #Path to a newly created nuget package
+            new_package_path = convertToPlatformPath(Settings.nugetFolderPath + '/' + 'webrtc.' + CreateNuget.version + '.nupkg')
+            if os.path.isfile(new_package_path):
+                nugetPackage = new_package_path
             else:
                 ret = ERROR_UPLOAD_BACKUP_FILES_MISSING
         #Get latest nuget package created, if uploadBackup is called without calling createNuget
@@ -82,17 +85,31 @@ class UploadBackup:
         else:
             cls.logger.warning('Missing NuGet package!')
             
+        print('Zipping pdb files:')
+        toolbar_width = 60
+        sys.stdout.write("[%s]" % (" " * toolbar_width))
+        sys.stdout.flush()
+        sys.stdout.write("\b" * (toolbar_width+1)) # return to start of line, after '['
+
+        #Used to check if progress bar should progress
+        previous_percentage = -1
         for root, dirs, files in os.walk(path):
             for file in files:
                 file_no += 1
-                percent = 100 * file_no/count
-                # Display percentage of files zipped
-                print('--Zipping pdb files: {0} %\r'.format(percent)),
+                percent = int(toolbar_width * file_no/count)
+
+                # Add to progress bar
+                if percent != previous_percentage:
+                    sys.stdout.write("-")
+                    sys.stdout.flush()
+
                 # Zip only folders based on configuration from the userdef.py file
                 for name in cls.get_config_names():
                     if name in root:
                         zipf.write(os.path.join(root, file), os.path.relpath(os.path.join(root, file), path))
-        print('')
+                
+                previous_percentage = percent
+        sys.stdout.write("]\n")
         cls.logger.debug('Files zipped to: ' + cls.zip_name)
         zipf.close()
         return ret
@@ -153,6 +170,7 @@ class UploadBackup:
     def upload_to_onedrive(cls):
         """
         Upload file to onedrive
+        :return ret: NO_ERROR if upload was successfull. Otherwise returns error code
         """
         ret = NO_ERROR
 
@@ -186,11 +204,8 @@ class UploadBackup:
         # Get all items inside root folder
         items = client.item(id=item_id).children.get()
         
-        ##############################################
-        #Set up this folder for going live and remove redirection to root folder
         # Name of the folder inside onedrive to be uploaded to
-        dir_name_onedrive = ''
-        ##############################################
+        dir_name_onedrive = 'WebRTC'
         for count, item in enumerate(items):
             if dir_name_onedrive in item.name and item.folder:
                 # Id of the folder inside onedrive to be uploaded to
@@ -202,20 +217,11 @@ class UploadBackup:
         file_path = r'./' + file_name
         print('Uploading file...')
 
-        ####################################
-        ####################################
-        #Remove when folder implemented for going live
-        # Upload to root folder in onedrive 
-        directory_id = item_id
-        ####################################
-        ####################################
-
         # uploads file
-        client.item(id = directory_id).children[file_name].upload(file_path)
+        client.item(id = directory_id).children[file_name].upload_async(file_path)
 
         # Get all items inside selected folder
         directory_items = client.item(id=directory_id).children.get()
-
 
         ret = ERROR_UPLOAD_BACKUP_FAILED
         for count, item in enumerate(directory_items):

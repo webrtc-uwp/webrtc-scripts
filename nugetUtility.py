@@ -20,7 +20,8 @@ Nuget server API key not set or not valid. To set the api key do the following:
 """ + '\033[0m'
     @classmethod
     def setUp(cls):
-        cls.nugetExePath = Settings.nugetFolderPath + '/nuget.exe'
+        cls.nugetFolderPath = Settings.nugetFolderPath
+        cls.nugetExePath = cls.nugetFolderPath + '/nuget.exe'
         cls.logger = Logger.getLogger('nugetUtility')
 
     @classmethod
@@ -67,6 +68,8 @@ Nuget server API key not set or not valid. To set the api key do the following:
         """
         Download latest nuget.exe file from nuget.org
         """
+        if not os.path.exists(cls.nugetFolderPath):
+            os.makedirs(cls.nugetFolderPath)
         # Python 3:
         if module_exists('urllib.request'):
             import urllib
