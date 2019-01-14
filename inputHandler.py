@@ -27,7 +27,7 @@ class Input:
     else:
       parser.add_argument('-p','--platforms', nargs='*', choices=['winuwp', 'win'], help='Target platform')
 
-    parser.add_argument('--cpus', nargs='*', choices=['x64', 'x86', 'arm', 'arm64'], type=str.lower, help='Target cpu')
+    parser.add_argument('-x','--cpus', nargs='*', choices=['x64', 'x86', 'arm', 'arm64'], type=str.lower, help='Target cpu architecture')
 
     parser.add_argument('-c','--configurations', nargs='*', choices=['debug', 'release'], type=str.lower, help='Target build configuration')
 

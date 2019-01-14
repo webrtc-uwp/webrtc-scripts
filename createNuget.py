@@ -105,7 +105,7 @@ class CreateNuget:
         # Works only if number of published versions of the nuget packet is less than 500
         search = 'https://api-v2v3search-0.nuget.org/search/query?q=packageid:' + target + '&ignoreFilter=true&prerelease=true&take=500'
 
-        cls.logger.info('Colecting ' + target + ' NuGet package versions from nuget.org...')
+        cls.logger.info('Collecting ' + target + ' NuGet package versions from nuget.org...')
         try:
             # Python 3:
             if module_exists('urllib.request'):
@@ -359,7 +359,7 @@ class CreateNuget:
             for element, ft in itertools.product(files, f_type):
                 src_attrib = element.attrib.get('src')
                 # Check if <file> element has a src with given cpu, configuration and file type
-                if all(val in src_attrib for val in [cpu, configuration, ft]):
+                if all(val in src_attrib for val in [cpu, configuration.capitalize(), ft]):
                     file_name = f_name + ft
                     # New src path to the lib file with required cpu, configuration and file type
                     src_path = convertToPlatformPath(
