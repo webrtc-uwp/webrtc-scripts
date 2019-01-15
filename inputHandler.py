@@ -34,5 +34,7 @@ class Input:
     parser.add_argument('--noColor', action='store_true', help='Do not colorize output')
 
     parser.add_argument('--noWrapper', action='store_true', help='Do not build wrapper projects')
+
+    parser.add_argument('--cleanOptions', nargs='*', choices=['cleanoutput', 'cleanidls', 'cleanuserDef','cleanprepare'], type=str.lower, help='Target build configuration')
     
     Settings.inputArgs = parser.parse_args()
