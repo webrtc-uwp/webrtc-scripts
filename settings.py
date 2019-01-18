@@ -99,7 +99,13 @@ class Settings:
       cls.targetConfigurations = targetConfigurations
 
     cls.targetProgrammingLanguage = targetProgrammingLanguage
-    cls.buildWithClang = buildWithClang
+    #cls.buildWithClang = buildWithClang
+
+    if cls.inputArgs.clang:
+      cls.buildWithClang = True
+    else:
+      cls.buildWithClang = buildWithClang
+
     cls.buildWrapper = buildWrapper
 
     cls.logFormat = logFormat

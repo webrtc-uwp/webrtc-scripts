@@ -37,4 +37,6 @@ class Input:
 
     parser.add_argument('--cleanOptions', nargs='*', choices=['cleanoutput', 'cleanidls', 'cleanuserDef','cleanprepare'], type=str.lower, help='Target build configuration')
     
+    parser.add_argument('--clang', action='store_true', help='Build with clang')
+    
     Settings.inputArgs = parser.parse_args()
