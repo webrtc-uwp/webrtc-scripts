@@ -60,7 +60,7 @@ class Cleanup:
 
     Utility.popd()
 
-    if Settings.buildWrapper:
+    if ret == NO_ERROR and Settings.buildWrapper:
       ret = cls.cleanWrapperProjects(target, platform, cpu, configuration)
 
     return ret
