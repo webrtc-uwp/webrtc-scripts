@@ -59,7 +59,7 @@ targetProgrammingLanguage = [ 'cx', 'cppwinrt', 'c', 'dotnet', 'python' ]
 #List of actions to perform
 actions = [ 'prepare', 'build', 'backup' ]
 
-buildWithClang = True
+buildWithClang = False
 #Flag if wrapper library should be built. If it is False, it will be built only native libraries
 buildWrapper = True  
 
