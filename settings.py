@@ -130,6 +130,7 @@ class Settings:
     cls.releaseNotePath = releaseNotePath
     cls.nugetAPIKey = nugetAPIKey
     cls.nugetServerURL = nugetServerURL
+    cls.updateSampleInfo = updateSampleInfo
 
     # If url is passed like input argument use that url instead of the one from userdef
     if cls.inputArgs.uploadBackupURL:
