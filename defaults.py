@@ -57,9 +57,9 @@ targetProgrammingLanguage = [ 'cx', 'cppwinrt', 'c', 'dotnet', 'python' ]
 #'backup': Backup latest build.
 #'createnuget' : Creates nuget package.
 #List of actions to perform
-actions = [ 'prepare', 'build', 'backup' ]
+actions = [ 'prepare', 'build' ]
 
-buildWithClang = True
+buildWithClang = False
 #Flag if wrapper library should be built. If it is False, it will be built only native libraries
 buildWrapper = True  
 

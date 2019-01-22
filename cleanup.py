@@ -60,6 +60,88 @@ class Cleanup:
 
     Utility.popd()
 
+    if ret == NO_ERROR and Settings.buildWrapper:
+      ret = cls.cleanWrapperProjects(target, platform, cpu, configuration)
+
+    return ret
+
+  @classmethod
+  def cleanWrapperProjects(cls, cleanupTarget='*', cleanupPlatform='*', cleanupCpu='*', configuration='*'):
+    """
+      Cleans wrapper projects.
+      :param target: Target (ortc, webrtc or * )
+      :param platform: Platform (win, winuwp or *)
+      :param cpu: CPU (arm, x86, x64 or *)
+      :param configuration: Release (debug, release or *)
+      :return ret: NO_ERROR if output folders deletion was successful. Otherwise returns error code.
+    """
+    ret = NO_ERROR
+
+    if cleanupTarget == '*':
+      targets = Settings.targets
+    else:
+      targets = [cleanupTarget]
+
+    if cleanupPlatform == '*':
+      platforms = Settings.targetPlatforms
+    else:
+      platforms = [cleanupPlatform]
+
+    if cleanupCpu == '*':
+      cpus = Settings.targetCPUs
+    else:
+      cpus = [cleanupCpu]
+
+    for target in targets:
+      for platform in platforms:
+        #Get solution to clean, for specified target and platform. Solution is obtained from config.TARGET_WRAPPER_SOLUTIONS
+        solutionName = convertToPlatformPath(Utility.getValueForTargetAndPlatformDict(config.TARGET_WRAPPER_SOLUTIONS, target, platform))
+
+        #If solution is not provided, return True like it was succefull
+        if solutionName == '':
+          cls.logger.warning('Solution with wrapper projects is not specified in config!')
+          continue
+
+        for cpu in cpus:
+          #Set the PATH and environment variables for command-line builds (e.g. vcvarsall.bat x64_x86)
+          cls.cmdVcVarsAll = '\"' +  Settings.vcvarsallPath + '\" ' + config.WINDOWS_COMPILER_OPTIONS[System.hostCPU][cpu]
+          cls.cmdVcVarsAllClean = '\"' +  Settings.vcvarsallPath + '\" ' + '/clean_env'
+
+          try:
+            #Solution template path
+            solutionSourcePath = os.path.join(Settings.rootSdkPath,convertToPlatformPath(config.WEBRTC_SOLUTION_TEMPLATES_PATH),solutionName)
+            #Path where solution template will be copied
+            solutionDestinationPath = os.path.join(Settings.rootSdkPath,convertToPlatformPath(config.WEBRTC_SOLUTION_PATH),solutionName)
+            
+            #Copy template solution to solution folder
+            if not Utility.copyFile(solutionSourcePath,solutionDestinationPath):
+              return errors.ERROR_CLEANUP_DELETING_OUTPUT_WRAPPER_FAILED
+
+            if (configuration != '*'):
+              configurationPart = ' /p:Configuration=\"' + configuration + '\"'
+            else:
+              configurationPart = ''
+
+            if (cpu != '*'):
+              cpuPart =  ' /p:Platform=\"' + cpu + '\"'
+            else:
+              cpuPart = ''
+              
+            #MSBuild command for building wrapper projects
+            cmdBuild = 'msbuild ' + solutionDestinationPath + ' /t:Clean' + configurationPart + cpuPart
+            #Execute MSBuild command
+            result = Utility.runSubprocess([cls.cmdVcVarsAll, cmdBuild, cls.cmdVcVarsAllClean], Settings.logLevel == 'DEBUG')
+            if result != NO_ERROR:
+              ret = errors.ERROR_CLEANUP_DELETING_OUTPUT_WRAPPER_FAILED
+              cls.logger.error('Failed cleaning ' + target + ' wrapper projects for ' + cpu + ' for configuration  '+ configuration)
+          except Exception as error:
+            cls.logger.error(str(error))
+            cls.logger.error('Failed cleaning ' + target + ' wrapper projects for ' + cpu + ' for configuration  '+ configuration)
+            ret = errors.ERROR_CLEANUP_DELETING_OUTPUT_WRAPPER_FAILED
+          finally:
+            #Delete solution used for building wrapper projects.
+            Utility.deleteFiles([solutionDestinationPath])
+
     return ret
 
   @classmethod
@@ -153,16 +235,16 @@ class Cleanup:
     """
     ret = NO_ERROR
 
-    if action == 'cleanOutput':
+    if action.lower() == 'cleanoutput':
       ret = cls.cleanOutput(target, platform, cpu, configuration)
 
-    if action == 'cleanUserDef':
+    if action.lower() == 'cleanuserdef':
       ret = cls.cleanUserDef()
 
-    if action == 'cleanIdls':
+    if action.lower() == 'cleanidls':
       ret = cls.cleanIdls()
 
-    if action == 'cleanPrepare':
+    if action.lower() == 'cleanprepare':
       ret = cls.cleanPrepare()
 
     if ret == NO_ERROR:

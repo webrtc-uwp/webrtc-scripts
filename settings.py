@@ -99,7 +99,13 @@ class Settings:
       cls.targetConfigurations = targetConfigurations
 
     cls.targetProgrammingLanguage = targetProgrammingLanguage
-    cls.buildWithClang = buildWithClang
+    #cls.buildWithClang = buildWithClang
+
+    if cls.inputArgs.clang:
+      cls.buildWithClang = True
+    else:
+      cls.buildWithClang = buildWithClang
+
     cls.buildWrapper = buildWrapper
 
     cls.logFormat = logFormat
@@ -139,7 +145,7 @@ class Settings:
     cls.msvcToolsBinPath = ''
     cls.vcvarsallPath = ''
 
-    #Dictionary with additional configuration for each action and default values
+    #Dictionary with additional configuration for each action and default values. Initially dictionary values are already set values (passed from command line, or read from userdef)
     cls.__actionOptions = {
                     'targets' : cls.targets,
                     'cpus' : cls.targetCPUs,
@@ -150,9 +156,13 @@ class Settings:
 
     #Set specific clean configuration if specified in userDef.py or use default values from __actionOptions dict
     for key,value in iterateDict(cls.__actionOptions):
-      cls.cleanupOptions[key] = cls.cleanupOptions.get(key,[])
-      if cls.cleanupOptions[key] == []:
+      #If cleanup actions are passed from command line, take values only from __actionOptions.
+      if cls.inputArgs.cleanOptions or cls.cleanupOptions.get(key,[]) == []:
         cls.cleanupOptions[key] = value
+
+    #If cleanup options are passed like input arguments use them, instead of one loaded from userdef
+    if cls.inputArgs.cleanOptions:
+      cls.cleanupOptions['actions'] =  cls.inputArgs.cleanOptions
 
   @classmethod
   def getGnOutputPath(cls, path, target, platform, cpu, configuration):
