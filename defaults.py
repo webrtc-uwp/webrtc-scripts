@@ -26,7 +26,8 @@ updateSampleInfo = {
                       'samples' : [
                         {
                           'name' : 'PeerCC',
-                          'url' : 'https://github.com/webrtc-uwp/PeerCC-Sample'
+                          'url' : 'https://github.com/webrtc-uwp/PeerCC-Sample',
+                          'branch': 'webrtc_merge_m66'
                         }
                       ]
                    }

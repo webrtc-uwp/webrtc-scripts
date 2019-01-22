@@ -3,10 +3,10 @@ import filecmp
 import shutil
 from subprocess import Popen, PIPE, call
 from xml.etree import ElementTree as ET
-import itertools
+from subprocess import Popen, PIPE, call
 
 from logger import Logger
-from helper import convertToPlatformPath, module_exists, install
+from helper import convertToPlatformPath
 from errors import NO_ERROR, ERROR_UPDATE_SAMPLE_COPY_FAILED, ERROR_UPDATE_SAMPLE_CLONE_FAILED, ERROR_UPDATE_SAMPLE_USE_NUGET_FAILED
 from settings import Settings
 from nugetUtility import NugetUtility
@@ -22,48 +22,49 @@ class UpdateSample:
     @classmethod
     def run(cls):
         ret = NO_ERROR
-        
+        samples_directory = './Published Samples/'
+        if Settings.updateSampleInfo['package'] is not 'default':
+            latestNugetVersion = Settings.updateSampleInfo['package']
         #Get nuget package version if updatesample is run alongside the createnuget action
-        if hasattr(CreateNuget, 'version'):
+        elif hasattr(CreateNuget, 'version'):
             latestNugetVersion = CreateNuget.version
         #Get nuget package version if updatesample is run separatly from the createnuget action
         else:
             latestNugetVersion = NugetUtility.get_latest_package()
         #Add nuget folder to nuget source in Nuget.Config
         cls.add_nuget_local_source()
+
         #Get sample name and repo url from userdef file
         for sample in Settings.updateSampleInfo['samples']:
             repo_name = sample['name']
             repo_url = sample['url']
+            repo_branch = sample['branch']
+            #Path of the sample folder to wich to clone to
+            cloned_sample_path = convertToPlatformPath(samples_directory + repo_name)
+            #Path to the sample folder inside commons directory
+            common_sample_path = convertToPlatformPath(config.SAMPLES_FOLDER_PATH + repo_name + '/Client')
 
-            ret = cls.clone_sample(repo_url, repo_name)
-            if ret == NO_ERROR:
-                ret = cls.copy_dirs(repo_name, config.SAMPLES_FOLDER_PATH + repo_name)
+            ret = cls.clone_sample(repo_url, repo_branch, cloned_sample_path)
             if ret == NO_ERROR:
                 #Make the sample use nuget package by changing .csproj file
-                ret = cls.use_nuget_package(repo_name, latestNugetVersion)
+                ret = cls.use_nuget_package(common_sample_path, latestNugetVersion)
+            if ret == NO_ERROR:
+                ret = cls.copy_dirs(common_sample_path, cloned_sample_path)
 
         return ret
 
     @classmethod
-    def clone_sample(cls, git_url, sample_dir_name):
+    def clone_sample(cls, git_url, git_branch, sample_dir_name):
         """
         Clones the sample from the repository to a dir
         """
         ret = NO_ERROR
-        if module_exists('git'):
-            import git
-        else:
-            install('gitpython')
-            import git
-
         try:
-            if not os.path.isdir('Published Samples'):
-                os.makedirs('Published Samples')
-            sample_dir_name = './Published Samples/' + sample_dir_name
             if not os.path.isdir(sample_dir_name):
                 cls.logger.debug("Cloning sample...")
-                git.Repo.clone_from(git_url, sample_dir_name)
+                # git.Repo.clone_from(git_url, sample_dir_name, branch=git_branch)
+                clone_command = ['git', 'clone', git_url, '-b', git_branch, sample_dir_name]
+                call(clone_command)
                 cls.logger.debug("Cloning sample finished.")
             else:
                 cls.logger.debug("Sample already Exists.")
@@ -176,17 +177,17 @@ class UpdateSample:
 
 
     @classmethod
-    def use_nuget_package(cls, sample_dir_name, nuget_version):
+    def use_nuget_package(cls, sample_dir_path, nuget_version):
         """
-        Make the sample use nuget package
-        :param sample_dir_name: Name of the sample to be changet to nuget package
+        Make the sample use nuget package, if it already is update the version
+        :param sample_dir_path: Name of the sample to be changet to nuget package
         :param nuget_version: Version of the nuget to be used
         :return ret: NO_ERROR if copy was successfull. Otherwise returns error code
         """
         ret = NO_ERROR
-        dirPath = convertToPlatformPath(config.SAMPLES_FOLDER_PATH + sample_dir_name + '/Client/')
-        fileName = cls.get_file_name(dirPath)
-        filePath = dirPath + fileName
+
+        fileName = cls.get_file_name(sample_dir_path)
+        filePath = convertToPlatformPath(sample_dir_path + '/' + fileName)
 
         xmlns = {'xmlns':'http://schemas.microsoft.com/developer/msbuild/2003'}
         try:
@@ -202,7 +203,24 @@ class UpdateSample:
                     #Remove ProjectReference element from ItemGroup
                     element.remove(projectReference)
                     cls.logger.debug('ProjectReference element removed from .csproj file')
+
+                #Check if the ItemGroup element contains PackageReference element 
+                packageReferences = element.findall('xmlns:PackageReference', xmlns)
+                if packageReferences:
+                    for reference in packageReferences:
+                        #Check if the PackageReference element has Include attribute with value WebRtc
+                        if 'webrtc' in reference.get('Include').lower():
+                            version = reference.find('xmlns:Version', xmlns)
+                            if version is not None:
+                                #Update nuget version for the PackageReference element
+                                version.text = nuget_version
+                                
+                                cls.logger.debug('Nuget reference in .csproj file updated successfuly.')
+                                tree.write(filePath)
+
+                                return ret
             
+            #If the nuget version has not been set already add a new ItemGroup element with nuget package reference
             #Get the Project element from the .csproj file
             project = tree.getroot()
 
@@ -220,6 +238,6 @@ class UpdateSample:
             tree.write(filePath)
         except Exception as error:
             ret = ERROR_UPDATE_SAMPLE_USE_NUGET_FAILED
-            cls.logger.error(str(ERROR_UPDATE_SAMPLE_USE_NUGET_FAILED))
+            cls.logger.error(str(error))
 
         return ret
