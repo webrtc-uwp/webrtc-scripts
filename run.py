@@ -247,13 +247,13 @@ def main():
 
   if ACTION_BACKUP in Settings.actions:
     actionBackup()
-
-  if ACTION_CREATE_NUGET in Settings.actions:
-    actionCreateNuget()
     
   if ACTION_RELEASE_NOTES in Settings.actions:
     actionReleaseNotes()
 
+  if ACTION_CREATE_NUGET in Settings.actions:
+    actionCreateNuget()
+    
   if ACTION_UPLOAD_BACKUP in Settings.actions:
     actionUploadBackup()
 

@@ -63,8 +63,8 @@ class UpdateSample:
             if not os.path.isdir(sample_dir_name):
                 cls.logger.debug("Cloning sample...")
                 # git.Repo.clone_from(git_url, sample_dir_name, branch=git_branch)
-                clone_command = ['git', 'clone', git_url, '-b', git_branch, sample_dir_name]
-                call(clone_command)
+                cloneCommand = ['git', 'clone', git_url, '-b', git_branch, sample_dir_name]
+                call(cloneCommand)
                 cls.logger.debug("Cloning sample finished.")
             else:
                 cls.logger.debug("Sample already Exists.")
