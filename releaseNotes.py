@@ -1,16 +1,12 @@
 import sys
 import os
+import re 
 from helper import module_exists, yes_no, convertToPlatformPath 
 from settings import Settings
+from nugetUtility import NugetUtility
 
 
 class ReleaseNotes:
-
-    @classmethod
-    def run(cls, note_file, target, platform, version):
-        note = cls.default_note(note_file, target, platform, version)
-        cls.set_note_version(note, note_file, target, platform, version)
-        return note
 
     @classmethod
     def select_input(cls):
@@ -39,8 +35,11 @@ class ReleaseNotes:
         elif inputValue is 2:
             inputNote = cls.select_file()
         if inputNote is not False:
-            with open(Settings.releaseNotePath, 'w') as release_notes:
-                release_notes.writelines(inputNote)
+            
+            with open(Settings.releaseNotePath, 'r+') as release_notes:
+                oldContent = release_notes.read()
+                release_notes.seek(0, 0)
+                release_notes.write(inputNote.rstrip('\r\n') + '\n' + oldContent)
                 print('Successfuly created release note')
         return inputNote
 
@@ -91,7 +90,7 @@ class ReleaseNotes:
         return note
 
     @classmethod
-    def default_note(cls, note_source, target, platform, version):
+    def get_note(cls, note_source):
         note = ''
         with open(note_source, 'r') as read_src:
             for line in read_src:
@@ -99,16 +98,20 @@ class ReleaseNotes:
                     break
                 else:
                     note += line
+        if note == '':
+            note = False
+            print('Release note not written')
         return note
         
 
     @classmethod
-    def set_note_version(cls, note, notes_file, target, platform, version):
+    def set_note_version(cls, version):
+        notes_file = 'releases.txt'
+        note = cls.get_note(notes_file)
         if note is not False:
             new_note = '---------------------------------------------------------------------\n' + \
-                'Version:   ' + target + '.' + platform + ' ' + version + '\n' + \
+                'Version:   '  + version + '\n' + \
                 '---------------------------------------------------------------------\n'
-            notes_file = convertToPlatformPath(notes_file)
             if os.path.isfile(notes_file):
                 with open(notes_file,"r") as src:
                     all_notes=src.readlines()
@@ -119,3 +122,37 @@ class ReleaseNotes:
 
             with open(notes_file, 'w') as release_notes:
                 release_notes.writelines(all_notes)
+
+    @classmethod
+    def set_note_version_server(cls):
+        """
+        Sets the version of the release notes by getting the latest 
+        published version of the nuget package published on nuget.org
+        """
+        notes_file = 'releases.txt'
+        #Get the list of WebRtc nuget pakcages with prereleases
+        packages = NugetUtility.nuget_cli('list', 'Id:WebRtc', '-PreRelease')
+        packages = packages.split('\r\n')
+        webrtcRegex = r"^WebRtc+\s"
+        #Search the list of the packages for a WebRtc package and set the version
+        for package in packages:
+            if re.match(webrtcRegex, package, flags=0):
+                version = package
+
+        note = cls.get_note(notes_file)
+        if note is not False:
+            new_note = '---------------------------------------------------------------------\n' + \
+                'Version:   '  + version + '\n' + \
+                '---------------------------------------------------------------------\n'
+            if os.path.isfile(notes_file):
+                with open(notes_file,"r") as src:
+                    all_notes=src.readlines()
+                    if '--------------------------------------------' not in all_notes[0]:
+                        all_notes.insert(0,new_note)
+            else:
+                all_notes = new_note
+
+            with open(notes_file, 'w') as release_notes:
+                release_notes.writelines(all_notes)
+                print("Release notes vesion set: " + version)    
+            
