@@ -1,14 +1,13 @@
 import os
 import filecmp
 import shutil
-from subprocess import Popen, PIPE, call
 from xml.etree import ElementTree as ET
-from subprocess import Popen, PIPE, call
 
 from logger import Logger
 from helper import convertToPlatformPath
 from errors import NO_ERROR, ERROR_UPDATE_SAMPLE_COPY_FAILED, ERROR_UPDATE_SAMPLE_CLONE_FAILED, ERROR_UPDATE_SAMPLE_USE_NUGET_FAILED
 from settings import Settings
+from utility import Utility
 from nugetUtility import NugetUtility
 from createNuget import CreateNuget
 import config
@@ -22,7 +21,7 @@ class UpdateSample:
     @classmethod
     def run(cls):
         ret = NO_ERROR
-        samples_directory = './Published Samples/'
+        samples_directory = './Published_Samples/'
         if Settings.updateSampleInfo['package'] is not 'default':
             latestNugetVersion = Settings.updateSampleInfo['package']
         #Get nuget package version if updatesample is run alongside the createnuget action
@@ -48,8 +47,8 @@ class UpdateSample:
             if ret == NO_ERROR:
                 #Make the sample use nuget package by changing .csproj file
                 ret = cls.use_nuget_package(common_sample_path, latestNugetVersion)
-            if ret == NO_ERROR:
-                ret = cls.copy_dirs(common_sample_path, cloned_sample_path)
+            # if ret == NO_ERROR:
+            #     ret = cls.copy_dirs(common_sample_path, cloned_sample_path)
 
         return ret
 
@@ -61,11 +60,13 @@ class UpdateSample:
         ret = NO_ERROR
         try:
             if not os.path.isdir(sample_dir_name):
+                os.makedirs(sample_dir_name)
                 cls.logger.debug("Cloning sample...")
-                # git.Repo.clone_from(git_url, sample_dir_name, branch=git_branch)
-                cloneCommand = ['git', 'clone', git_url, '-b', git_branch, sample_dir_name]
-                call(cloneCommand)
-                cls.logger.debug("Cloning sample finished.")
+                cloneCommand = 'git clone -b ' + git_branch + ' ' + git_url + ' ' + sample_dir_name
+                cloneCommand = cloneCommand.strip()
+                ret = Utility.runSubprocess([cloneCommand], Settings.logLevel == 'DEBUG')
+                if ret == NO_ERROR:
+                    cls.logger.debug("Cloning sample finished.")
             else:
                 cls.logger.debug("Sample already Exists.")
         except Exception as error:
