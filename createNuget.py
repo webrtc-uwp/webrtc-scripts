@@ -70,7 +70,7 @@ class CreateNuget:
             cls.version = Settings.manualNugetVersionNumber
         if ret == NO_ERROR:
             if os.path.isfile(Settings.releaseNotePath):
-                release_note = ReleaseNotes.run(Settings.releaseNotePath, target, platform, cls.version)
+                release_note = ReleaseNotes.get_note(Settings.releaseNotePath, cls.version)
             ret = cls.create_nuspec(cls.version, target, release_note)
         if ret == NO_ERROR:
             ret = cls.create_targets(target)

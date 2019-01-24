@@ -58,7 +58,6 @@ Nuget server API key not set or not valid. To set the api key do the following:
             p = Popen(full_command, stdin=PIPE, stdout=PIPE, stderr=PIPE)
             output, err = p.communicate()
 
-            print(output)
             if 'The name specified has already been added to the list of available package sources. Please provide a unique name.' in err:
                 cls.logger.warning('Source with that name already exists.')
                 return 'run update'
@@ -67,6 +66,13 @@ Nuget server API key not set or not valid. To set the api key do the following:
                 cls.logger.error(err)
             if '403 (Forbidden)' in err:
                 print(cls.api_key_instruction)
+                
+            if 'nuget list' in printCommand:
+                return output
+            else:
+                cls.logger.debug("Output: ")
+                print(output)
+        
         except Exception as errorMessage:
             cls.logger.error(errorMessage)
             ret = ERROR_ACQUIRE_NUGET_EXE_FAILED

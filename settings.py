@@ -141,6 +141,11 @@ class Settings:
     if cls.inputArgs.setnugetkey:
       cls.nugetAPIKey = cls.inputArgs.setnugetkey
       cls.runSetNugetKey = True
+    
+    # If true sets release note version by geting latest published nuget version from nuget.org
+    cls.setservernoteversion = False
+    if cls.inputArgs.setservernoteversion:
+      cls.setservernoteversion = cls.inputArgs.setservernoteversion
 
     cls.msvsPath = msvsPath
 
