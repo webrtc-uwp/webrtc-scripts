@@ -6,7 +6,7 @@
 #args.gn template path
 webRTCGnArgsTemplatePath='./webrtc/windows/templates/gns/args.gn'
 
-#Path where nuget package and all of the fil
+#Path where nuget package and all of the files used to create the package are stored
 nugetFolderPath = './webrtc/windows/nuget'
 nugetVersionInfo = {
                       #Main version number of the NuGet package 
@@ -14,8 +14,33 @@ nugetVersionInfo = {
                       #False if not prerelease, Default is based on previous version, False if not prerelease
                       'prerelease': 'Default'
                    }
-#Imput NuGet package version number manualy, used if selected version number does not exist on nuget.org
+#Imput NuGet package version number manualy, used if selected version number does not exist on nuget.org, E.g., '1.66.0.3-Alpha'
 manualNugetVersionNumber = False
+
+#Path to a release notes file
+releaseNotePath = 'releases.txt'
+
+#Information about the sample to be updated
+updateSampleInfo = {
+                      'package' : 'default',
+                      'samples' : [
+                        {
+                          'name' : 'PeerCC',
+                          'url' : 'https://github.com/webrtc-uwp/PeerCC-Sample',
+                          'branch': 'webrtc_merge_m66'
+                        }
+                      ]
+                   }
+
+#List of NuGet packages used to manualy publish nuget packages, E.g., 'webrtc.1.66.0.3-Alpha.nupkg'
+#Packages must be placed in a folder referenced in nugetFolderPath variable
+nugetPackagesToPublish = []
+
+#API key used to publish nuget packages nuget.org
+nugetAPIKey = ''
+
+#URL for the nuget server, if 'default' nuget.org is used
+nugetServerURL = 'default'
 
 #Output path where will be stored nuget package as well as libs and pdbs
 #releaseOutputPath = '.'
@@ -48,14 +73,16 @@ targetConfigurations = [ 'Release', 'Debug' ]
 #TODO: Implement logic to update zslib_eventing_tool.gni based on list of specified programming languages.
 targetProgrammingLanguage = [ 'cx', 'cppwinrt', 'c', 'dotnet', 'python' ]
 
-#=========== Supported actions: clean, createuserdef, prepare, build, backup, createnuget. 
-# In future it will be added support publishnuget, updatesample.
+#=========== Supported actions: clean, createuserdef, prepare, build, backup, createnuget, publishnuget, uploadbackup. 
+# In future it will be added support  updatesample.
 #'clean' : Based on cleanup options set in cleanupOptions dict, it can be choosen desired cleanup actions.
 #'createuserdef' : Deletes existing userdef.py if exists and create a new from defaults.py.
 #'prepare' : Prepares developement environemnt for selected targets for choosen cpus, platforms and configurations.
 #'build' : Builds selected targets for choosen cpus, platforms and configurations.
 #'backup': Backup latest build.
 #'createnuget' : Creates nuget package.
+#'publishnuget' : Publishes nuget package
+#'uploadbackup' : Creates a zipp file with pdb files and nuget package based on configuration and uploads it to onedrive
 #List of actions to perform
 actions = [ 'prepare', 'build' ]
 

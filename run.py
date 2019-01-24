@@ -10,6 +10,10 @@ from prepare import Preparation
 from builder import Builder
 from cleanup import Cleanup
 from createNuget import CreateNuget
+from publishNuget import PublishNuget
+from releaseNotes import ReleaseNotes
+from uploadBackup import UploadBackup
+from updateSample import UpdateSample
 from errors import NO_ERROR, ERROR_TARGET_NOT_SUPPORTED, ERROR_PLATFORM_NOT_SUPPORTED
 from summary import Summary
 from backup import Backup
@@ -122,24 +126,62 @@ def actionCreateNuget():
   CreateNuget.init()
 
   for target in Settings.targets:
-    Logger.printStartActionMessage(ACTION_CREATE_NUGET)
-    result = CreateNuget.run(
-      target, Settings.targetPlatforms, Settings.targetCPUs, 
-      Settings.targetConfigurations, Settings.nugetFolderPath, Settings.nugetVersionInfo
-    )
-    Summary.addNugetSummary(target, result, CreateNuget.executionTime)
-    if result != NO_ERROR:
-        Logger.printEndActionMessage('Failed to create NuGet package ' + target,ColoredFormatter.RED)
-        #Terminate script execution if stopExecutionOnError is set to True in userdef
-        shouldEndOnError(result)
-    else:
-        Logger.printEndActionMessage('CreateNuget ' + target)
+    for platform in Settings.targetPlatforms:
+      Logger.printStartActionMessage('Create Nuget for ' + target)
+      result = CreateNuget.run(
+        target, platform, Settings.targetCPUs, 
+        Settings.targetConfigurations, Settings.nugetFolderPath, Settings.nugetVersionInfo
+      )
+      Summary.addNugetSummary(target, platform, result, CreateNuget.executionTime)
+      if result != NO_ERROR:
+          Logger.printEndActionMessage('Failed to create NuGet package ' + target + ' ' + platform,ColoredFormatter.RED)
+          #Terminate script execution if stopExecutionOnError is set to True in userdef
+          shouldEndOnError(result)
+      else:
+          Logger.printEndActionMessage('Create Nuget for ' + target + ' ' + platform)
 
 def actionPublishNuget():
-  pass
+  PublishNuget.init()
+  for target in Settings.targets:
+    for platform in Settings.targetPlatforms:
+      Logger.printStartActionMessage("Publish Nuget for " + target + ' ' + platform)
+      result = PublishNuget.run()
+      if result != NO_ERROR:
+          Logger.printEndActionMessage('Failed to publish NuGet package ' + target + ' ' + platform,ColoredFormatter.RED)
+          #Terminate script execution if stopExecutionOnError is set to True in userdef
+          shouldEndOnError(result)
+      else:
+          Logger.printEndActionMessage('Publish Nuget for ' + target + ' ' + platform)
+
+def actionReleaseNotes():
+  ReleaseNotes.select_input()
+
+def actionSetNugetKey():
+  PublishNuget.set_api_key(Settings.nugetAPIKey)
+
+def actionUploadBackup():
+  need_to_run_backup = UploadBackup.checkBackup()
+  if need_to_run_backup is True:
+    actionBackup()
+  Logger.printStartActionMessage("Upload Backup")
+  result = UploadBackup.run()
+  if result != NO_ERROR:
+      Logger.printEndActionMessage('Failed to upload backup')
+      #Terminate script execution if stopExecutionOnError is set to True in userdef
+      shouldEndOnError(result)
+  else:
+      Logger.printEndActionMessage('Backup uploaded')
 
 def actionUpdatePublishedSample():
-  pass
+  UpdateSample.init()
+  Logger.printStartActionMessage("Update published sample")
+  result = UpdateSample.run()
+  if result != NO_ERROR:
+      Logger.printEndActionMessage('Failed to update sample!')
+      #Terminate script execution if stopExecutionOnError is set to True in userdef
+      shouldEndOnError(result)
+  else:
+      Logger.printEndActionMessage('Update published sample')
 
 def shouldEndOnError(error):
   """
@@ -187,6 +229,10 @@ def main():
     System.stopExecution(ERROR_PLATFORM_NOT_SUPPORTED)
 
   #Start performing actions. Actions has to be executed in right order and that is the reason why it is handled this way
+  #If uploadbackup is selected start the authentication process first
+  if ACTION_UPLOAD_BACKUP in Settings.actions:
+    UploadBackup.init()
+  
   if ACTION_CLEAN in Settings.actions:
     actionClean()
     
@@ -201,15 +247,24 @@ def main():
 
   if ACTION_BACKUP in Settings.actions:
     actionBackup()
+    
+  if ACTION_RELEASE_NOTES in Settings.actions:
+    actionReleaseNotes()
 
   if ACTION_CREATE_NUGET in Settings.actions:
     actionCreateNuget()
+    
+  if ACTION_UPLOAD_BACKUP in Settings.actions:
+    actionUploadBackup()
 
   if ACTION_PUBLISH_NUGET in Settings.actions:
     actionPublishNuget()
 
   if ACTION_UPDATE_SAMPLE in Settings.actions:
     actionUpdatePublishedSample()
+  
+  if Settings.runSetNugetKey is True:
+    actionSetNugetKey()
 
   end_time = time.time()
   Summary.printSummary(end_time - start_time)
