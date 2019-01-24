@@ -28,6 +28,7 @@ NUGET_LIBRARIES = '/libraries/[TARGET]/[PLATFORM]/[CPU]/[CONFIGURATION]/'
 NUGET_URL = 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe'
 NATIVE_LIB_SRC = './[TARGET]/windows/solutions/Build/Output/Org.[TARGET]/[CONFIGURATION]/[CPU]/[FILE]'
 NATIVE_LIB_TARGET = 'runtimes\\win10-[CPU]\\native'
+SAMPLES_FOLDER_PATH = './common/windows/samples/'
 
 #Paths are relative to the webrtc root path
 GN_OUTPUT_PATH = './out'

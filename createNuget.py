@@ -474,6 +474,7 @@ class CreateNuget:
                     # Make a new file element with the attributes from above
                     new_file = ET.SubElement(files, 'file', attrib=file_attrib)
                     new_file.tail = "\n\t\t"
+                    cls.logger.debug("File added: " + file_attrib['src'])
                 else:
                     raise Exception('File does NOT exist! \n' + src_path)
             # Save changes to the .nuspec file

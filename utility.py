@@ -484,8 +484,8 @@ class Utility:
       result = process.returncode
       if result != 0:
         result = ERROR_SUBPROCESS_EXECUTAION_FAILED
-      if stderr != '':
-        cls.logger.error(str(stderr))
+        if stderr != '':
+          cls.logger.error(str(stderr))
 
     except KeyboardInterrupt:
       os.kill(process.pid, signal.SIGTERM)

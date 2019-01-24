@@ -1,4 +1,5 @@
 import os
+import glob
 from subprocess import Popen, PIPE, call
 
 from errors import NO_ERROR, ERROR_ACQUIRE_NUGET_EXE_FAILED
@@ -45,16 +46,24 @@ Nuget server API key not set or not valid. To set the api key do the following:
             # absolute path to nuget.exe
             exe_path = convertToPlatformPath(cls.nugetExePath)
             full_command = [exe_path, nuget_command]
-            cls.logger.info(exe_path)
+            #Used to print command to cmd
+            printCommand = 'Running command: nuget ' + nuget_command + ' '
             # add options or other arguments to the nuget command
             for cmd in args:
+                printCommand += cmd + ' '
                 full_command.append(cmd)
-            
+
+            cls.logger.info(printCommand)
+
             p = Popen(full_command, stdin=PIPE, stdout=PIPE, stderr=PIPE)
             output, err = p.communicate()
 
             print(output)
-            if err:                
+            if 'The name specified has already been added to the list of available package sources. Please provide a unique name.' in err:
+                cls.logger.warning('Source with that name already exists.')
+                return 'run update'
+            if err:
+                ret = ERROR_ACQUIRE_NUGET_EXE_FAILED
                 cls.logger.error(err)
             if '403 (Forbidden)' in err:
                 print(cls.api_key_instruction)
@@ -84,3 +93,20 @@ Nuget server API key not set or not valid. To set the api key do the following:
                 f.write(urllib2.urlopen(config.NUGET_URL).read())
                 f.close()
         cls.logger.info("Download Complete!")
+
+    @classmethod
+    def get_latest_package(cls):
+        search = convertToPlatformPath(Settings.nugetFolderPath+'/*.nupkg')
+        list_of_files = glob.glob(search)
+        if list_of_files != []:
+            latest_file = max(list_of_files, key=os.path.getctime)
+            #Remove folder path from the latest file string
+            latest_file = latest_file.replace(convertToPlatformPath(Settings.nugetFolderPath), '')
+            #Remove target from the file exposing the version and .nupkg extention
+            latest_file = latest_file.split('.', 1)[-1]
+            #Remove .nupkg extention exposing only the latest built version of the nuget file.
+            latest_version = latest_file.replace('.nupkg', '')
+            
+            return latest_version
+        else:
+            cls.logger.warning('No nuget package found inside the selected folder, please run createnuget action.')

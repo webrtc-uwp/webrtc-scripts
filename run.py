@@ -13,6 +13,7 @@ from createNuget import CreateNuget
 from publishNuget import PublishNuget
 from releaseNotes import ReleaseNotes
 from uploadBackup import UploadBackup
+from updateSample import UpdateSample
 from errors import NO_ERROR, ERROR_TARGET_NOT_SUPPORTED, ERROR_PLATFORM_NOT_SUPPORTED
 from summary import Summary
 from backup import Backup
@@ -172,7 +173,15 @@ def actionUploadBackup():
       Logger.printEndActionMessage('Backup uploaded')
 
 def actionUpdatePublishedSample():
-  pass
+  UpdateSample.init()
+  Logger.printStartActionMessage("Update published sample")
+  result = UpdateSample.run()
+  if result != NO_ERROR:
+      Logger.printEndActionMessage('Failed to update sample!')
+      #Terminate script execution if stopExecutionOnError is set to True in userdef
+      shouldEndOnError(result)
+  else:
+      Logger.printEndActionMessage('Update published sample')
 
 def shouldEndOnError(error):
   """
@@ -238,13 +247,13 @@ def main():
 
   if ACTION_BACKUP in Settings.actions:
     actionBackup()
-
-  if ACTION_CREATE_NUGET in Settings.actions:
-    actionCreateNuget()
     
   if ACTION_RELEASE_NOTES in Settings.actions:
     actionReleaseNotes()
 
+  if ACTION_CREATE_NUGET in Settings.actions:
+    actionCreateNuget()
+    
   if ACTION_UPLOAD_BACKUP in Settings.actions:
     actionUploadBackup()
 
