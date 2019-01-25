@@ -5,6 +5,7 @@ import logging
 import subprocess
 import signal
 import shutil
+from _winreg import HKEY_LOCAL_MACHINE, OpenKey, QueryValueEx, CloseKey
 
 from logger import Logger
 from helper import convertToPlatformPath
@@ -524,4 +525,21 @@ class Utility:
           if not ret:
             break
     
+    return ret
+
+  @classmethod
+  def getKeyValueFromRegistry(cls, parentKey, key, value_name):
+    """
+      Obtain key value from Windows regisry.
+      :return: Key value if exists, otherwise None.
+    """
+    ret = None
+
+    try:
+      registryKey = OpenKey(parentKey, key)
+      ret, typ = QueryValueEx(registryKey, value_name)
+      CloseKey(registryKey)
+    except Exception as error:
+      print(str(error))
+
     return ret

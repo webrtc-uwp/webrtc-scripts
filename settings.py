@@ -41,6 +41,8 @@ class Settings:
     cls.defaultFilePath = os.path.join(os.path.dirname(__file__),'defaults.py')
     #Root path for preparation
     cls.webrtcPath = os.path.join(cls.rootSdkPath, convertToPlatformPath(config.PREPRATARION_WORKING_PATH))
+    #Main BUILD.gn path
+    cls.mainBuildGnFilePath = os.path.join(cls.webrtcPath,'BUILD.gn')
     #WebRtc solution path
     cls.webrtcSolutionPaths = os.path.join(cls.rootSdkPath,convertToPlatformPath(config.WEBRTC_SOLUTION_PATH))
 

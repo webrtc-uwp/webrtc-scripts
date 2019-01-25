@@ -94,7 +94,6 @@ class Preparation:
     start_time = time.time()
     ret = NO_ERROR
     cls.executionTime = 0
-    mainBuildGnFilePath = None
 
     cls.logger.info('Runnning preparation for target: ' + target + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration)
 
@@ -106,18 +105,17 @@ class Preparation:
     ret = cls.__prepareOutputFolder(gnOutputPath, target, platform, cpu, configuration)
 
     if ret == NO_ERROR:
-      mainBuildGnFilePath = os.path.join(Settings.webrtcPath,'BUILD.gn')
       
       #Backup original BUILD.gn from webrtc root folder and add additional dependecies to webrtc target
-      if Utility.backUpAndUpdateGnFile(mainBuildGnFilePath,config.WEBRTC_TARGET,config.ADDITIONAL_TARGETS_TO_ADD):
+      if Utility.backUpAndUpdateGnFile(Settings.mainBuildGnFilePath,config.WEBRTC_TARGET,config.ADDITIONAL_TARGETS_TO_ADD):
         #Generate ninja files and VS projects
         ret = cls.__generateProjects(gnOutputPath)
       else:
         ret = errors.ERROR_PREPARE_UPDATING_DEPS_FAILED
 
     #Delete updated BUILD.gn from webrtc root folder and recover original file
-    if mainBuildGnFilePath != None:
-      Utility.returnOriginalFile(mainBuildGnFilePath)
+    Utility.returnOriginalFile(Settings.mainBuildGnFilePath)
+    
     Utility.popd()
     
     if ret == NO_ERROR:

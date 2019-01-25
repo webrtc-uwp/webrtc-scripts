@@ -4,6 +4,7 @@ import sys
 import subprocess
 import traceback
 from importlib import import_module
+from _winreg import HKEY_LOCAL_MACHINE
 
 import config
 from utility import Utility
@@ -140,9 +141,10 @@ class System:
   @classmethod
   def checkTools(cls):
     """
-      Checks if git and perl are installed on host machine.
+      Checks if git, perl and Windows SDK tools are installed on host machine.
       :return: NO_ERROR if all tools are installed, otherwise returns error code
     """
+    ret = NO_ERROR
     #Check if Git is installed
     if not Utility.checkIfToolIsInstalled('git'):
       cls.logger.warning('git' + ' is not installed.')
@@ -153,7 +155,26 @@ class System:
       cls.logger.warning('perl' + ' is not installed.')
       #return errors.ERROR_SYSTEM_MISSING_PERL
 
-    return NO_ERROR
+    ret = cls.checkVSDebugTools()
+
+    return ret
+
+  @classmethod
+  def checkVSDebugTools(cls):
+    """
+      Checks if VS debug tools are installed.
+      :return: ERROR_SYSTEM_MISSING_VS_DEBUG_TOOLS if debug tools are not isntalled.
+    """
+    ret = NO_ERROR
+    # Get Windows SDK Debugger path from Windows registry
+    winSdkDebugToolPath = Utility.getKeyValueFromRegistry(HKEY_LOCAL_MACHINE, r'SOFTWARE\Wow6432Node\Microsoft\Windows Kits\Installed Roots',"WindowsDebuggersRoot10")
+
+    # If path is not found in registry or path is not valid return error
+    if winSdkDebugToolPath == None or not os.path.isdir(winSdkDebugToolPath): 
+      ret = errors.ERROR_SYSTEM_MISSING_VS_DEBUG_TOOLS
+    else:
+      cls.logger.debug('Windows SDK Debug Tools path is ' + winSdkDebugToolPath)
+    return ret
 
   @classmethod
   def checkIfTargetIsSupported(cls, target):

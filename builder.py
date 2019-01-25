@@ -147,8 +147,6 @@ class Builder:
     ret = NO_ERROR
     cls.logger.info('Following targets ' + str(targets) + ' will be built for cpu '+ targetCPU)
 
-    mainBuildGnFilePath = os.path.join(Settings.webrtcPath,'BUILD.gn')
-
     try:
       for target in targets:
         cls.logger.debug('Building target ' + target)
@@ -159,7 +157,7 @@ class Builder:
         #This is necessary to do, because ninja regenerates ninja files at startup, and it is required 
         # to have the sam BUILD.gn as in prepare process.
         if target == config.WEBRTC_TARGET:
-          if not Utility.backUpAndUpdateGnFile(mainBuildGnFilePath,config.WEBRTC_TARGET,config.ADDITIONAL_TARGETS_TO_ADD):
+          if not Utility.backUpAndUpdateGnFile(Settings.mainBuildGnFilePath,config.WEBRTC_TARGET,config.ADDITIONAL_TARGETS_TO_ADD):
             ret = errors.ERROR_BUILD_UPDATING_DEPS_FAILED
 
         if ret == NO_ERROR:
@@ -174,7 +172,7 @@ class Builder:
       cls.logger.error('Build failed for following targets ' + str(targets) + ' for cpu '+ targetCPU)
       ret = errors.ERROR_BUILD_FAILED
     finally:
-      Utility.returnOriginalFile(mainBuildGnFilePath)
+      Utility.returnOriginalFile(Settings.mainBuildGnFilePath)
 
     if ret == NO_ERROR:
       cls.logger.info('Successfully finished building libs for target ' + target)
