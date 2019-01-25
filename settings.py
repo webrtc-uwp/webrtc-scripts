@@ -65,7 +65,7 @@ class Settings:
           os.path.isfile(cls.inputArgs.template + '.py') or 
           os.path.isfile(os.path.join(cls.templatesPath, cls.inputArgs.template + '.py'))): 
         globals().update(import_module(cls.inputArgs.template).__dict__)
-
+      print('======================================= ' + os.path.join(cls.templatesPath, cls.inputArgs.template + '.py'))
     #cls.gnOutputPath = gnOutputPath
 
     cls.supportedPlatformsForHostOs = supportedPlatformsForHostOs

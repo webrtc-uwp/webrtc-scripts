@@ -9,12 +9,13 @@ from _winreg import HKEY_LOCAL_MACHINE, OpenKey, QueryValueEx, CloseKey
 
 from logger import Logger
 from helper import convertToPlatformPath
-from errors import error_codes, NO_ERROR, ERROR_SUBPROCESS_EXECUTAION_FAILED
+from errors import error_codes, NO_ERROR, ERROR_SUBPROCESS_EXECUTAION_FAILED, TERMINATED_BY_USER
 import config
 class Utility:
 
   #Used in pushd and popd
   pushstack = list()
+  actviveSubprocessList  = list()
 
   @classmethod
   def setUp(cls):
@@ -476,29 +477,51 @@ class Utility:
       #Execute command
       cls.logger.debug('Running subprocess: \n' + commandToExecute)
       if userEnv == None:
-        process = subprocess.Popen(commandToExecute, shell=False, stdout=tempFile, stderr=subprocess.PIPE)
+        process = subprocess.Popen(commandToExecute, shell=False, stdin=subprocess.PIPE, stdout=tempFile, stderr=subprocess.PIPE)
       else:
-        process = subprocess.Popen(commandToExecute, shell=False, stdout=tempFile, stderr=subprocess.PIPE, env=userEnv)
+        process = subprocess.Popen(commandToExecute, shell=False, stdin=subprocess.PIPE, stdout=tempFile, stderr=subprocess.PIPE, env=userEnv)
+
+      #Add created subprocess to the list of active subprocesses, so it can be terminated on script termination.
+      cls.actviveSubprocessList.append(process)
 
       #Enable showing subprocess output and responsiveness on keyboard actions (terminating script on user action) 
-      stdout, stderr = process.communicate()
+      process.communicate()
 
-      result = process.returncode
-      if result != 0:
+      if process.returncode != 0:
         result = ERROR_SUBPROCESS_EXECUTAION_FAILED
-        if stderr != '':
-          cls.logger.error(str(stderr))
+        cls.logger.error(error_codes[result])
 
-    except KeyboardInterrupt:
-      os.kill(process.pid, signal.SIGTERM)
     except Exception as error:
       result = ERROR_SUBPROCESS_EXECUTAION_FAILED
       cls.logger.error(str(error))
+    finally:
+      if process != None:
+        cls.terminateSubprocess(process)
 
     if result != NO_ERROR:
       cls.logger.error(error_codes[result])
 
     return result
+
+  @classmethod
+  def terminateSubprocess(cls, process = None):
+    """
+      Terminate running porcesses.
+      :param process: Process to terminate. If passed value is None, 
+                      terminate all processes.
+    """
+    try:
+      if process != None:
+        process.terminate()
+        cls.actviveSubprocessList.remove(process)
+      else:
+        for prc in cls.actviveSubprocessList:
+          prc.terminate()
+        while len(cls.actviveSubprocessList) > 0:
+          cls.actviveSubprocessList.pop()
+    except Exception as error:
+      cls.logger.error('Failed subprocess termination')
+      cls.logger.error(str(error))
 
   @classmethod
   def filesInFolder(cls,path):  
@@ -540,6 +563,6 @@ class Utility:
       ret, typ = QueryValueEx(registryKey, value_name)
       CloseKey(registryKey)
     except Exception as error:
-      print(str(error))
+       cls.logger.error(str(error))
 
     return ret

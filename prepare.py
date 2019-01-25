@@ -26,7 +26,7 @@ class Preparation:
 
     #Create logger
     cls.logger = Logger.getLogger('Prepare')
-
+    
     #Set working directory to ./webrtc/xplatform/webrtc
     if not os.path.exists(Settings.webrtcPath):
       System.stopExecution(1, 'Unable to set preparation working directory')
@@ -49,14 +49,14 @@ class Preparation:
         if not Utility.createFolderLinks(config.FOLDERS_TO_LINK_ORTC) and ret == NO_ERROR:
           ret = errors.ERROR_PREPARE_CREATING_LINKS_FAILED
 
-    #Copy all files from specified folder (key) to destination (value)
+      #Copy all files from specified folder (key) to destination (value)
       for dict in config.FOLDERS_CONTENT_TO_COPY:
         for key, value in iterateDict(dict):
           result = Utility.copyAllFilesFromFolder(convertToPlatformPath(key), convertToPlatformPath(value))
           if not result:
             ret = errors.ERROR_PREPARE_COPYING_FILES_FAILED
             break
-
+      
       #Copy files whose paths and destinations are in dictionary { file_path : destination_path }
       if not Utility.copyFilesFromDict(config.FILES_TO_COPY) and ret == NO_ERROR:
         ret = errors.ERROR_PREPARE_COPYING_FILES_FAILED
@@ -69,16 +69,18 @@ class Preparation:
       #Download missing build tools
       if not System.downloadBuildToolsIfNeeded() and ret == NO_ERROR:
         ret = errors.ERROR_PREPARE_INSTALLING_CLANG_FAILED
-
+      
       if ret == NO_ERROR:
         ret = cls.__updateChangeTimeStamp()
-
+      
     except Exception as error:
       ret = errors.ERROR_PREPARE_SET_UP_FAILED
       cls.logger.error(str(error))
     finally:
+      #Remove logger handlers added in third party scripts. (e.g. Google's lastchange.py)
+      Logger.cleanThirdPartyLoggers()
       Utility.popd()
-
+    
     return ret
     
   @classmethod
@@ -115,7 +117,7 @@ class Preparation:
 
     #Delete updated BUILD.gn from webrtc root folder and recover original file
     Utility.returnOriginalFile(Settings.mainBuildGnFilePath)
-    
+
     Utility.popd()
     
     if ret == NO_ERROR:
@@ -184,7 +186,7 @@ class Preparation:
       cls.logger.info('Generating webrtc projects ...')
 
       #Generate Webrtc projects
-      cmd = 'gn gen ' + gnOutputPath + ' --ide=' + config.VISUAL_STUDIO_VERSION
+      cmd = 'gn gen ' + gnOutputPath + ' --ide=' + config.VISUAL_STUDIO_VERSION + ' -v'
       result = Utility.runSubprocess([cmd], Settings.logLevel == 'DEBUG',my_env)
       if result != 0:
         ret = errors.ERROR_PREPARE_GN_GENERATION_FAILED
@@ -234,6 +236,7 @@ class Preparation:
       import lastchange
 
       lastchange.main(['','-o','LASTCHANGE'])
+
     except Exception as error:
       ret = errors.ERROR_PREPARE_UPDATING_TIMESTEMP_FAILED
       cls.logger.error(str(error))

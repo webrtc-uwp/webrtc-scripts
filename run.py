@@ -14,7 +14,7 @@ from publishNuget import PublishNuget
 from releaseNotes import ReleaseNotes
 from uploadBackup import UploadBackup
 from updateSample import UpdateSample
-from errors import NO_ERROR, ERROR_TARGET_NOT_SUPPORTED, ERROR_PLATFORM_NOT_SUPPORTED
+from errors import NO_ERROR, ERROR_TARGET_NOT_SUPPORTED, ERROR_PLATFORM_NOT_SUPPORTED, TERMINATED_BY_USER
 from summary import Summary
 from backup import Backup
 from consts import *
@@ -191,80 +191,90 @@ def shouldEndOnError(error):
     System.stopExecution(error)
     Summary.printSummary()
 
+def handleKeyboardInterupt():
+  """
+    Handles keyboard interupt Ctrl+c
+  """
+  System.stopExecution(TERMINATED_BY_USER)
 
 def main():
   
-  #Save time when script is started to calculate total execution tima
-  start_time = time.time()
+  #Try is just for catching KeyboardInterrupt
+  try:
+    #Save time when script is started to calculate total execution tima
+    start_time = time.time()
 
-  #Determine host OS, checks supported targets, update python and system paths.
-  System.preInit()
+    #Determine host OS, checks supported targets, update python and system paths.
+    System.preInit()
 
-  #Parse input parameters if any. This must be call after System.preInit, because it is required to determine host os first. 
-  Input.parseInput(sys.argv[1:])
-  
-  #Start message put here, so it is not shown when script help is being shown.
-  Logger.printStartActionMessage('Script execution',ColoredFormatter.YELLOW)
-
-  #Create userdef.py file if missing. Load settings. Create system logger. Download depot tools (gn and clang-format). -----Set working directory to rood sdk folder.
-  System.setUp()
-
-  #Create root logger
-  mainLogger = Logger.getLogger('Main')
-  mainLogger.info('Root logger is created')
-  
-  #Check if required tools are installed. Currently git (used for downloading iOS binaries) and perl(used in assembly builds)
-  errorCode = System.checkTools()
-  if errorCode != 0:
-    System.stopExecution(errorCode)
-   
-  #Check if specified targets are supported
-  if not System.checkIfTargetsAreSupported(Settings.targets):
-    mainLogger.error('Target from the list ' + str(Settings.targets) + ' is not supported')
-    System.stopExecution(ERROR_TARGET_NOT_SUPPORTED)
-  
-  #Check if specified platforms are supported
-  if not System.checkIfPlatformsAreSupported(Settings.targetPlatforms):
-    mainLogger.error('Platform from the list ' + str(Settings.targetPlatforms) + ' is not supported')
-    System.stopExecution(ERROR_PLATFORM_NOT_SUPPORTED)
-
-  #Start performing actions. Actions has to be executed in right order and that is the reason why it is handled this way
-  #If uploadbackup is selected start the authentication process first
-  if ACTION_UPLOAD_BACKUP in Settings.actions:
-    UploadBackup.init()
-  
-  if ACTION_CLEAN in Settings.actions:
-    actionClean()
+    #Parse input parameters if any. This must be call after System.preInit, because it is required to determine host os first. 
+    Input.parseInput(sys.argv[1:])
     
-  if ACTION_CREATE_USERDEF in Settings.actions:
-    actionCreateUserdef()
+    #Start message put here, so it is not shown when script help is being shown.
+    Logger.printStartActionMessage('Script execution',ColoredFormatter.YELLOW)
 
-  if ACTION_PREPARE in Settings.actions:
-    actionPrepare()
+    #Create userdef.py file if missing. Load settings. Create system logger. Download depot tools (gn and clang-format). -----Set working directory to rood sdk folder.
+    System.setUp()
 
-  if ACTION_BUILD in Settings.actions:
-    actionBuild()
-
-  if ACTION_BACKUP in Settings.actions:
-    actionBackup()
+    #Create root logger
+    mainLogger = Logger.getLogger('Main')
+    mainLogger.info('Root logger is created')
     
-  if ACTION_RELEASE_NOTES in Settings.actions:
-    actionReleaseNotes()
-
-  if ACTION_CREATE_NUGET in Settings.actions:
-    actionCreateNuget()
+    #Check if required tools are installed. Currently git (used for downloading iOS binaries) and perl(used in assembly builds)
+    errorCode = System.checkTools()
+    if errorCode != 0:
+      System.stopExecution(errorCode)
     
-  if ACTION_UPLOAD_BACKUP in Settings.actions:
-    actionUploadBackup()
+    #Check if specified targets are supported
+    if not System.checkIfTargetsAreSupported(Settings.targets):
+      mainLogger.error('Target from the list ' + str(Settings.targets) + ' is not supported')
+      System.stopExecution(ERROR_TARGET_NOT_SUPPORTED)
+    
+    #Check if specified platforms are supported
+    if not System.checkIfPlatformsAreSupported(Settings.targetPlatforms):
+      mainLogger.error('Platform from the list ' + str(Settings.targetPlatforms) + ' is not supported')
+      System.stopExecution(ERROR_PLATFORM_NOT_SUPPORTED)
+    
+    #Start performing actions. Actions has to be executed in right order and that is the reason why it is handled this way
+    #If uploadbackup is selected start the authentication process first
+    if ACTION_UPLOAD_BACKUP in Settings.actions:
+      UploadBackup.init()
+    
+    if ACTION_CLEAN in Settings.actions:
+      actionClean()
+      
+    if ACTION_CREATE_USERDEF in Settings.actions:
+      actionCreateUserdef()
 
-  if ACTION_PUBLISH_NUGET in Settings.actions:
-    actionPublishNuget()
+    if ACTION_PREPARE in Settings.actions:
+      actionPrepare()
 
-  if ACTION_UPDATE_SAMPLE in Settings.actions:
-    actionUpdatePublishedSample()
-  
-  if Settings.runSetNugetKey is True:
-    actionSetNugetKey()
+    if ACTION_BUILD in Settings.actions:
+      actionBuild()
+
+    if ACTION_BACKUP in Settings.actions:
+      actionBackup()
+      
+    if ACTION_RELEASE_NOTES in Settings.actions:
+      actionReleaseNotes()
+
+    if ACTION_CREATE_NUGET in Settings.actions:
+      actionCreateNuget()
+      
+    if ACTION_UPLOAD_BACKUP in Settings.actions:
+      actionUploadBackup()
+
+    if ACTION_PUBLISH_NUGET in Settings.actions:
+      actionPublishNuget()
+
+    if ACTION_UPDATE_SAMPLE in Settings.actions:
+      actionUpdatePublishedSample()
+    
+    if Settings.runSetNugetKey is True:
+      actionSetNugetKey()
+
+  except KeyboardInterrupt:
+    handleKeyboardInterupt()
 
   end_time = time.time()
   Summary.printSummary(end_time - start_time)

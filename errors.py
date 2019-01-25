@@ -101,5 +101,5 @@ error_codes = {
   ERROR_CLEANUP_DELETING_FLG_FILES_FAILED : 'Failed deleting .flg files!',
   ERROR_CLEANUP_DELETING_GENERATED_FILES_FAILED : 'Failed deleting files generated with idl compiler!',
   ERROR_CLEANUP_REVERTING_PREPARE_CHANGES_FAILED : 'Failed reverting prepare changes!',
-  TERMINATED_BY_USER : 'Execution terminated by the user!'
+  TERMINATED_BY_USER : 'Execution terminated by user!'
 }

@@ -50,7 +50,6 @@ class ColoredFormatter(logging.Formatter):
       record.msg = self.colorize(record.msg,self.color_level_dict[record.levelno])
     return logging.Formatter.format(self, record)
 
-
 class Logger:
 
   formatter = None #ColoredFormatter(FORMAT)
@@ -113,3 +112,12 @@ class Logger:
   @classmethod
   def printEndActionMessage(cls, action, textColor = ColoredFormatter.GREEN):
     cls.printColorMessage(ACTION_END_MESSAGE.replace('[ACTION]',action),textColor)
+
+  @classmethod
+  def cleanThirdPartyLoggers(cls):
+    """
+      Removes all logger handles created in third party scripts.
+    """
+    for handler in logging.root.handlers:
+      if handler != cls.loggerHandle:
+        logging.root.removeHandler(handler)

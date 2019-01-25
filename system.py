@@ -156,7 +156,7 @@ class System:
       #return errors.ERROR_SYSTEM_MISSING_PERL
 
     ret = cls.checkVSDebugTools()
-
+    
     return ret
 
   @classmethod
@@ -194,6 +194,7 @@ class System:
       :param targets: list of targets to check for
       :return: True if targets are supported
     """
+    
     cls.logger.debug('Checking if specified targets are supported.')
     for target in targets:
       if not cls.checkIfTargetIsSupported(target):
@@ -261,31 +262,40 @@ class System:
       else:
         errorMessage = error_codes[error]
       
-      #If logger is not yet initialzed it cannot be use it, so just colorized message is shown
-      if cls.logger != None:
-        cls.logger.critical('Script execution has failed')
-        cls.logger.error(message)
+      try:
+        Utility.terminateSubprocess()
+        Utility.returnOriginalFile(Settings.mainBuildGnFilePath)
+      except Exception as error:
+        Logger.printColorMessage(str(error))
+
+      if error == errors.TERMINATED_BY_USER:
+        Logger.printColorMessage(error_codes[error])
       else:
-        Logger.printColorMessage('Script execution has failed')
-        Logger.printColorMessage('Error E'+ str(error) + ': ' + errorMessage)
+        #If logger is not yet initialzed it cannot be use it, so just colorized message is shown
+        if cls.logger != None:
+          cls.logger.critical('Script execution has failed')
+          cls.logger.error(errorMessage)
+        else:
+          Logger.printColorMessage('Script execution has failed')
+          Logger.printColorMessage('Error E'+ str(error) + ': ' + errorMessage)
 
-      #If showSettingsValuesOnError is set to True, print current settings values
-      if Settings.showSettingsValuesOnError:
-        print ('\n\n\n----------------------- CURRENT SETTINGS -----------------------')
-        attrs = vars(Settings)
-        print ('\n '.join('%s: %s' % item for item in attrs.items()))
-        print ('------------------- CURRENT SETTINGS END -----------------------')
+        #If showSettingsValuesOnError is set to True, print current settings values
+        if Settings.showSettingsValuesOnError:
+          print ('\n\n\n----------------------- CURRENT SETTINGS -----------------------')
+          attrs = vars(Settings)
+          print ('\n '.join('%s: %s' % item for item in attrs.items()))
+          print ('------------------- CURRENT SETTINGS END -----------------------')
 
-      if Settings.showPATHOnError:
-        print ('\n\n\n----------------------- PATH -----------------------')
-        print (os.environ['PATH'])
-        print ('------------------- PATH END -----------------------')
+        if Settings.showPATHOnError:
+          print ('\n\n\n----------------------- PATH -----------------------')
+          print (os.environ['PATH'])
+          print ('------------------- PATH END -----------------------')
 
-      #If showTraceOnError is set to True, print current trace log
-      if Settings.showTraceOnError:
-        print ('\n\n\n----------------------- TRACE -----------------------')
-        traceback.print_stack()
-        print ('----------------------- TRACE END -----------------------')
+        #If showTraceOnError is set to True, print current trace log
+        if Settings.showTraceOnError:
+          print ('\n\n\n----------------------- TRACE -----------------------')
+          traceback.print_stack()
+          print ('----------------------- TRACE END -----------------------')
 
     sys.exit(error)
 
