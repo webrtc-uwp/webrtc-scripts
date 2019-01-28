@@ -31,7 +31,7 @@ class UpdateSample:
         else:
             latestNugetVersion = NugetUtility.get_latest_package()
         #Add nuget folder to nuget source in Nuget.Config
-        cls.add_nuget_local_source()
+        NugetUtility.add_nuget_local_source()
 
         #Get sample name and repo url from userdef file
         for sample in Settings.updateSampleInfo['samples']:
@@ -47,8 +47,8 @@ class UpdateSample:
             if ret == NO_ERROR:
                 #Make the sample use nuget package by changing .csproj file
                 ret = cls.use_nuget_package(common_sample_path, latestNugetVersion)
-            # if ret == NO_ERROR:
-            #     ret = cls.copy_dirs(common_sample_path, cloned_sample_path)
+            if ret == NO_ERROR:
+                ret = cls.copy_dirs(common_sample_path, cloned_sample_path)
 
         return ret
 
@@ -64,7 +64,7 @@ class UpdateSample:
                 cls.logger.debug("Cloning sample...")
                 cloneCommand = 'git clone -b ' + git_branch + ' ' + git_url + ' ' + sample_dir_name
                 cloneCommand = cloneCommand.strip()
-                ret = Utility.runSubprocess([cloneCommand], Settings.logLevel == 'DEBUG')
+                ret = Utility.runSubprocess([cloneCommand])
                 if ret == NO_ERROR:
                     cls.logger.debug("Cloning sample finished.")
             else:
@@ -143,28 +143,6 @@ class UpdateSample:
             ret = ERROR_UPDATE_SAMPLE_COPY_FAILED
 
         return ret
-
-    @classmethod
-    def add_nuget_local_source(cls):
-        """
-        Adds nuget folder from userdef as a non-HTTP nuget package source.
-        """
-        #Package source name (how it will be set in NuGet.Config)
-        srcName = 'UpdateSample'
-        #Package source path for the srcName (how it will be set in NuGet.Config)
-        srcPath = os.path.abspath(Settings.nugetFolderPath)
-        try:
-            result = NugetUtility.nuget_cli('sources', 'Add', '-Name', srcName, '-Source', srcPath)
-
-            if result == NO_ERROR:
-                cls.logger.debug('Package Source with Name: ' + srcName + ' and path: ' + srcPath + ' added successfully.')
-            #If package source with the same name already exists update path for that source
-            elif 'run update' in result:
-                cls.logger.debug('Running source update.')
-                NugetUtility.nuget_cli('sources', 'update', '-Name', srcName, '-Source', srcPath)
-                cls.logger.debug('Package Source with Name: ' + srcName + ' and path: ' + srcPath + ' updated successfully.')
-        except Exception as error:
-            cls.logger.error(str(error))
 
     @classmethod
     def get_file_name(cls, dir_path):

@@ -3,10 +3,14 @@ import os
 import re 
 from helper import module_exists, yes_no, convertToPlatformPath 
 from settings import Settings
+from logger import Logger
 from nugetUtility import NugetUtility
 
 
 class ReleaseNotes:
+    @classmethod
+    def init(cls):
+        cls.logger = Logger.getLogger('ReleaseNotes')
 
     @classmethod
     def select_input(cls):
@@ -18,6 +22,8 @@ class ReleaseNotes:
         print('1) Insert directly from command line')
         print('2) Insert from a file')
 
+        cls.init()
+
         inputValue = 0
         inputNote = False
         try:
@@ -28,7 +34,7 @@ class ReleaseNotes:
         except SyntaxError:
             inputValue = 0
         if inputValue is 0:
-            print('Failed to create a release note')
+            cls.logger.warning('Failed to create a release note')
             return False
         elif inputValue is 1:
             inputNote = cls.cmd_note()
@@ -40,7 +46,7 @@ class ReleaseNotes:
                 oldContent = release_notes.read()
                 release_notes.seek(0, 0)
                 release_notes.write(inputNote.rstrip('\r\n') + '\n' + oldContent)
-                print('Successfuly created release note')
+                cls.logger.info('Successfuly created release note')
         return inputNote
 
     @classmethod
@@ -62,6 +68,7 @@ class ReleaseNotes:
         Shows a GUI for file selection, selected txt file will be read and its contents will be returned
         :return note: string read from txt file
         """
+        cls.init()
         note = ''
         if module_exists('Tkinter'):
             from Tkinter import Tk
@@ -87,10 +94,12 @@ class ReleaseNotes:
                 note += line
         if note == '':
             note = False
+        cls.logger.debug("Note selected from a file.")
         return note
 
     @classmethod
     def get_note(cls, note_source):
+        cls.init()
         note = ''
         with open(note_source, 'r') as read_src:
             for line in read_src:
@@ -100,12 +109,17 @@ class ReleaseNotes:
                     note += line
         if note == '':
             note = False
-            print('Release note not written')
+            cls.logger.warning('Release note not written')
         return note
         
 
     @classmethod
     def set_note_version(cls, version):
+        """
+        Sets the version of the release note.
+        :param version: version of the release note to be set
+        """
+        cls.init()
         notes_file = 'releases.txt'
         note = cls.get_note(notes_file)
         if note is not False:
@@ -122,6 +136,7 @@ class ReleaseNotes:
 
             with open(notes_file, 'w') as release_notes:
                 release_notes.writelines(all_notes)
+                cls.logger.info("Release notes vesion set: " + version)
 
     @classmethod
     def set_note_version_server(cls):
@@ -129,6 +144,7 @@ class ReleaseNotes:
         Sets the version of the release notes by getting the latest 
         published version of the nuget package published on nuget.org
         """
+        cls.init()
         notes_file = 'releases.txt'
         #Get the list of WebRtc nuget pakcages with prereleases
         packages = NugetUtility.nuget_cli('list', 'Id:WebRtc', '-PreRelease')
@@ -154,5 +170,5 @@ class ReleaseNotes:
 
             with open(notes_file, 'w') as release_notes:
                 release_notes.writelines(all_notes)
-                print("Release notes vesion set: " + version)    
+                cls.logger.info("Release notes vesion set: " + version)    
             
