@@ -157,7 +157,7 @@ def actionReleaseNotes():
   ReleaseNotes.select_input()
 
 def actionSetNugetKey():
-  PublishNuget.set_api_key(Settings.nugetAPIKey)
+  PublishNuget.set_api_key(Settings.nugetAPIKey, address=Settings.nugetServerURL)
 
 def actionUploadBackup():
   need_to_run_backup = UploadBackup.checkBackup()
@@ -232,6 +232,9 @@ def main():
   #If uploadbackup is selected start the authentication process first
   if ACTION_UPLOAD_BACKUP in Settings.actions:
     UploadBackup.init()
+    
+  if Settings.runSetNugetKey is True:
+    actionSetNugetKey()
   
   if ACTION_CLEAN in Settings.actions:
     actionClean()
@@ -262,9 +265,6 @@ def main():
 
   if ACTION_UPDATE_SAMPLE in Settings.actions:
     actionUpdatePublishedSample()
-  
-  if Settings.runSetNugetKey is True:
-    actionSetNugetKey()
 
   if Settings.setservernoteversion is True:
     ReleaseNotes.set_note_version_server()

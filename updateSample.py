@@ -21,6 +21,10 @@ class UpdateSample:
     @classmethod
     def run(cls):
         ret = NO_ERROR
+
+        #Change current working directory to root sdk directory
+        Utility.pushd(Settings.rootSdkPath)
+
         samples_directory = './Published_Samples/'
         if Settings.updateSampleInfo['package'] is not 'default':
             latestNugetVersion = Settings.updateSampleInfo['package']
@@ -50,6 +54,9 @@ class UpdateSample:
             if ret == NO_ERROR:
                 ret = cls.copy_dirs(common_sample_path, cloned_sample_path)
 
+        # return to the base directory
+        Utility.popd()
+        
         return ret
 
     @classmethod
