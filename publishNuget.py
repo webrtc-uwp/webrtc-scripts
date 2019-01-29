@@ -99,6 +99,7 @@ class PublishNuget:
             print('0) Cancel')
             for package in cls.packages:
                 index = cls.packages.index(package)+1
+                #Show available packages
                 print(str(index) + ') ' + package['fullName'])
             #Cancel if user didnt input number
             try:

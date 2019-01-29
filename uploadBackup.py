@@ -106,7 +106,7 @@ class UploadBackup:
         else:
             cls.logger.warning('Missing NuGet package!')
             
-        print('Zipping pdb files:')
+        cls.logger.debug('Zipping pdb files:')
         toolbar_width = 60
         sys.stdout.write("[%s]" % (" " * toolbar_width))
         sys.stdout.flush()

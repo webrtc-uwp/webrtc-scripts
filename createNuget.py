@@ -70,7 +70,7 @@ class CreateNuget:
             cls.version = Settings.manualNugetVersionNumber
         if ret == NO_ERROR:
             if os.path.isfile(Settings.releaseNotePath):
-                release_note = ReleaseNotes.get_note(Settings.releaseNotePath, cls.version)
+                release_note = ReleaseNotes.get_note(Settings.releaseNotePath)
             ret = cls.create_nuspec(cls.version, target, release_note)
         if ret == NO_ERROR:
             ret = cls.create_targets(target)
@@ -94,6 +94,9 @@ class CreateNuget:
         if ret == NO_ERROR:
             cls.check_and_move(target, cls.version)
             cls.logger.info('NuGet package created succesfuly: ' + cls.nugetFolderPath + '/' + cls.version)
+            #Add nuget folder as nuget source in Nuget.Config
+            NugetUtility.add_nuget_local_source()
+            cls.delete_used()
         end_time = time.time()
         cls.executionTime = end_time - start_time
         
@@ -627,3 +630,20 @@ class CreateNuget:
             shutil.move(package, cls.nugetFolderPath + '/' + package)
         else:
             cls.logger.error('NuGet package does not exist')
+
+    @classmethod
+    def delete_used(cls):
+        content = os.listdir(cls.nugetFolderPath)
+        try:
+            for element in content:
+                if 'libraries' in element:
+                    libraries = convertToPlatformPath(cls.nugetFolderPath + '/' + element)
+                    shutil.rmtree(libraries)
+                if '.nuspec' in element:
+                    nuspec = convertToPlatformPath(cls.nugetFolderPath + '/' + element)
+                    os.remove(nuspec)
+                if '.targets' in element:
+                    targets = convertToPlatformPath(cls.nugetFolderPath + '/' + element)
+                    os.remove(targets)
+        except Exception as error:
+            cls.logger.warning("Failed to delete unnecessary files from nuget folder.")
