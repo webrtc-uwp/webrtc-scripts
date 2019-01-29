@@ -60,6 +60,8 @@ class CreateNuget:
         cls.destinationLibPath = cls.nugetFolderPath + config.NUGET_LIBRARIES
         ret = NO_ERROR
         release_note = ''
+        #Change current working directory to root sdk directory
+        Utility.pushd(Settings.rootSdkPath)
         if Settings.manualNugetVersionNumber is False:
             ret = cls.get_versions(target)
             if ret == NO_ERROR:
@@ -87,7 +89,7 @@ class CreateNuget:
                 if ret == NO_ERROR:
                     # update .winmd and .xml tags in nuspec file with the copied files
                     ret = cls.update_nuspec_files(target, platform, configuration, cpu,f_type=['.winmd', '.xml'], target_path=r'lib\uap10.0')
-                # return to the base directory
+                # return to the root sdk directory
                 Utility.popd()
         if ret == NO_ERROR:
             ret = NugetUtility.nuget_cli('pack', cls.nugetFolderPath + '/webrtc.nuspec')
@@ -99,6 +101,9 @@ class CreateNuget:
             cls.delete_used()
         end_time = time.time()
         cls.executionTime = end_time - start_time
+
+        # return to the base directory
+        Utility.popd()
         
         return ret
 

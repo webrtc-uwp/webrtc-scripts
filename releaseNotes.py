@@ -4,6 +4,7 @@ import re
 from helper import module_exists, yes_no, convertToPlatformPath 
 from settings import Settings
 from logger import Logger
+from utility import Utility
 from nugetUtility import NugetUtility
 
 
@@ -17,6 +18,8 @@ class ReleaseNotes:
         """
         Gives user a choice on how to write a release note
         """
+        #Change current working directory to root sdk directory
+        Utility.pushd(Settings.rootSdkPath)
         print('Would you like to insert release notes?')
         print('0) Cancel')
         print('1) Insert directly from command line')
@@ -47,6 +50,8 @@ class ReleaseNotes:
                 release_notes.seek(0, 0)
                 release_notes.write(inputNote.rstrip('\r\n') + '\n' + oldContent)
                 cls.logger.info('Successfuly created release note')
+        # return to the base directory
+        Utility.popd()
         return inputNote
 
     @classmethod
@@ -119,6 +124,8 @@ class ReleaseNotes:
         Sets the version of the release note.
         :param version: version of the release note to be set
         """
+        #Change current working directory to root sdk directory
+        Utility.pushd(Settings.rootSdkPath)
         cls.init()
         notes_file = 'releases.txt'
         note = cls.get_note(notes_file)
@@ -137,6 +144,8 @@ class ReleaseNotes:
             with open(notes_file, 'w') as release_notes:
                 release_notes.writelines(all_notes)
                 cls.logger.info("Release notes vesion set: " + version)
+        # return to the base directory
+        Utility.popd()
 
     @classmethod
     def set_note_version_server(cls):
@@ -144,6 +153,8 @@ class ReleaseNotes:
         Sets the version of the release notes by getting the latest 
         published version of the nuget package published on nuget.org
         """
+        #Change current working directory to root sdk directory
+        Utility.pushd(Settings.rootSdkPath)
         cls.init()
         notes_file = 'releases.txt'
         #Get the list of WebRtc nuget pakcages with prereleases
@@ -171,4 +182,7 @@ class ReleaseNotes:
             with open(notes_file, 'w') as release_notes:
                 release_notes.writelines(all_notes)
                 cls.logger.info("Release notes vesion set: " + version)    
+                
+        # return to the base directory
+        Utility.popd()
             
