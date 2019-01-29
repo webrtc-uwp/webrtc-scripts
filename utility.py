@@ -439,9 +439,9 @@ class Utility:
       :param dict: Dictionary to extract from.
       :param target: Target name, that is the key for the inner dict.
       :param platform: Platform name, that is the key for the second inned dict.
-      :return ret: Value if found. Otherwise None.
+      :return ret: Value if found. Otherwise ''.
     """
-    ret = None
+    ret = ''
     if dict == None:
       return ret
 
@@ -489,7 +489,6 @@ class Utility:
 
       if process.returncode != 0:
         result = ERROR_SUBPROCESS_EXECUTAION_FAILED
-        cls.logger.error(error_codes[result])
 
     except Exception as error:
       result = ERROR_SUBPROCESS_EXECUTAION_FAILED

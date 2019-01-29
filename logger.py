@@ -54,18 +54,6 @@ class Logger:
 
   formatter = None #ColoredFormatter(FORMAT)
   loggerHandle = None #logging.StreamHandler()
-  #loggerHandle.setFormatter(formatter)
-  basicLogger = None
-
-  @classmethod
-  def initBasicLogger(cls):
-    basicLoggerHandle = logging.StreamHandler()
-    basicFormatter = logging.Formatter('')
-    basicLoggerHandle.setFormatter(basicFormatter)
-    basicLoggerHandle.setLevel(logging.DEBUG)
-    cls.basicLogger = logging.getLogger('basic')
-    cls.basicLogger.setLevel(logging.DEBUG)
-    cls.basicLogger.addHandler(basicLoggerHandle)
 
   @classmethod
   def setUp(cls, logFormat, noColoredOutput = False, logToFile = '', overwriteLogFile = True):
@@ -96,14 +84,11 @@ class Logger:
 
   @classmethod
   def printColorMessage(cls, message,textColor = ColoredFormatter.RED, background = None):
-    #if cls.basicLogger == None:
-    #  cls.initBasicLogger()
     
     coloredMessage = ''.join((ColoredFormatter.CSI_SEQUENCE, (str(textColor + 30)),
                             'm', message, ColoredFormatter.RESET_SEQUECE))
     
     print(coloredMessage)
-    #cls.basicLogger.debug(coloredMessage)
 
   @classmethod
   def printStartActionMessage(cls, action, textColor = ColoredFormatter.GREEN):

@@ -39,8 +39,10 @@ class Input:
     
     parser.add_argument('--clang', action='store_true', help='Build with clang')
 
-    parser.add_argument('-uploadurl', nargs='?', action='store', dest='uploadBackupURL', help='Cloud storrage URL to wich backup will be uploaded')
+    parser.add_argument('--uploadurl', nargs='?', action='store', dest='uploadBackupURL', help='Cloud storrage URL to wich backup will be uploaded')
 
-    parser.add_argument('-setnugetkey', nargs='?', action='store', dest='setnugetkey', help='Set the api key for the nuget server')
+    parser.add_argument('--setnugetkey', nargs='?', action='store', dest='setnugetkey', help='Set the api key for the nuget server')
+
+    parser.add_argument('-u','--userTarget', nargs='?', help='Target to build if not webrtc or ortc')
     
     Settings.inputArgs = parser.parse_args()

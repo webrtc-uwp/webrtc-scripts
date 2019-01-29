@@ -62,7 +62,8 @@ class Settings:
     if cls.inputArgs.template:
       if cls.inputArgs.template and \
          (os.path.isfile(cls.inputArgs.template) or 
-          os.path.isfile(cls.inputArgs.template + '.py') or 
+          os.path.isfile(cls.inputArgs.template + '.py') or
+          os.path.isfile(os.path.join(cls.templatesPath, cls.inputArgs.template)) or 
           os.path.isfile(os.path.join(cls.templatesPath, cls.inputArgs.template + '.py'))): 
         globals().update(import_module(cls.inputArgs.template).__dict__)
       print('======================================= ' + os.path.join(cls.templatesPath, cls.inputArgs.template + '.py'))
@@ -76,11 +77,15 @@ class Settings:
     else:
       cls.actions = actions
 
-    #If targets are passed like input arguments use them, instead of one loaded from template
-    if cls.inputArgs.targets:
-      cls.targets = cls.inputArgs.targets
+    #If user target (any target different from ortc and webrtc) is passed like input argument use it.
+    if cls.inputArgs.userTarget:
+       cls.targets = [cls.inputArgs.userTarget]
     else:
-      cls.targets = targets
+      #If targets are passed like input arguments use them, instead of one loaded from template
+      if cls.inputArgs.targets:
+        cls.targets = cls.inputArgs.targets
+      else:
+        cls.targets = targets
 
     #If platforms are passed like input arguments use them, instead of one loaded from template
     if cls.inputArgs.platforms:
@@ -180,6 +185,8 @@ class Settings:
     #If cleanup options are passed like input arguments use them, instead of one loaded from userdef
     if cls.inputArgs.cleanOptions:
       cls.cleanupOptions['actions'] =  cls.inputArgs.cleanOptions
+
+    cls.availableTargetsForBuilding = availableTargetsForBuilding
 
   @classmethod
   def getGnOutputPath(cls, path, target, platform, cpu, configuration):

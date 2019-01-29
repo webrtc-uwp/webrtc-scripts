@@ -90,14 +90,14 @@ def actionBuild():
   Builder.init()
 
   for target in Settings.targets:
-    targetsToBuild, combineLibs = Builder.getTargetGnPath(target)
+    targetsToBuild, combineLibs, copyToOutput = Builder.getTargetGnPath(target)
     for platform in Settings.targetPlatforms:
       for cpu in Settings.targetCPUs:
         if System.checkIfCPUIsSupportedForPlatform(cpu,platform):
           for configuration in Settings.targetConfigurations:
             if not Summary.checkIfActionFailed(ACTION_PREPARE, target, platform, cpu, configuration):
               Logger.printStartActionMessage('Build ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration,ColoredFormatter.YELLOW)
-              result = Builder.run(target, targetsToBuild, platform, cpu, configuration, combineLibs)
+              result = Builder.run(target, targetsToBuild, platform, cpu, configuration, combineLibs, copyToOutput)
               Summary.addSummary(ACTION_BUILD, target, platform, cpu, configuration, result, Builder.executionTime)
               if result != NO_ERROR:
                   Logger.printEndActionMessage('Failed building ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration,ColoredFormatter.RED)
@@ -225,10 +225,11 @@ def main():
     if errorCode != 0:
       System.stopExecution(errorCode)
     
+    #### COMMENTED to allow building other gn targets.
     #Check if specified targets are supported
-    if not System.checkIfTargetsAreSupported(Settings.targets):
-      mainLogger.error('Target from the list ' + str(Settings.targets) + ' is not supported')
-      System.stopExecution(ERROR_TARGET_NOT_SUPPORTED)
+    #if not System.checkIfTargetsAreSupported(Settings.targets):
+    #  mainLogger.error('Target from the list ' + str(Settings.targets) + ' is not supported')
+    #  System.stopExecution(ERROR_TARGET_NOT_SUPPORTED)
     
     #Check if specified platforms are supported
     if not System.checkIfPlatformsAreSupported(Settings.targetPlatforms):
