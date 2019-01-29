@@ -277,6 +277,9 @@ def main():
   except KeyboardInterrupt:
     handleKeyboardInterupt()
 
+  if Settings.setservernoteversion is True:
+    ReleaseNotes.set_note_version_server()
+    
   end_time = time.time()
   Summary.printSummary(end_time - start_time)
 

@@ -8,6 +8,7 @@ from errors import NO_ERROR, ERROR_LOADING_NUGET_PACKAGES, ERROR_SELECTING_NUGET
 from helper import convertToPlatformPath
 from system import System
 from createNuget import CreateNuget
+from releaseNotes import ReleaseNotes
 
 
 class PublishNuget:
@@ -50,6 +51,8 @@ class PublishNuget:
                 #Api key needs to be placed diferently
                 cls.publish(packagePath, cls.serverURL)
         end_time = time.time()
+        
+        ReleaseNotes.set_note_version(package['packageVersionNumber'])
         cls.executionTime = end_time - start_time
         return ret
 
@@ -96,6 +99,7 @@ class PublishNuget:
             print('0) Cancel')
             for package in cls.packages:
                 index = cls.packages.index(package)+1
+                #Show available packages
                 print(str(index) + ') ' + package['fullName'])
             #Cancel if user didnt input number
             try:

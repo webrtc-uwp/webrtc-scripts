@@ -1,5 +1,6 @@
 import os
 import glob
+import re
 from subprocess import Popen, PIPE, call
 
 from errors import NO_ERROR, ERROR_ACQUIRE_NUGET_EXE_FAILED
@@ -58,15 +59,24 @@ Nuget server API key not set or not valid. To set the api key do the following:
             p = Popen(full_command, stdin=PIPE, stdout=PIPE, stderr=PIPE)
             output, err = p.communicate()
 
-            print(output)
             if 'The name specified has already been added to the list of available package sources. Please provide a unique name.' in err:
                 cls.logger.warning('Source with that name already exists.')
                 return 'run update'
+            if 'The source specified has already been added to the list of available package sources. Please provide a unique source.' in err:
+                cls.logger.warning(err)
+                return 'alerady added'
             if err:
                 ret = ERROR_ACQUIRE_NUGET_EXE_FAILED
                 cls.logger.error(err)
             if '403 (Forbidden)' in err:
-                print(cls.api_key_instruction)
+                cls.logger.error(cls.api_key_instruction)
+                
+            if 'nuget list' in printCommand:
+                return output
+            else:
+                cls.logger.debug("Output: ")
+                cls.logger.debug(output)
+        
         except Exception as errorMessage:
             cls.logger.error(errorMessage)
             ret = ERROR_ACQUIRE_NUGET_EXE_FAILED
@@ -110,3 +120,39 @@ Nuget server API key not set or not valid. To set the api key do the following:
             return latest_version
         else:
             cls.logger.warning('No nuget package found inside the selected folder, please run createnuget action.')
+
+    @classmethod
+    def add_nuget_local_source(cls, name='Local_NuGet_packages'):
+        """
+        Adds nuget folder from userdef as a non-HTTP nuget package source.
+        """
+        #Package source name (how it will be set in NuGet.Config)
+        srcName = name
+        if convertToPlatformPath(Settings.nugetFolderPath) in convertToPlatformPath('./webrtc/windows/nuget'):
+            srcName = 'SDK_NuGet_package'
+        #Package source path for the srcName (how it will be set in NuGet.Config)
+        srcPath = os.path.abspath(Settings.nugetFolderPath)
+        try:
+            result = NugetUtility.nuget_cli('sources', 'Add', '-Name', srcName, '-Source', srcPath)
+
+            if result == NO_ERROR:
+                cls.logger.debug('Package Source with Name: ' + srcName + ' and path: ' + srcPath + ' added successfully.')
+            #If package source with the same name already exists update path for that source
+            elif 'run update' in result and 'SDK NuGet package' in srcName:
+                cls.logger.debug('Running source update.')
+                NugetUtility.nuget_cli('sources', 'update', '-Name', srcName, '-Source', srcPath)
+                cls.logger.debug('Package Source with Name: ' + srcName + ' and path: ' + srcPath + ' updated successfully.')
+            elif name in srcName and 'alerady added' not in result:
+                number = re.search(r'\d+$', srcName)
+                # if srcName does't end in number add a number, else increment that number.
+                if number is None:
+                    srcName = srcName + '_2'
+                else:
+                    number = number.group()
+                    newNumber = int(number) + 1
+                    srcName = srcName.replace(str(number), str(newNumber))
+                #Add new name to nuget sources
+                NugetUtility.add_nuget_local_source(name=srcName)
+        except Exception as error:
+            cls.logger.error(str(error))
+
