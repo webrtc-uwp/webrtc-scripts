@@ -585,7 +585,7 @@ class CreateNuget:
                     for line in source:
                         if '<version>' in line:
                             destination.write('\t\t<version>' + version + '</version>\n')
-                            if release_note is not False:
+                            if release_note:
                                 cls.logger.debug('Release note added: ' + release_note)
                                 # Template .nuspec file
                                 with open(cls.changelog_file.replace('[TARGET]', target).replace('[VERSION]', version), 'w') as changelog:
