@@ -12,7 +12,7 @@ nugetVersionInfo = {
                       'prerelease': 'Default'
                    }
 #Imput NuGet package version number manualy, used if selected version number does not exist on nuget.org, E.g., '1.66.0.3-Alpha'
-manualNugetVersionNumber = True
+manualNugetVersionNumber = '1.71.0.1-Alpha'
 
 #Path to a release notes file
 releaseNotePath = 'releases.txt'
@@ -81,7 +81,7 @@ targetProgrammingLanguage = [ 'cx', 'cppwinrt', 'c', 'dotnet', 'python' ]
 #'publishnuget' : Publishes nuget package
 #'uploadbackup' : Creates a zipp file with pdb files and nuget package based on configuration and uploads it to onedrive
 #List of actions to perform
-actions = [ 'createnuget', 'releasenotes', 'publishnuget', 'updatesample' ]
+actions = [ 'prepare', 'build', 'createnuget', 'releasenotes', 'publishnuget', 'updatesample' ]
 
 #Flag if wrapper library should be built. If it is False, it will be built only native libraries
 buildWrapper = True  
