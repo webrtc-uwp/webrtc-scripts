@@ -144,14 +144,19 @@ def actionPublishNuget():
   PublishNuget.init()
   for target in Settings.targets:
     for platform in Settings.targetPlatforms:
-      Logger.printStartActionMessage("Publish Nuget for " + target + ' ' + platform)
-      result = PublishNuget.run()
-      if result != NO_ERROR:
-          Logger.printEndActionMessage('Failed to publish NuGet package ' + target + ' ' + platform,ColoredFormatter.RED)
-          #Terminate script execution if stopExecutionOnError is set to True in userdef
-          shouldEndOnError(result)
+      if not Summary.checkIfCreateNugetFailed(target, platform):
+        Logger.printStartActionMessage("Publish Nuget for " + target + ' ' + platform)
+        result = PublishNuget.run()
+        if result != NO_ERROR:
+            Logger.printEndActionMessage('Failed to publish NuGet package ' + target + ' ' + platform,ColoredFormatter.RED)
+            #Terminate script execution if stopExecutionOnError is set to True in userdef
+            shouldEndOnError(result)
+        else:
+            Logger.printEndActionMessage('Publish Nuget for ' + target + ' ' + platform)
       else:
-          Logger.printEndActionMessage('Publish Nuget for ' + target + ' ' + platform)
+          Logger.printColorMessage('Publish Nuget cannot run because Create Nuget has failed for ' + target + ' ' + platform,ColoredFormatter.YELLOW)
+          Logger.printEndActionMessage('Publish Nuget not run for ' + target + ' ' + platform,ColoredFormatter.YELLOW)
+
 
 def actionReleaseNotes():
   ReleaseNotes.select_input()
@@ -174,14 +179,20 @@ def actionUploadBackup():
 
 def actionUpdatePublishedSample():
   UpdateSample.init()
-  Logger.printStartActionMessage("Update published sample")
-  result = UpdateSample.run()
-  if result != NO_ERROR:
-      Logger.printEndActionMessage('Failed to update sample!')
-      #Terminate script execution if stopExecutionOnError is set to True in userdef
-      shouldEndOnError(result)
+  if not Summary.checkIfCreateNugetFailed('webrtc', 'winuwp'):
+      Logger.printStartActionMessage("Update published sample")
+      result = UpdateSample.run()
+      if result != NO_ERROR:
+          Logger.printEndActionMessage('Failed to update sample!')
+          #Terminate script execution if stopExecutionOnError is set to True in userdef
+          shouldEndOnError(result)
+      else:
+          Logger.printEndActionMessage('Update published sample')
   else:
-      Logger.printEndActionMessage('Update published sample')
+      Logger.printColorMessage('Update published sample cannot run because Create Nuget has failed',ColoredFormatter.YELLOW)
+      Logger.printEndActionMessage('Update published sample not run',ColoredFormatter.YELLOW)
+
+
 
 def shouldEndOnError(error):
   """

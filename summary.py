@@ -33,6 +33,19 @@ class Summary:
     cls.action_results['createNuget'] = resultActionDict
 
   @classmethod
+  def checkIfCreateNugetFailed(cls, target, platform):
+    ret = False
+    actionDict = cls.action_results.get('createNuget',None)
+    if actionDict != None:
+      key = target + '___' + platform
+      resultDict = actionDict.get(key,None)
+      if resultDict != None:
+        if resultDict['result'] != NO_ERROR:
+          ret = True
+
+    return ret
+
+  @classmethod
   def printSummary(cls, executionTime = 0):
     Logger.printColorMessage('\n========================================= SUMMARY ========================================= \n', ColoredFormatter.YELLOW)
     for key, value in iterateDict(cls.action_results):
