@@ -81,7 +81,11 @@ By following the instruction in the console you will be able to choose a way to 
 
 Release notes are stored in **releases.txt** file inside root sdk directory
 
-Version of the release notes will be added automaticly when running `publishnuget` action, or it can be added manualy by adding in `--setservernoteversion` option when you next time you call the `python run.py` command, which will take latest published version of the nuget package and set it as a release note version.
+Version of the release notes will be added automatically when running `publishnuget` action. It can also be set manually by adding in `--setservernoteversion` option. In that case it will take the latest published version of the nuget package and set it as a release note version in releases.txt.
+
+If the `releasenotes` action is called, and release.txt file already has a note that doesn't have a version set, newly created note will be appended to the top of the previous note that doesn't have a version set.
+
+When running `createnuget` action, release notes, that don't have a version set, are used as NuGet package release notes. Those notes are also copied to a .txt file and placed along side the created package.
 
 ## Creating NuGet package  
 Creating NuGet package for WebRtc UWP can be done by running createnuget action.  
