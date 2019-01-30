@@ -15,7 +15,7 @@ nugetVersionInfo = {
                       'prerelease': 'Default'
                    }
 #Imput NuGet package version number manualy, used if selected version number does not exist on nuget.org, E.g., '1.66.0.3-Alpha'
-manualNugetVersionNumber = False
+manualNugetVersionNumber = ''
 
 #Path to a release notes file
 releaseNotePath = 'releases.txt'

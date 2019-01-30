@@ -65,12 +65,14 @@ Nuget server API key not set or not valid. To set the api key do the following:
             if 'The source specified has already been added to the list of available package sources. Please provide a unique source.' in err:
                 cls.logger.warning(err)
                 return 'alerady added'
+
+            if '403' in err:
+                print(cls.api_key_instruction)
+                
             if err:
                 ret = ERROR_ACQUIRE_NUGET_EXE_FAILED
                 cls.logger.error(err)
-            if '403 (Forbidden)' in err:
-                cls.logger.error(cls.api_key_instruction)
-                
+
             if 'nuget list' in printCommand:
                 return output
             else:
