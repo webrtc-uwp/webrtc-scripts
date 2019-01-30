@@ -4,6 +4,7 @@ import time
 from logger import Logger
 from settings import Settings
 from nugetUtility import NugetUtility
+from utility import Utility
 from errors import NO_ERROR, ERROR_LOADING_NUGET_PACKAGES, ERROR_SELECTING_NUGET_PACKAGES
 from helper import convertToPlatformPath
 from system import System
@@ -28,6 +29,9 @@ class PublishNuget:
         Start publish NuGet package process
         :return: NO_ERROR if successfull. Otherwise returns error code
         """
+        #Change current working directory to root sdk directory
+        Utility.pushd(Settings.rootSdkPath)
+
         start_time = time.time()
         ret =  NO_ERROR
 
@@ -54,6 +58,9 @@ class PublishNuget:
         
         ReleaseNotes.set_note_version(package['packageVersionNumber'])
         cls.executionTime = end_time - start_time
+        
+        # return to the base directory
+        Utility.popd()
         return ret
 
     @classmethod
@@ -125,7 +132,7 @@ class PublishNuget:
         :param address: server URL address (optional) if left out nuget.org is assumed
         """
         if address is 'default':
-            NugetUtility.nuget_cli('setapikey', key)
+            NugetUtility.nuget_cli('setapikey', key, '-Source', 'https://www.nuget.org/')
         else:
             NugetUtility.nuget_cli('setapikey', key, '-Source', address)
 
@@ -138,7 +145,7 @@ class PublishNuget:
         :param address: server address.
         """
         if address is 'default':
-            NugetUtility.nuget_cli('push', nuget_package)
+            NugetUtility.nuget_cli('push', nuget_package, '-Source', 'https://www.nuget.org/')
         else:
             NugetUtility.nuget_cli('push', nuget_package, '-Source', address)
 

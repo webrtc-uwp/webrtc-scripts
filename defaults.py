@@ -81,6 +81,7 @@ targetProgrammingLanguage = [ 'cx', 'cppwinrt', 'c', 'dotnet', 'python' ]
 #'build' : Builds selected targets for choosen cpus, platforms and configurations.
 #'backup': Backup latest build.
 #'createnuget' : Creates nuget package.
+#'releasenote' : Gives user a choice on how to add a release note.
 #'publishnuget' : Publishes nuget package
 #'uploadbackup' : Creates a zipp file with pdb files and nuget package based on configuration and uploads it to onedrive
 #List of actions to perform

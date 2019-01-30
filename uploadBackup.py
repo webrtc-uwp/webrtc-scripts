@@ -11,6 +11,7 @@ from subprocess import Popen, PIPE, call
 from helper import convertToPlatformPath, module_exists, install
 from errors import NO_ERROR, ERROR_UPLOAD_BACKUP_FAILED, ERROR_UPLOAD_BACKUP_FILES_MISSING
 from settings import Settings
+from utility import Utility
 from createNuget import CreateNuget
 from settings import Settings
 from logger import Logger
@@ -141,6 +142,7 @@ class UploadBackup:
         Get the latest backup folder name
         :return latest_backup: Name of the latest backup folder
         """
+        latest_backup = ''
         all_backups = [b_dir for b_dir in os.listdir('.') if os.path.isdir(b_dir) and 'Backup' in b_dir]
 
         if len(all_backups) > 1:

@@ -237,7 +237,8 @@ def main():
       System.stopExecution(ERROR_PLATFORM_NOT_SUPPORTED)
     
     #Start performing actions. Actions has to be executed in right order and that is the reason why it is handled this way
-    #If uploadbackup is selected start the authentication process first
+
+    #If uploadbackup is selected start the authentication process first, because user action is required.
     if ACTION_UPLOAD_BACKUP in Settings.actions:
       UploadBackup.init()
     
@@ -265,15 +266,14 @@ def main():
     if ACTION_UPLOAD_BACKUP in Settings.actions:
       actionUploadBackup()
 
+    if Settings.runSetNugetKey is True:
+      actionSetNugetKey()
+      
     if ACTION_PUBLISH_NUGET in Settings.actions:
       actionPublishNuget()
 
     if ACTION_UPDATE_SAMPLE in Settings.actions:
       actionUpdatePublishedSample()
-    
-    if Settings.runSetNugetKey is True:
-      actionSetNugetKey()
-
   except KeyboardInterrupt:
     handleKeyboardInterupt()
 
