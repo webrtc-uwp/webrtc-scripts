@@ -637,6 +637,7 @@ class CreateNuget:
             if os.path.isfile(package):
                 shutil.move(package, cls.nugetFolderPath + '/' + package)
             else:
+                ret = ERROR_CREATE_NUGET_FILE_FAILED
                 cls.logger.error('NuGet package does not exist')
         except Exception as error:
             cls.logger.error(str(error))
