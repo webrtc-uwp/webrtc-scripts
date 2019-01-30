@@ -9,7 +9,7 @@ These scripts are used for preparing the development environment, building, and 
 - Strawberry Perl (Supported perl version can be obrained from http://strawberryperl.com/)
 
 ## Getting Started
-The simplest way to build WebRTC which doesn't require familiarizing yourself with the scripts and how to pass input arguments is opening the `webrtc-uwp-sdk\webrtc\windows\solutions\WebRtc.Universal.sln` solution and building the Org.Ortc project. This way the WebRTC environment for winuwp will be prepared and built for selected cpu and configuration. You can immediately try it by compiling and running PeerConnectionClient.WebRtc project for a sample app that demonstrates audio\video calls.
+The simplest way to build WebRTC which doesn't require familiarizing yourself with the scripts and how to pass input arguments is opening the `webrtc-uwp-sdk\webrtc\windows\solutions\WebRtc.Universal.sln` solution and building the Org.WebRtc project. This way the WebRTC environment for winuwp will be prepared and built for selected cpu and configuration. You can immediately try it by compiling and running PeerConnectionClient.WebRtc project for a sample app that demonstrates audio\video calls.
 
 ## Python Preparation Scripts
 These scripts are new so we expect there to be some rough edges - please log any issues on GitHub. If you are eager to try it, you can just run the `run.py` Python script from scripts folder. It can be run from any folder on your disk. (i.e. e:\my_working>python d:\test\webrtc-uwp-sdk\scripts\run.py). The folder from which run.py is called will be the working directory and the file `userdef.py` which contains the default values will be created there. This file can be edited to modify the default actions and platforms. For further details see the section "How to pass input args?"
@@ -69,3 +69,58 @@ Before you are able to build the WebRTC projects it is required to prepare the d
     >```python run.py template_file```
     
     By creating templates for the most common actions you can simplify running scripts.
+
+## Release Notes  
+Creating release notes process can be done by running releasenotes action, which can be run in two ways:
+1. By running the following command:
+>```python run.py -a releasenotes```
+2. Or by adding 'releasenotes' action into `actions` variable inside userdef.py and running the command: 
+>```python run.py```
+
+By following the instruction in the console you will be able to choose a way to insert the release notes, either by typing it directly in the cmd window or by selecting notes from a file (selecting from a file copies files contents and from them creates a release note.)
+
+Release notes are stored in **releases.txt** file inside root sdk directory
+
+Version of the release notes will be added automatically when running `publishnuget` action. It can also be set manually by adding in `--setservernoteversion` option. In that case it will take the latest published version of the nuget package and set it as a release note version in releases.txt.
+
+If the `releasenotes` action is called, and release.txt file already has a note that doesn't have a version set, newly created note will be appended to the top of the previous note that doesn't have a version set.
+
+When running `createnuget` action, release notes, that don't have a version set, are used as NuGet package release notes. Those notes are also copied to a .txt file and placed along side the created package.
+
+## Creating NuGet package  
+Creating NuGet package for WebRtc UWP can be done by running createnuget action.  
+
+1. Prefered way to do this is to insert 'createnuget' into actions variable inside userdef.py file and set up    the configuration.  
+   **Configuration Example:** Create WebRtc NuGet package for WinUWP platform for x64 release version:
+   ```
+    targets = [ 'webrtc' ]
+    targetCPUs = [ 'x64' ]
+    targetPlatforms = [ 'winuwp' ]
+    targetConfigurations = [ 'Release' ]
+    actions = [ 'createnuget' ]
+   ```
+   *If the prepare and build actions for the selected configuration have not been done before running createnuget action, action variable should have those actions as well in order for the nuget creation process to succeed.* 
+   example: ``` actions = [ 'prepare', 'build', 'createnuget' ]```   
+   After configuration has been setup, run the following command:   
+   >```python run.py ```  
+
+2. All of this can also be done by running the following command:  
+   >```python run.py -a createnuget <configuration>```   
+   
+   ---
+   **Configuration**  
+   
+   Platforms: `-t winuwp`  
+   Cpu architectures: `-x x64 x86 arm`  
+   Configuration: `-c debug release`   
+   
+   **Command Example:**  Create WebRtc NuGet package for WinUWP platform for x64 release version:
+   >```python run.py -a createnuget -t winuwp -x x64 -c release```  
+   *Assuming the prepare and build has been done beforehand*
+   
+   ---
+To select nuget package version, change the `nugetVersionInfo` variable in userdef.py, this variable is used for WebRtc versions that already have published packages, in which case, next package version will be selected automatically.
+To create a NuGet package for a WebRtc version that does not have a published nuget package on nuget.org, use `manualNugetVersionNumber` variable in userdef.py to manually add in a version of the nuget package, for example:
+>manualNugetVersionNumber = '1.71.0.1-Alpha'
+
+To select a directory where the newly created NuGet packages will be placed, change the value of the `nugetFolderPath` variable inside userdef.py to a path of your choosing.

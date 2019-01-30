@@ -49,10 +49,10 @@ class UpdateSample:
 
             ret = cls.clone_sample(repo_url, repo_branch, cloned_sample_path)
             if ret == NO_ERROR:
-                #Make the sample use nuget package by changing .csproj file
-                ret = cls.use_nuget_package(common_sample_path, latestNugetVersion)
-            if ret == NO_ERROR:
                 ret = cls.copy_dirs(common_sample_path, cloned_sample_path)
+            if ret == NO_ERROR:
+                #Make the sample use nuget package by changing .csproj file
+                ret = cls.use_nuget_package(cloned_sample_path, latestNugetVersion)
 
         # return to the base directory
         Utility.popd()
