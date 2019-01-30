@@ -62,7 +62,7 @@ class CreateNuget:
         release_note = ''
         #Change current working directory to root sdk directory
         Utility.pushd(Settings.rootSdkPath)
-        if Settings.manualNugetVersionNumber is False:
+        if Settings.manualNugetVersionNumber is '':
             ret = cls.get_versions(target)
             if ret == NO_ERROR:
                 ret = cls.create_versions_storage(cls.versions, target)
@@ -94,7 +94,8 @@ class CreateNuget:
         if ret == NO_ERROR:
             ret = NugetUtility.nuget_cli('pack', cls.nugetFolderPath + '/webrtc.nuspec')
         if ret == NO_ERROR:
-            cls.check_and_move(target, cls.version)
+            ret = cls.check_and_move(target, cls.version)            
+        if ret == NO_ERROR:
             cls.logger.info('NuGet package created succesfuly: ' + cls.nugetFolderPath + '/' + cls.version)
             #Add nuget folder as nuget source in Nuget.Config
             NugetUtility.add_nuget_local_source()
@@ -630,11 +631,18 @@ class CreateNuget:
         :param target: webrtc or ortc
         :param version: Version of the created NuGet file
         """
-        package = target + '.' + version + '.nupkg'
-        if os.path.isfile(package):
-            shutil.move(package, cls.nugetFolderPath + '/' + package)
-        else:
-            cls.logger.error('NuGet package does not exist')
+        ret = NO_ERROR
+        try:
+            package = target + '.' + version + '.nupkg'
+            if os.path.isfile(package):
+                shutil.move(package, cls.nugetFolderPath + '/' + package)
+            else:
+                cls.logger.error('NuGet package does not exist')
+        except Exception as error:
+            cls.logger.error(str(error))
+            ret = ERROR_CREATE_NUGET_FILE_FAILED
+        return ret
+
 
     @classmethod
     def delete_used(cls):
