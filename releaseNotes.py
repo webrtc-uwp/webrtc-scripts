@@ -44,8 +44,8 @@ class ReleaseNotes:
         elif inputValue is 2:
             inputNote = cls.select_file()
         if inputNote is not False:
-            
-            with open(Settings.releaseNotePath, 'r+') as release_notes:
+            mode = 'r+' if os.path.exists(Settings.releaseNotePath) else 'w+'
+            with open(Settings.releaseNotePath, mode) as release_notes:
                 oldContent = release_notes.read()
                 release_notes.seek(0, 0)
                 release_notes.write(inputNote.rstrip('\r\n') + '\n' + oldContent)
