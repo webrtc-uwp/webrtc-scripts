@@ -53,10 +53,11 @@ class PublishNuget:
             for package in cls.packages:
                 packagePath = convertToPlatformPath(cls.nugetFolderPath+'/'+package['fullName'])
                 #Api key needs to be placed diferently
-                cls.publish(packagePath, cls.serverURL)
+                ret = cls.publish(packagePath, cls.serverURL)
         end_time = time.time()
         
-        ReleaseNotes.set_note_version(package['packageVersionNumber'])
+        if ret == NO_ERROR:
+            ReleaseNotes.set_note_version(package['packageVersionNumber'])
         cls.executionTime = end_time - start_time
         
         # return to the base directory
@@ -144,10 +145,12 @@ class PublishNuget:
         :param nuget_package: full name of the nuget package to be published.
         :param address: server address.
         """
+        ret = NO_ERROR
         if address is 'default':
-            NugetUtility.nuget_cli('push', nuget_package, '-Source', 'https://www.nuget.org/')
+            ret = NugetUtility.nuget_cli('push', nuget_package, '-Source', 'https://www.nuget.org/')
         else:
-            NugetUtility.nuget_cli('push', nuget_package, '-Source', address)
+            ret = NugetUtility.nuget_cli('push', nuget_package, '-Source', address)
+        return ret
 
     @classmethod
     def delete(cls, package_id, package_veresion, address):
@@ -157,4 +160,6 @@ class PublishNuget:
         :param package_veresion: version number of the package to be deleted from server.
         :param address: server address.
         """
-        NugetUtility.nuget_cli('delete', package_id, package_veresion, '-Source', address)
+        ret = NO_ERROR
+        ret = NugetUtility.nuget_cli('delete', package_id, package_veresion, '-Source', address)
+        return ret
