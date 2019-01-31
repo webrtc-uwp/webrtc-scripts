@@ -122,9 +122,7 @@ def actionBackup():
             if not Summary.checkIfActionFailed(ACTION_BUILD, target, platform, cpu, configuration):
               Backup.run(target, platform, cpu, configuration)
 
-def actionCreateNuget():
-  CreateNuget.init()
-
+def checkIfBuildFailed():
   buildCheck = True
 
   if ACTION_BUILD in Settings.actions:
@@ -135,11 +133,15 @@ def actionCreateNuget():
             for configuration in Settings.targetConfigurations:
               if Summary.checkIfActionFailed(ACTION_BUILD, target, platform, cpu, configuration):
                 buildCheck = False
+  return buildCheck
+
+def actionCreateNuget():
+  CreateNuget.init()
 
   for target in Settings.targets:
     for platform in Settings.targetPlatforms:
         Logger.printStartActionMessage('Create Nuget for ' + target)
-        if buildCheck == True:
+        if checkIfBuildFailed() == True:
           result = CreateNuget.run(
             target, platform, Settings.targetCPUs, 
             Settings.targetConfigurations, Settings.nugetFolderPath, Settings.nugetVersionInfo
@@ -176,18 +178,7 @@ def actionPublishNuget():
 
 
 def actionReleaseNotes():
-  
-  buildCheck = True
-
-  if ACTION_BUILD in Settings.actions:
-    for target in Settings.targets:
-      for platform in Settings.targetPlatforms:
-        for cpu in Settings.targetCPUs:
-          if System.checkIfCPUIsSupportedForPlatform(cpu,platform):
-            for configuration in Settings.targetConfigurations:
-              if Summary.checkIfActionFailed(ACTION_BUILD, target, platform, cpu, configuration):
-                buildCheck = False
-  if buildCheck == True:
+  if checkIfBuildFailed() == True:
     ReleaseNotes.select_input()
   else:
     Logger.printColorMessage('Release notes cannot run because build has failed' ,ColoredFormatter.YELLOW)
