@@ -14,7 +14,7 @@ from publishNuget import PublishNuget
 from releaseNotes import ReleaseNotes
 from uploadBackup import UploadBackup
 from updateSample import UpdateSample
-from errors import NO_ERROR, ERROR_TARGET_NOT_SUPPORTED, ERROR_PLATFORM_NOT_SUPPORTED, TERMINATED_BY_USER
+from errors import NO_ERROR, ERROR_TARGET_NOT_SUPPORTED, ERROR_PLATFORM_NOT_SUPPORTED, TERMINATED_BY_USER, ERROR_BUILD_FAILED
 from summary import Summary
 from backup import Backup
 from consts import *
@@ -125,20 +125,37 @@ def actionBackup():
 def actionCreateNuget():
   CreateNuget.init()
 
+  buildCheck = True
+
+  if ACTION_BUILD in Settings.actions:
+    for target in Settings.targets:
+      for platform in Settings.targetPlatforms:
+        for cpu in Settings.targetCPUs:
+          if System.checkIfCPUIsSupportedForPlatform(cpu,platform):
+            for configuration in Settings.targetConfigurations:
+              if Summary.checkIfActionFailed(ACTION_BUILD, target, platform, cpu, configuration):
+                buildCheck = False
+
   for target in Settings.targets:
     for platform in Settings.targetPlatforms:
-      Logger.printStartActionMessage('Create Nuget for ' + target)
-      result = CreateNuget.run(
-        target, platform, Settings.targetCPUs, 
-        Settings.targetConfigurations, Settings.nugetFolderPath, Settings.nugetVersionInfo
-      )
-      Summary.addNugetSummary(target, platform, result, CreateNuget.executionTime)
-      if result != NO_ERROR:
-          Logger.printEndActionMessage('Failed to create NuGet package ' + target + ' ' + platform,ColoredFormatter.RED)
-          #Terminate script execution if stopExecutionOnError is set to True in userdef
-          shouldEndOnError(result)
-      else:
-          Logger.printEndActionMessage('Create Nuget for ' + target + ' ' + platform)
+        Logger.printStartActionMessage('Create Nuget for ' + target)
+        if buildCheck == True:
+          result = CreateNuget.run(
+            target, platform, Settings.targetCPUs, 
+            Settings.targetConfigurations, Settings.nugetFolderPath, Settings.nugetVersionInfo
+          )
+        else:
+          result = ERROR_BUILD_FAILED
+          Logger.printColorMessage('Create Nuget cannot run because build has failed' ,ColoredFormatter.YELLOW)
+          Logger.printEndActionMessage('Create Nuget not run for ' + target + ' ' + platform,ColoredFormatter.YELLOW)
+          CreateNuget.executionTime = 0
+        Summary.addNugetSummary(target, platform, result, CreateNuget.executionTime)
+        if result != NO_ERROR:
+            Logger.printEndActionMessage('Failed to create NuGet package ' + target + ' ' + platform,ColoredFormatter.RED)
+            #Terminate script execution if stopExecutionOnError is set to True in userdef
+            shouldEndOnError(result)
+        else:
+            Logger.printEndActionMessage('Create Nuget for ' + target + ' ' + platform)
 
 def actionPublishNuget():
   PublishNuget.init()
@@ -159,7 +176,22 @@ def actionPublishNuget():
 
 
 def actionReleaseNotes():
-  ReleaseNotes.select_input()
+  
+  buildCheck = True
+
+  if ACTION_BUILD in Settings.actions:
+    for target in Settings.targets:
+      for platform in Settings.targetPlatforms:
+        for cpu in Settings.targetCPUs:
+          if System.checkIfCPUIsSupportedForPlatform(cpu,platform):
+            for configuration in Settings.targetConfigurations:
+              if Summary.checkIfActionFailed(ACTION_BUILD, target, platform, cpu, configuration):
+                buildCheck = False
+  if buildCheck == True:
+    ReleaseNotes.select_input()
+  else:
+    Logger.printColorMessage('Release notes cannot run because build has failed' ,ColoredFormatter.YELLOW)
+    Logger.printEndActionMessage('Release notes not run' ,ColoredFormatter.YELLOW)
 
 def actionSetNugetKey():
   PublishNuget.set_api_key(Settings.nugetAPIKey)
