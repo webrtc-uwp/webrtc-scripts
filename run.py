@@ -122,7 +122,7 @@ def actionBackup():
             if not Summary.checkIfActionFailed(ACTION_BUILD, target, platform, cpu, configuration):
               Backup.run(target, platform, cpu, configuration)
 
-def checkIfBuildFailed():
+def checkIfBuildSuccessful():
   buildCheck = True
 
   if ACTION_BUILD in Settings.actions:
