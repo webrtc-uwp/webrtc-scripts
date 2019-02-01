@@ -122,26 +122,13 @@ def actionBackup():
             if not Summary.checkIfActionFailed(ACTION_BUILD, target, platform, cpu, configuration):
               Backup.run(target, platform, cpu, configuration)
 
-def checkIfBuildSuccessful():
-  buildCheck = True
-
-  if ACTION_BUILD in Settings.actions:
-    for target in Settings.targets:
-      for platform in Settings.targetPlatforms:
-        for cpu in Settings.targetCPUs:
-          if System.checkIfCPUIsSupportedForPlatform(cpu,platform):
-            for configuration in Settings.targetConfigurations:
-              if Summary.checkIfActionFailed(ACTION_BUILD, target, platform, cpu, configuration):
-                buildCheck = False
-  return buildCheck
-
 def actionCreateNuget():
   CreateNuget.init()
 
   for target in Settings.targets:
     for platform in Settings.targetPlatforms:
         Logger.printStartActionMessage('Create Nuget for ' + target)
-        if checkIfBuildFailed() == True:
+        if checkIfBuildWasSuccessful() == True:
           result = CreateNuget.run(
             target, platform, Settings.targetCPUs, 
             Settings.targetConfigurations, Settings.nugetFolderPath, Settings.nugetVersionInfo
@@ -178,7 +165,7 @@ def actionPublishNuget():
 
 
 def actionReleaseNotes():
-  if checkIfBuildFailed() == True:
+  if checkIfBuildWasSuccessful() == True:
     ReleaseNotes.select_input()
   else:
     Logger.printColorMessage('Release notes cannot run because build has failed' ,ColoredFormatter.YELLOW)
@@ -215,8 +202,6 @@ def actionUpdatePublishedSample():
       Logger.printColorMessage('Update published sample cannot run because Create Nuget has failed',ColoredFormatter.YELLOW)
       Logger.printEndActionMessage('Update published sample not run',ColoredFormatter.YELLOW)
 
-
-
 def shouldEndOnError(error):
   """
     Terminates script execution if stopExecutionOnError is set to True in userdef 
@@ -225,6 +210,19 @@ def shouldEndOnError(error):
     System.stopExecution(error)
     Summary.printSummary()
 
+def checkIfBuildWasSuccessful():
+  buildCheck = True
+
+  if ACTION_BUILD in Settings.actions:
+    for target in Settings.targets:
+      for platform in Settings.targetPlatforms:
+        for cpu in Settings.targetCPUs:
+          if System.checkIfCPUIsSupportedForPlatform(cpu,platform):
+            for configuration in Settings.targetConfigurations:
+              if Summary.checkIfActionFailed(ACTION_BUILD, target, platform, cpu, configuration):
+                buildCheck = False
+  return buildCheck
+  
 def handleKeyboardInterupt():
   """
     Handles keyboard interupt Ctrl+c
