@@ -13,6 +13,7 @@ from settings import Settings
 from helper import convertToPlatformPath
 import errors
 from errors import error_codes, NO_ERROR
+from nugetUtility import NugetUtility
 
 class Builder:
   @classmethod
@@ -123,13 +124,20 @@ class Builder:
       if not Utility.copyFile(solutionSourcePath,solutionDestinationPath):
         return errors.ERROR_BUILD_BUILDING_WRAPPER_FAILED
 
-      #MSBuild command for building wrapper projects
-      cmdBuild = 'msbuild ' + solutionDestinationPath + ' /t:Build' + ' /p:Configuration=\"' + configuration + '\" /p:Platform=\"' + targetCPU + '\"'
-      #Execute MSBuild command
-      result = Utility.runSubprocess([cls.cmdVcVarsAll, cmdBuild, cls.cmdVcVarsAllClean], Settings.logLevel == 'DEBUG')
-      if result != NO_ERROR:
-        ret = errors.ERROR_BUILD_BUILDING_WRAPPER_FAILED
-        cls.logger.error('Failed building ' + target + ' wrapper projects for ' + targetCPU + ' for configuration  '+ configuration)
+      #Restore nugets
+      cmdBuild = Settings.nugetExecutablePath + ' restore ' + solutionDestinationPath
+      result = NugetUtility.nuget_cli('restore', solutionDestinationPath)
+      #result = Utility.runSubprocess([cmdBuild], Settings.logLevel == 'DEBUG')
+      if result == NO_ERROR:
+        #MSBuild command for building wrapper projects
+        cmdBuild = 'msbuild ' + solutionDestinationPath + ' /t:Build' + ' /p:Configuration=\"' + configuration + '\" /p:Platform=\"' + targetCPU + '\"'
+        #Execute MSBuild command
+        result = Utility.runSubprocess([cls.cmdVcVarsAll, cmdBuild, cls.cmdVcVarsAllClean], Settings.logLevel == 'DEBUG')
+        if result != NO_ERROR:
+          ret = errors.ERROR_BUILD_BUILDING_WRAPPER_FAILED
+          cls.logger.error('Failed building ' + target + ' wrapper projects for ' + targetCPU + ' for configuration  '+ configuration)
+      else:
+        ret = errors.ERROR_BUILD_RESTORING_NUGET_FAILED
     except Exception as error:
       cls.logger.error(str(error))
       cls.logger.error('Failed building ' + target + ' wrapper projects for ' + targetCPU + ' for configuration  '+ configuration)

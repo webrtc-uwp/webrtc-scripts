@@ -45,7 +45,8 @@ class Settings:
     cls.mainBuildGnFilePath = os.path.join(cls.webrtcPath,'BUILD.gn')
     #WebRtc solution path
     cls.webrtcSolutionPaths = os.path.join(cls.rootSdkPath,convertToPlatformPath(config.WEBRTC_SOLUTION_PATH))
-
+    #NuGet executable path
+    cls.nugetExecutablePath = os.path.join(cls.rootSdkPath, convertToPlatformPath(config.NUGET_EXECUTABLE_PATH))
     #local ninja path
     cls.localNinjaPath = os.path.join(cls.localDepotToolsPath,'ninja')
 
