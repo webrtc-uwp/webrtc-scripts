@@ -124,3 +124,36 @@ To create a NuGet package for a WebRtc version that does not have a published nu
 >manualNugetVersionNumber = '1.71.0.1-Alpha'
 
 To select a directory where the newly created NuGet packages will be placed, change the value of the `nugetFolderPath` variable inside userdef.py to a path of your choosing.
+
+## Update published sample
+
+Purpose of this action is to clone the sample from the url and branch given in the userdef.py file and place it inside Published_Samples directory, then the cloned sample is compared to the sample inside common\windows\samples directory and the differences are copied from the sample in common\windows\samples directory to the cloned sample. After that is done, a reference to the created NuGet package is added to the cloned sample.  
+
+Update published sample action can be run by adding 'updatesample' into `actions` variable inside userdef.py file.  
+Changing the options for this actions can be done inside `updateSampleInfo` variable, that is also contained in userdef.py.  
+Option Example:
+```
+updateSampleInfo = {
+                      'package' : 'default',
+                      'samples' : [
+                        {
+                          'name' : 'PeerCC',
+                          'url' : 'https://github.com/webrtc-uwp/PeerCC-Sample',
+                          'branch': 'webrtc_merge_m66'
+                        }
+                      ]
+                   }
+```
+`package` variable controls the version of the WebRtc NuGet package that will be used by the sample when it gets updated, if the value is 'default' package used will be most recently created WebRtc NuGet package.  
+`samples` variable contains an array of samples where each sample has a `name` that is used to as a name of the cloned sample, in order for the action to work, `name` of the cloned sample should be same as the name of the sample inside common\windows\samples directory that the cloned sample is being compared to. Each sample should also have `url` which is the url of the sample on GitHub and `branch` which determines the branch of that sample.  
+
+## Publish NuGet
+
+Publish NuGet package action can be run in two ways:
+1. By running the following command:
+>`python run.py -a publishnuget`
+2. By inserting 'publishnuget' into `actions` variable inside userdef.py file.
+If the publishnuget action is called alongside createnuget action, created NuGet package will be published automatically. In case the publishnuget is run like standalone action, it will be possible to choose the NuGet package to publish from the list of the created packages. List of the created NuGet packages is generated from the packages placed inside a path defined in `nugetFolderPath` variable of the userdef.py file.  
+If the key for the NuGet server has not been set, and the publishnuget action is run, package will not be published, and the instruction will be shown on how to set the key for the nuget.org server.
+Key can be set by adding an option `-setnugetkey <key>` when run.py script is called. Example command: `python run.py -a publishnuget -setnugetkey <key>` where `<key>` is the key from acquired the server.
+Once the key is set for a particular server, it doesn't need to be set again on the machine where the script is being called from.
