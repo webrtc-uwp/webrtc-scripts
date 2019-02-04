@@ -41,9 +41,12 @@ class Settings:
     cls.defaultFilePath = os.path.join(os.path.dirname(__file__),'defaults.py')
     #Root path for preparation
     cls.webrtcPath = os.path.join(cls.rootSdkPath, convertToPlatformPath(config.PREPRATARION_WORKING_PATH))
+    #Main BUILD.gn path
+    cls.mainBuildGnFilePath = os.path.join(cls.webrtcPath,'BUILD.gn')
     #WebRtc solution path
     cls.webrtcSolutionPaths = os.path.join(cls.rootSdkPath,convertToPlatformPath(config.WEBRTC_SOLUTION_PATH))
-
+    #NuGet executable path
+    cls.nugetExecutablePath = os.path.join(cls.rootSdkPath, convertToPlatformPath(config.NUGET_EXECUTABLE_PATH))
     #local ninja path
     cls.localNinjaPath = os.path.join(cls.localDepotToolsPath,'ninja')
 
@@ -60,10 +63,11 @@ class Settings:
     if cls.inputArgs.template:
       if cls.inputArgs.template and \
          (os.path.isfile(cls.inputArgs.template) or 
-          os.path.isfile(cls.inputArgs.template + '.py') or 
+          os.path.isfile(cls.inputArgs.template + '.py') or
+          os.path.isfile(os.path.join(cls.templatesPath, cls.inputArgs.template)) or 
           os.path.isfile(os.path.join(cls.templatesPath, cls.inputArgs.template + '.py'))): 
         globals().update(import_module(cls.inputArgs.template).__dict__)
-
+      print('======================================= ' + os.path.join(cls.templatesPath, cls.inputArgs.template + '.py'))
     #cls.gnOutputPath = gnOutputPath
 
     cls.supportedPlatformsForHostOs = supportedPlatformsForHostOs
@@ -74,11 +78,15 @@ class Settings:
     else:
       cls.actions = actions
 
-    #If targets are passed like input arguments use them, instead of one loaded from template
-    if cls.inputArgs.targets:
-      cls.targets = cls.inputArgs.targets
+    #If user target (any target different from ortc and webrtc) is passed like input argument use it.
+    if cls.inputArgs.userTarget:
+       cls.targets = [cls.inputArgs.userTarget]
     else:
-      cls.targets = targets
+      #If targets are passed like input arguments use them, instead of one loaded from template
+      if cls.inputArgs.targets:
+        cls.targets = cls.inputArgs.targets
+      else:
+        cls.targets = targets
 
     #If platforms are passed like input arguments use them, instead of one loaded from template
     if cls.inputArgs.platforms:
@@ -133,6 +141,26 @@ class Settings:
     cls.nugetFolderPath = nugetFolderPath
     cls.nugetVersionInfo = nugetVersionInfo
     cls.manualNugetVersionNumber = manualNugetVersionNumber
+    cls.nugetPackagesToPublish = nugetPackagesToPublish
+    cls.releaseNotePath = releaseNotePath
+    cls.nugetAPIKey = nugetAPIKey
+    cls.nugetServerURL = nugetServerURL
+    cls.updateSampleInfo = updateSampleInfo
+
+    # If url is passed like input argument use that url instead of the one from userdef
+    if cls.inputArgs.uploadBackupURL:
+      cls.uploadBackupURL = cls.inputArgs.uploadBackupURL
+    
+    # If true API key is set for nuget.org server
+    cls.runSetNugetKey = False
+    if cls.inputArgs.setnugetkey:
+      cls.nugetAPIKey = cls.inputArgs.setnugetkey
+      cls.runSetNugetKey = True
+    
+    # If true sets release note version by geting latest published nuget version from nuget.org
+    cls.setservernoteversion = False
+    if cls.inputArgs.setservernoteversion:
+      cls.setservernoteversion = cls.inputArgs.setservernoteversion
 
     cls.msvsPath = msvsPath
 
@@ -163,6 +191,8 @@ class Settings:
     #If cleanup options are passed like input arguments use them, instead of one loaded from userdef
     if cls.inputArgs.cleanOptions:
       cls.cleanupOptions['actions'] =  cls.inputArgs.cleanOptions
+
+    cls.availableTargetsForBuilding = availableTargetsForBuilding
 
   @classmethod
   def getGnOutputPath(cls, path, target, platform, cpu, configuration):

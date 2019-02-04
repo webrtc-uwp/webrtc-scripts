@@ -4,9 +4,11 @@ import sys
 import subprocess
 import traceback
 from importlib import import_module
+from _winreg import HKEY_LOCAL_MACHINE
 
 import config
 from utility import Utility
+from nugetUtility import NugetUtility
 from settings import Settings
 from logger import Logger
 import errors
@@ -72,6 +74,9 @@ class System:
     #Set utility logger
     Utility.setUp()
 
+    #Set up nuget utility
+    NugetUtility.setUp()
+
     #Remove Google's depot tools from the PATH and add local depot tool path.
     cls.__updateDepotToolsPath()
 
@@ -136,9 +141,10 @@ class System:
   @classmethod
   def checkTools(cls):
     """
-      Checks if git and perl are installed on host machine.
+      Checks if git, perl and Windows SDK tools are installed on host machine.
       :return: NO_ERROR if all tools are installed, otherwise returns error code
     """
+    ret = NO_ERROR
     #Check if Git is installed
     if not Utility.checkIfToolIsInstalled('git'):
       cls.logger.warning('git' + ' is not installed.')
@@ -149,7 +155,26 @@ class System:
       cls.logger.warning('perl' + ' is not installed.')
       #return errors.ERROR_SYSTEM_MISSING_PERL
 
-    return NO_ERROR
+    ret = cls.checkVSDebugTools()
+    
+    return ret
+
+  @classmethod
+  def checkVSDebugTools(cls):
+    """
+      Checks if VS debug tools are installed.
+      :return: ERROR_SYSTEM_MISSING_VS_DEBUG_TOOLS if debug tools are not isntalled.
+    """
+    ret = NO_ERROR
+    # Get Windows SDK Debugger path from Windows registry
+    winSdkDebugToolPath = Utility.getKeyValueFromRegistry(HKEY_LOCAL_MACHINE, r'SOFTWARE\Wow6432Node\Microsoft\Windows Kits\Installed Roots',"WindowsDebuggersRoot10")
+
+    # If path is not found in registry or path is not valid return error
+    if winSdkDebugToolPath == None or not os.path.isdir(winSdkDebugToolPath): 
+      ret = errors.ERROR_SYSTEM_MISSING_VS_DEBUG_TOOLS
+    else:
+      cls.logger.debug('Windows SDK Debug Tools path is ' + winSdkDebugToolPath)
+    return ret
 
   @classmethod
   def checkIfTargetIsSupported(cls, target):
@@ -169,6 +194,7 @@ class System:
       :param targets: list of targets to check for
       :return: True if targets are supported
     """
+    
     cls.logger.debug('Checking if specified targets are supported.')
     for target in targets:
       if not cls.checkIfTargetIsSupported(target):
@@ -236,31 +262,40 @@ class System:
       else:
         errorMessage = error_codes[error]
       
-      #If logger is not yet initialzed it cannot be use it, so just colorized message is shown
-      if cls.logger != None:
-        cls.logger.critical('Script execution has failed')
-        cls.logger.error(message)
+      try:
+        Utility.terminateSubprocess()
+        Utility.returnOriginalFile(Settings.mainBuildGnFilePath)
+      except Exception as error:
+        Logger.printColorMessage(str(error))
+
+      if error == errors.TERMINATED_BY_USER:
+        Logger.printColorMessage(error_codes[error])
       else:
-        Logger.printColorMessage('Script execution has failed')
-        Logger.printColorMessage('Error E'+ str(error) + ': ' + errorMessage)
+        #If logger is not yet initialzed it cannot be use it, so just colorized message is shown
+        if cls.logger != None:
+          cls.logger.critical('Script execution has failed')
+          cls.logger.error(errorMessage)
+        else:
+          Logger.printColorMessage('Script execution has failed')
+          Logger.printColorMessage('Error E'+ str(error) + ': ' + errorMessage)
 
-      #If showSettingsValuesOnError is set to True, print current settings values
-      if Settings.showSettingsValuesOnError:
-        print ('\n\n\n----------------------- CURRENT SETTINGS -----------------------')
-        attrs = vars(Settings)
-        print ('\n '.join('%s: %s' % item for item in attrs.items()))
-        print ('------------------- CURRENT SETTINGS END -----------------------')
+        #If showSettingsValuesOnError is set to True, print current settings values
+        if Settings.showSettingsValuesOnError:
+          print ('\n\n\n----------------------- CURRENT SETTINGS -----------------------')
+          attrs = vars(Settings)
+          print ('\n '.join('%s: %s' % item for item in attrs.items()))
+          print ('------------------- CURRENT SETTINGS END -----------------------')
 
-      if Settings.showPATHOnError:
-        print ('\n\n\n----------------------- PATH -----------------------')
-        print (os.environ['PATH'])
-        print ('------------------- PATH END -----------------------')
+        if Settings.showPATHOnError:
+          print ('\n\n\n----------------------- PATH -----------------------')
+          print (os.environ['PATH'])
+          print ('------------------- PATH END -----------------------')
 
-      #If showTraceOnError is set to True, print current trace log
-      if Settings.showTraceOnError:
-        print ('\n\n\n----------------------- TRACE -----------------------')
-        traceback.print_stack()
-        print ('----------------------- TRACE END -----------------------')
+        #If showTraceOnError is set to True, print current trace log
+        if Settings.showTraceOnError:
+          print ('\n\n\n----------------------- TRACE -----------------------')
+          traceback.print_stack()
+          print ('----------------------- TRACE END -----------------------')
 
     sys.exit(error)
 

@@ -1,21 +1,18 @@
-"""
-  This file holds default settings value and it is used like template for creation userdef.py file.
-  If you want to change any variable listed below do that in generated userdef.py file.
-"""
+# This file is generated from defaults.py. Be free to change any variable listed below.
 
 #args.gn template path
 webRTCGnArgsTemplatePath='./webrtc/windows/templates/gns/args.gn'
 
 #Path where nuget package and all of the files used to create the package are stored
-nugetFolderPath = './webrtc/windows/nuget'
+nugetFolderPath = 'E:/mynugetpackages'
 nugetVersionInfo = {
                       #Main version number of the NuGet package 
-                      'number': '66',
+                      'number': '71',
                       #False if not prerelease, Default is based on previous version, False if not prerelease
                       'prerelease': 'Default'
                    }
 #Imput NuGet package version number manualy, used if selected version number does not exist on nuget.org, E.g., '1.66.0.3-Alpha'
-manualNugetVersionNumber = ''
+manualNugetVersionNumber = '1.71.0.1-Alpha'
 
 #Path to a release notes file
 releaseNotePath = 'releases.txt'
@@ -54,7 +51,7 @@ supportedPlatformsForHostOs = {
 
 #Supported cpus for specific platform
 supportedCPUsForPlatform = { 
-                              'winuwp'  : ['arm', 'arm64', 'x86', 'x64'],
+                              'winuwp'  : ['arm', 'x86', 'x64'],
                               'win'     : ['x86', 'x64'],
                               'ios'     : ['arm'],
                               'mac'     : [ 'x86', 'x64'],
@@ -65,11 +62,11 @@ supportedCPUsForPlatform = {
 #List of targets for which will be performed specified actions. Supported target is webrtc. In future it will be added support for ortc.
 targets = [ 'webrtc' ]
 #List of target cpus. Supported cpus are arm, x86 and x64
-targetCPUs = [ 'arm', 'x86', 'x64' ]
+targetCPUs = [ 'x86', 'x64' ]
 #List of target platforms. Supported cpus are win and winuwp
-targetPlatforms = [ 'win', 'winuwp' ]
+targetPlatforms = [ 'winuwp' ]
 #List of target configurations. Supported cpus are Release and Debug
-targetConfigurations = [ 'Release', 'Debug' ]
+targetConfigurations = [ 'Release' ]
 #TODO: Implement logic to update zslib_eventing_tool.gni based on list of specified programming languages.
 targetProgrammingLanguage = [ 'cx', 'cppwinrt', 'c', 'dotnet', 'python' ]
 
@@ -81,13 +78,11 @@ targetProgrammingLanguage = [ 'cx', 'cppwinrt', 'c', 'dotnet', 'python' ]
 #'build' : Builds selected targets for choosen cpus, platforms and configurations.
 #'backup': Backup latest build.
 #'createnuget' : Creates nuget package.
-#'releasenote' : Gives user a choice on how to add a release note.
 #'publishnuget' : Publishes nuget package
 #'uploadbackup' : Creates a zipp file with pdb files and nuget package based on configuration and uploads it to onedrive
 #List of actions to perform
-actions = [ 'prepare', 'build' ]
+actions = [ 'prepare', 'build', 'createnuget', 'releasenotes', 'publishnuget', 'updatesample' ]
 
-buildWithClang = False
 #Flag if wrapper library should be built. If it is False, it will be built only native libraries
 buildWrapper = True  
 
@@ -106,7 +101,7 @@ buildWrapper = True
 #             If ['*'] it will delete output folders for all configurations. 
 #             If ['Release'] it will delete just Release output folder
 cleanupOptions = {
-                'actions' : ['cleanOutput'],
+                'actions' : ['cleanOutput','cleanIdls','cleanPrepare'],
                 'targets' : [],
                 'cpus' : [],
                 'platforms' : [],
@@ -152,21 +147,3 @@ enabledBackup = False
 libsBackupPath = './Backup'
 #Flag for overwriting current backup folder
 overwriteBackup = False
-
-#Additional targets that can be built
-#'target_name' : Name of target to build. You can name target as your wish.
-#                e.g. peercc_server. It is dictionary key for a list
-#                of gn targets that will be built for target you define, 
-#                flag for linking obj files. (0 don't link, 1 link) and 
-#                flag for copying libs, exes and pdbs to OUTPUT folder.
-# {
-#   'target_name'  : ( [list of gn target paths], merging libs flag, copying to ouptut flag ),    
-# }
-availableTargetsForBuilding = {
-                                'peercc_server'  : (
-                                                      [ 
-                                                        'peerconnection_server'
-                                                      ],0,1
-                                                    ),    
-                              }
-                              

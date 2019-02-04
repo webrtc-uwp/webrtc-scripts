@@ -1,21 +1,21 @@
 import os
-import subprocess
 import shutil
 import itertools
 import json
 import time
 from xml.etree import ElementTree as ET
 
-from errors import NO_ERROR, ERROR_NUGET_CREATION_MISSING_FILE, ERROR_ACQUIRE_NUGET_EXE_FAILED,\
-ERROR_GET_NUGET_PACKAGE_VERSIONS_FAILED, ERROR_PACKAGE_VERSION_NOT_SUPPORTED, ERROR_CREATE_NUGET_FILE_FAILED,\
+from errors import NO_ERROR, ERROR_NUGET_CREATION_MISSING_FILE, ERROR_GET_NUGET_PACKAGE_VERSIONS_FAILED,\
+ERROR_PACKAGE_VERSION_NOT_SUPPORTED, ERROR_CREATE_NUGET_FILE_FAILED,\
 ERROR_CHANGE_NUSPEC_FAILED
 import config
 from logger import Logger,ColoredFormatter
 from settings import Settings
-from helper import convertToPlatformPath
+from helper import convertToPlatformPath, module_exists, yes_no
 from utility import Utility
 from summary import Summary
-import defaults
+from nugetUtility import NugetUtility
+from releaseNotes import ReleaseNotes
 
 
 class CreateNuget:
@@ -34,10 +34,10 @@ class CreateNuget:
         """
         Initiates logger object.
         """
-        cls.logger = Logger.getLogger('createNuget')
+        cls.logger = Logger.getLogger('CreateNuget')
 
     @classmethod
-    def run(cls, target, platforms, cpus, configurations, targetFolder, versionInfo):
+    def run(cls, target, platform, cpus, configurations, targetFolder, versionInfo):
         """
         Method used to call all other methods in order necessary to create NuGet package
         First creates .nuspec, then .targets then adds files to .nuspec
@@ -48,17 +48,21 @@ class CreateNuget:
         :param configurations: Debug/Release.
         :param targetFolder: base folder where all files will be placed including created package
         :param versionInfo: Dictionary with the basic information about NuGet version number
+        :return: NO_ERROR if successfull. Otherwise returns error code
         """
         start_time = time.time()
         
         cls.nugetFolderPath = targetFolder
-        cls.nugetExePath = cls.nugetFolderPath + '/nuget.exe'
         cls.nuspec_file = cls.nugetFolderPath + '/[TARGET].nuspec'
+        cls.changelog_file = cls.nugetFolderPath + '/[TARGET].[VERSION]-changelog.txt'
         cls.targets_file = cls.nugetFolderPath + '/[TARGET].targets'
         cls.versions_file = cls.nugetFolderPath + '/versions.json'
         cls.destinationLibPath = cls.nugetFolderPath + config.NUGET_LIBRARIES
         ret = NO_ERROR
-        if Settings.manualNugetVersionNumber is False:
+        release_note = ''
+        #Change current working directory to root sdk directory
+        Utility.pushd(Settings.rootSdkPath)
+        if Settings.manualNugetVersionNumber is '':
             ret = cls.get_versions(target)
             if ret == NO_ERROR:
                 ret = cls.create_versions_storage(cls.versions, target)
@@ -67,11 +71,13 @@ class CreateNuget:
         else:
             cls.version = Settings.manualNugetVersionNumber
         if ret == NO_ERROR:
-            ret = cls.create_nuspec(cls.version, target)
+            if os.path.isfile(Settings.releaseNotePath):
+                release_note = ReleaseNotes.get_note(Settings.releaseNotePath)
+            ret = cls.create_nuspec(cls.version, target, release_note)
         if ret == NO_ERROR:
             ret = cls.create_targets(target)
         if ret == NO_ERROR:
-            for platform, cpu, configuration in itertools.product(platforms, cpus, configurations):                
+            for cpu, configuration in itertools.product(cpus, configurations):                
                 # check and copy all lib files to the specified folder 
                 ret = cls.copy_files(target, platform, configuration, cpu)
                 
@@ -83,81 +89,24 @@ class CreateNuget:
                 if ret == NO_ERROR:
                     # update .winmd and .xml tags in nuspec file with the copied files
                     ret = cls.update_nuspec_files(target, platform, configuration, cpu,f_type=['.winmd', '.xml'], target_path=r'lib\uap10.0')
-                # return to the base directory
+                # return to the root sdk directory
                 Utility.popd()
         if ret == NO_ERROR:
-            ret = cls.nuget_cli('pack', cls.nugetFolderPath + '/webrtc.nuspec')
+            ret = NugetUtility.nuget_cli('pack', cls.nugetFolderPath + '/webrtc.nuspec')
         if ret == NO_ERROR:
-            cls.check_and_move(target, cls.version)
+            ret = cls.check_and_move(target, cls.version)            
+        if ret == NO_ERROR:
             cls.logger.info('NuGet package created succesfuly: ' + cls.nugetFolderPath + '/' + cls.version)
+            #Add nuget folder as nuget source in Nuget.Config
+            NugetUtility.add_nuget_local_source()
+            cls.delete_used()
         end_time = time.time()
         cls.executionTime = end_time - start_time
+
+        # return to the base directory
+        Utility.popd()
         
         return ret
-
-    @classmethod
-    def nuget_cli(cls, nuget_command, *args):
-        """
-        Adds nuget cli functionality to python script trough nuget.exe
-        If nuget.exe is not available, download_nuget method is called
-
-        :param nuget_command: nuget cli command can be writtenwith or without nuget prefix.
-        :param *args: aditional options and arguments for the nuget cli command
-            example: CreateNuget.nuget_cli('help', '-All', '-Markdown')
-        """
-        ret = NO_ERROR
-        if not os.path.exists(cls.nugetExePath):
-            cls.download_nuget()
-
-        # allows nuget command to be written with or wihout 'nuget ' prefix
-        if 'nuget ' in nuget_command:
-            nuget_command = nuget_command.replace('nuget ', '')
-        try:
-            # absolute path to nuget.exe
-            exe_path = convertToPlatformPath(cls.nugetExePath)
-            full_command = [exe_path, nuget_command]
-            cls.logger.info(exe_path)
-            # add options or other arguments to the nuget command
-            for cmd in args:
-                full_command.append(cmd)
-            subprocess.call(full_command)
-        except Exception as errorMessage:
-            cls.logger.error(errorMessage)
-            ret = ERROR_ACQUIRE_NUGET_EXE_FAILED
-        return ret
-
-    @classmethod
-    def download_nuget(cls):
-        """
-        Download latest nuget.exe file from nuget.org
-        """
-        # Python 3:
-        if CreateNuget.module_exists('urllib.request'):
-            import urllib
-            cls.logger.info('Downloading NuGet.exe file with urllib.request...')
-            urllib.request.urlretrieve(config.NUGET_URL, cls.nugetExePath)
-
-        # Python 2:
-        if CreateNuget.module_exists('urllib2'):
-            import urllib2
-            cls.logger.info('Downloading NuGet.exe file with urllib2...')
-            with open(cls.nugetExePath, 'wb') as f:
-                f.write(urllib2.urlopen(config.NUGET_URL).read())
-                f.close()
-        cls.logger.info("Download Complete!")
-
-    @staticmethod
-    def module_exists(module_name):
-        """
-        :param module_name: name of the module that needs to be checked.
-        :return: True/False based on if the input module exists or not
-        """
-        try:
-            __import__(module_name)
-        except ImportError:
-            return False
-        else:
-            return True
 
     @classmethod
     def get_versions(cls, target):
@@ -170,15 +119,15 @@ class CreateNuget:
         # Works only if number of published versions of the nuget packet is less than 500
         search = 'https://api-v2v3search-0.nuget.org/search/query?q=packageid:' + target + '&ignoreFilter=true&prerelease=true&take=500'
 
-        cls.logger.info('Colecting ' + target + ' NuGet package versions from nuget.org...')
+        cls.logger.info('Collecting ' + target + ' NuGet package versions from nuget.org...')
         try:
             # Python 3:
-            if CreateNuget.module_exists('urllib.request'):
+            if module_exists('urllib.request'):
                 import urllib.request
                 with urllib.request.urlopen(search) as url:
                     data = json.loads(url.read().decode())
             # Python 2:
-            if CreateNuget.module_exists('urllib.request') is False:
+            if module_exists('urllib.request') is False:
                 import urllib
                 response = urllib.urlopen(search)
                 data = json.loads(response.read())
@@ -424,7 +373,7 @@ class CreateNuget:
             for element, ft in itertools.product(files, f_type):
                 src_attrib = element.attrib.get('src')
                 # Check if <file> element has a src with given cpu, configuration and file type
-                if all(val in src_attrib for val in [cpu, configuration, ft]):
+                if all(val in src_attrib for val in [cpu, configuration.capitalize(), ft]):
                     file_name = f_name + ft
                     # New src path to the lib file with required cpu, configuration and file type
                     src_path = convertToPlatformPath(
@@ -534,6 +483,7 @@ class CreateNuget:
                     # Make a new file element with the attributes from above
                     new_file = ET.SubElement(files, 'file', attrib=file_attrib)
                     new_file.tail = "\n\t\t"
+                    cls.logger.debug("File added: " + file_attrib['src'])
                 else:
                     raise Exception('File does NOT exist! \n' + src_path)
             # Save changes to the .nuspec file
@@ -618,7 +568,7 @@ class CreateNuget:
             cls.logger.error(str(error))
 
     @classmethod
-    def create_nuspec(cls, version, target):
+    def create_nuspec(cls, version, target, release_note = False):
         """
         Create .nuspec file based on a template with default values
         :param version: version of the nuget package must be specified when
@@ -636,6 +586,12 @@ class CreateNuget:
                     for line in source:
                         if '<version>' in line:
                             destination.write('\t\t<version>' + version + '</version>\n')
+                            if release_note:
+                                cls.logger.debug('Release note added: ' + release_note)
+                                # Template .nuspec file
+                                with open(cls.changelog_file.replace('[TARGET]', target).replace('[VERSION]', version), 'w') as changelog:
+                                    changelog.write(release_note)
+                                destination.write('\t\t<releaseNotes>' + release_note + '</releaseNotes>\n')
                         else:
                             destination.write(line)
             cls.logger.debug('Nuspec file created successfuly!')
@@ -675,8 +631,33 @@ class CreateNuget:
         :param target: webrtc or ortc
         :param version: Version of the created NuGet file
         """
-        package = target + '.' + version + '.nupkg'
-        if os.path.isfile(package):
-            shutil.move(package, cls.nugetFolderPath + '/' + package)
-        else:
-            cls.logger.error('NuGet package does not exist')
+        ret = NO_ERROR
+        try:
+            package = target + '.' + version + '.nupkg'
+            if os.path.isfile(package):
+                shutil.move(package, cls.nugetFolderPath + '/' + package)
+            else:
+                ret = ERROR_CREATE_NUGET_FILE_FAILED
+                cls.logger.error('NuGet package does not exist')
+        except Exception as error:
+            cls.logger.error(str(error))
+            ret = ERROR_CREATE_NUGET_FILE_FAILED
+        return ret
+
+
+    @classmethod
+    def delete_used(cls):
+        content = os.listdir(cls.nugetFolderPath)
+        try:
+            for element in content:
+                if 'libraries' in element:
+                    libraries = convertToPlatformPath(cls.nugetFolderPath + '/' + element)
+                    shutil.rmtree(libraries)
+                if '.nuspec' in element:
+                    nuspec = convertToPlatformPath(cls.nugetFolderPath + '/' + element)
+                    os.remove(nuspec)
+                if '.targets' in element:
+                    targets = convertToPlatformPath(cls.nugetFolderPath + '/' + element)
+                    os.remove(targets)
+        except Exception as error:
+            cls.logger.warning("Failed to delete unnecessary files from nuget folder.")

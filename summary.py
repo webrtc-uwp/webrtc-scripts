@@ -21,8 +21,8 @@ class Summary:
     cls.action_results[action] = resultActionDict
 
   @classmethod
-  def addNugetSummary(cls, target, result, time = 0):
-    key = target
+  def addNugetSummary(cls, target, platform, result, time = 0):
+    key = target + '___' + platform
 
     resultActionDict =  cls.action_results.get('createNuget',dict())
     resultDict = resultActionDict.get(key,dict())
@@ -31,6 +31,19 @@ class Summary:
     resultActionDict[key] = resultDict
 
     cls.action_results['createNuget'] = resultActionDict
+
+  @classmethod
+  def checkIfCreateNugetFailed(cls, target, platform):
+    ret = False
+    actionDict = cls.action_results.get('createNuget',None)
+    if actionDict != None:
+      key = target + '___' + platform
+      resultDict = actionDict.get(key,None)
+      if resultDict != None:
+        if resultDict['result'] != NO_ERROR:
+          ret = True
+
+    return ret
 
   @classmethod
   def printSummary(cls, executionTime = 0):

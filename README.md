@@ -9,7 +9,7 @@ These scripts are used for preparing the development environment, building, and 
 - Strawberry Perl (Supported perl version can be obrained from http://strawberryperl.com/)
 
 ## Getting Started
-The simplest way to build WebRTC which doesn't require familiarizing yourself with the scripts and how to pass input arguments is opening the `webrtc-uwp-sdk\webrtc\windows\solutions\WebRtc.Universal.sln` solution and building the Org.Ortc project. This way the WebRTC environment for winuwp will be prepared and built for selected cpu and configuration. You can immediately try it by compiling and running PeerConnectionClient.WebRtc project for a sample app that demonstrates audio\video calls.
+The simplest way to build WebRTC which doesn't require familiarizing yourself with the scripts and how to pass input arguments is opening the `webrtc-uwp-sdk\webrtc\windows\solutions\WebRtc.Universal.sln` solution and building the Org.WebRtc project. This way the WebRTC environment for winuwp will be prepared and built for selected cpu and configuration. You can immediately try it by compiling and running PeerConnectionClient.WebRtc project for a sample app that demonstrates audio\video calls.
 
 ## Python Preparation Scripts
 These scripts are new so we expect there to be some rough edges - please log any issues on GitHub. If you are eager to try it, you can just run the `run.py` Python script from scripts folder. It can be run from any folder on your disk. (i.e. e:\my_working>python d:\test\webrtc-uwp-sdk\scripts\run.py). The folder from which run.py is called will be the working directory and the file `userdef.py` which contains the default values will be created there. This file can be edited to modify the default actions and platforms. For further details see the section "How to pass input args?"
@@ -23,22 +23,27 @@ the development environment will be prepared for win and winuwp platforms, for A
 
 ### How to prepare developement environment
 
-Before you are able to build the WebRTC projects it is required to prepare the development environemnt. To do that, run the `run.py` Python script with the 'prepare' parameter. The script will download and install missing tools. It will create junction links in the directory structure and copy files to the proper locations.  It will also generate ninja files and Visual Studio projects. The folder where these generated files will be saved is: 
+Before you are able to build the WebRTC projects it is required to prepare the development environemnt. To do that, run the `run.py` Python script with the 'prepare' parameter. The script will download and install missing tools. It will create junction links in the directory structure and copy files to the proper locations.  It will also generate ninja files and Visual Studio projects. By default, generated ninja files will use toolchain with Microsoft's cl.exe compiler. If you want to use clang-cl compiler it is necessary to pass --clang input argument.
+The folder where these generated files will be saved is: 
 
 >`webrtc-uwp-sdk\webrtc\xplatform\webrtc\out\webrtc_[platform]_[cpu]_[configuration]`
 (e.g. `webrtc-uwp-sdk\webrtc\xplatform\webrtc\out\webrtc_winuwp_x86_Release`)
 	
 ## Examples for preparing the development environment
 
-1. The easiest way for those who don't want to play with scripts and are interested in specific cpu and configuration is to open `webrtc-uwp-sdk\webrtc\windows\solutions\WebRtc.Universal.sln` and to build Org.WebRtc project. This won't just prepare environemnt but it will build the wrapper project too.
+1. The easiest way for those who don't want to play with scripts and are interested in specific cpu and configuration is to open `webrtc-uwp-sdk\webrtc\windows\solutions\WebRtc.Universal.sln` and to build Org.WebRtc project. This won't just prepare environemnt but it will build WebRTC native libs and the wrapper project too.
 
 2. If you want to prepare the environment for all platforms and CPUs and configurations, without building, you can run following command:
     >`python run.py -a prepare`
 
+    Basically, on first run, this command is creating userdef.py file from defaults.py and loading options from it, and then proceeding with preparation. By default options are set to prepare environment for all platforms, CPUs and configurations, but modifying file you can selecte options that are of interest for you. 
     This line can be used if you running this from scripts folder, otherwise you need to specify full or relative path to the run.py script. The result of prepare action can be found in the `webrtc-uwp-sdk\webrtc\xplatform\webrtc\out\` folder.
-  
+
     In case you want to prepare the environment for specific CPUs and configuration the next command will do the job:
     >`python run.py -a prepare --cpus x64 arm -c debug`
+
+    In case you want to prepare the environment only for win32 platform, x86 CPU and all configurations, and to use clang-cl compiler for building use following command:
+    >`python run.py -a prepare -p win --cpus x86 --clang`
 	
 3. If you want to have even more control over script execution, modifying userdef.py file is right solution for you. First what you need to do is to create that file. To do that it is enough to run: 
     >`python run.py -a createuserdef`
@@ -69,3 +74,160 @@ Before you are able to build the WebRTC projects it is required to prepare the d
     >```python run.py template_file```
     
     By creating templates for the most common actions you can simplify running scripts.
+
+## Building projects
+
+Beside opening WebRtc.Universal.sln and building WebRTC native libs as well as wrapper libs, from VS, these libs can be built from command line too. Using command line gives you more control over build process. 
+
+Syntax for selecting build options is the same as for prepare action.
+
+## Examples for building WebRTC native and wrapper libs
+
+1. Open `webrtc-uwp-sdk\webrtc\windows\solutions\WebRtc.Universal.sln` and build Org.WebRtc project. This will build WebRTC native and wrapper libs.
+
+2. If you want to prepare the environment and build native and wrapper libs for all platforms and CPUs and configurations that are supported, you can run following command:
+    >`python run.py -a prepare build`
+
+    If you already have prepared developer environment and you don't want to build wrapper libs, you can run scripts without prepare action:
+    >`python run.py -a build --noWrapper`
+
+    In case you want to build antive and wrapper libs for specific CPUs and configuration the next command will do the job:
+    >`python run.py -a build --cpus x64 arm -c debug`
+
+    For preparing and building WebRTC native libs for WinUWP platform, all CPUs and configurations, using clang-cl.exe compiler and skipping building wrapper libs try this:
+    >`python run.py -a prepare build -p winuwp --clang --noWrapper`
+
+3. If you want to control scripts execution by modifying userdef.py file, you have to add build action in actions list:
+   **Configuration Example:** Build WebRTC native and wrapper libs with Microsoft's cl.exe:
+    ```
+    actions = [ 'build' ]
+    #To build with clang-cl set this variable to True and run prepare action again
+    buildWithClang = False
+    #To skip building wrapper libs set this variable to False
+    buildWrapper = True
+    ```
+
+## Build cleanup
+
+  Scripts are giving an option to perform build and environment cleanup. Syntax is the same as for build and prepare actions. It is possible to pass input using userdef.py file or through command line. Depends of settings it can perform build cleanup for specified platforms, CPUs and configurations.
+
+## Cleanup examples
+
+  1.  If you were using `webrtc-uwp-sdk\webrtc\windows\solutions\WebRtc.Universal.sln` to build Org.WebRtc project, you can run just clean on that project and WebRTC native libs as well as generated ninja files and wrapper projects will be cleaned.
+
+  2.  If you want to clean WebRTC native and wrapper libs and ninja files for all platforms, CPUs and configurations, that can be achieved with this command:
+      >`python run.py -a clean --cleanOptions cleanoutput`
+
+      To perform the same cleanup, but just for winuwp platform, x64 CPU and debug configuration, it will look like this:
+      >`python run.py -a clean --cpus x64 -c debug -p winuwp --cleanOptions cleanoutput`
+
+      To delete results of idl and evenet compiler, command is this:
+      >`python run.py -a clean --cleanOptions cleanidls`
+
+      To reset userdef to default settings:
+      >`python run.py -a clean --cleanOptions cleanuserdef`
+
+      To revert to state before preparation process use following command:
+      >`python run.py -a clean --cleanOptions cleanoutput cleanidls cleanuserdef cleanprepare`
+
+  3.  All of this can be achieved using userdef.py.
+      **Configuration Example:** To clean output for all cpus and win platform (in this example targets and configurations are read from targets and configuration variable in userdef.py):
+      ```
+      actions = [ 'clean' ]
+      cleanupOptions = {
+                'actions' : ['cleanOutput'],
+                'targets' : [],
+                'cpus' : ['*'],
+                'platforms' : ['win'],
+                'configurations' : []
+              }
+      ```
+
+## Release Notes  
+
+Creating release notes process can be done by running releasenotes action, which can be run in two ways:
+1. By running the following command:
+>```python run.py -a releasenotes```
+2. Or by adding 'releasenotes' action into `actions` variable inside userdef.py and running the command: 
+>```python run.py```
+
+By following the instruction in the console you will be able to choose a way to insert the release notes, either by typing it directly in the cmd window or by selecting notes from a file (selecting from a file copies files contents and from them creates a release note.)
+
+Release notes are stored in **releases.txt** file inside root sdk directory
+
+Version of the release notes will be added automatically when running `publishnuget` action. It can also be set manually by adding in `--setservernoteversion` option. In that case it will take the latest published version of the nuget package and set it as a release note version in releases.txt.
+
+If the `releasenotes` action is called, and release.txt file already has a note that doesn't have a version set, newly created note will be appended to the top of the previous note that doesn't have a version set.
+
+When running `createnuget` action, release notes, that don't have a version set, are used as NuGet package release notes. Those notes are also copied to a .txt file and placed along side the created package.
+
+## Creating NuGet package  
+Creating NuGet package for WebRtc UWP can be done by running createnuget action.  
+
+1. Prefered way to do this is to insert 'createnuget' into actions variable inside userdef.py file and set up    the configuration.  
+   **Configuration Example:** Create WebRtc NuGet package for WinUWP platform for x64 release version:
+   ```
+    targets = [ 'webrtc' ]
+    targetCPUs = [ 'x64' ]
+    targetPlatforms = [ 'winuwp' ]
+    targetConfigurations = [ 'Release' ]
+    actions = [ 'createnuget' ]
+   ```
+   *If the prepare and build actions for the selected configuration have not been done before running createnuget action, action variable should have those actions as well in order for the nuget creation process to succeed.* 
+   example: ``` actions = [ 'prepare', 'build', 'createnuget' ]```   
+   After configuration has been setup, run the following command:   
+   >```python run.py ```  
+
+2. All of this can also be done by running the following command:  
+   >```python run.py -a createnuget <configuration>```   
+   
+   ---
+   **Configuration**  
+   
+   Platforms: `-t winuwp`  
+   Cpu architectures: `-x x64 x86 arm`  
+   Configuration: `-c debug release`   
+   
+   **Command Example:**  Create WebRtc NuGet package for WinUWP platform for x64 release version:
+   >```python run.py -a createnuget -t winuwp -x x64 -c release```  
+   *Assuming the prepare and build has been done beforehand*
+   
+   ---
+To select nuget package version, change the `nugetVersionInfo` variable in userdef.py, this variable is used for WebRtc versions that already have published packages, in which case, next package version will be selected automatically.
+To create a NuGet package for a WebRtc version that does not have a published nuget package on nuget.org, use `manualNugetVersionNumber` variable in userdef.py to manually add in a version of the nuget package, for example:
+>manualNugetVersionNumber = '1.71.0.1-Alpha'
+
+To select a directory where the newly created NuGet packages will be placed, change the value of the `nugetFolderPath` variable inside userdef.py to a path of your choosing.
+
+## Update published sample
+
+Purpose of this action is to clone the sample from the url and branch given in the userdef.py file and place it inside Published_Samples directory, then the cloned sample is compared to the sample inside common\windows\samples directory and the differences are copied from the sample in common\windows\samples directory to the cloned sample. After that is done, a reference to the created NuGet package is added to the cloned sample.  
+
+Update published sample action can be run by adding 'updatesample' into `actions` variable inside userdef.py file.  
+Changing the options for this actions can be done inside `updateSampleInfo` variable, that is also contained in userdef.py.  
+Option Example:
+```
+updateSampleInfo = {
+                      'package' : 'default',
+                      'samples' : [
+                        {
+                          'name' : 'PeerCC',
+                          'url' : 'https://github.com/webrtc-uwp/PeerCC-Sample',
+                          'branch': 'webrtc_merge_m66'
+                        }
+                      ]
+                   }
+```
+`package` variable controls the version of the WebRtc NuGet package that will be used by the sample when it gets updated, if the value is 'default' package used will be most recently created WebRtc NuGet package.  
+`samples` variable contains an array of samples where each sample has a `name` that is used to as a name of the cloned sample, in order for the action to work, `name` of the cloned sample should be same as the name of the sample inside common\windows\samples directory that the cloned sample is being compared to. Each sample should also have `url` which is the url of the sample on GitHub and `branch` which determines the branch of that sample.  
+
+## Publish NuGet
+
+Publish NuGet package action can be run in two ways:
+1. By running the following command:
+>`python run.py -a publishnuget`
+2. By inserting 'publishnuget' into `actions` variable inside userdef.py file.
+If the publishnuget action is called alongside createnuget action, created NuGet package will be published automatically. In case the publishnuget is run like standalone action, it will be possible to choose the NuGet package to publish from the list of the created packages. List of the created NuGet packages is generated from the packages placed inside a path defined in `nugetFolderPath` variable of the userdef.py file.  
+If the key for the NuGet server has not been set, and the publishnuget action is run, package will not be published, and the instruction will be shown on how to set the key for the nuget.org server.
+Key can be set by adding an option `-setnugetkey <key>` when run.py script is called. Example command: `python run.py -a publishnuget -setnugetkey <key>` where `<key>` is the key from acquired the server.
+Once the key is set for a particular server, it doesn't need to be set again on the machine where the script is being called from.

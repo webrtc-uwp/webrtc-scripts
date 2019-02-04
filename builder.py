@@ -13,6 +13,7 @@ from settings import Settings
 from helper import convertToPlatformPath
 import errors
 from errors import error_codes, NO_ERROR
+from nugetUtility import NugetUtility
 
 class Builder:
   @classmethod
@@ -23,7 +24,7 @@ class Builder:
     cls.logger = Logger.getLogger('Build')
 
   @classmethod
-  def run(cls, targetName, targets, platform, cpu, configuration, shouldCombineLibs = False, builderWorkingPath = None):
+  def run(cls, targetName, targets, platform, cpu, configuration, shouldCombineLibs = False, shouldCopyToOutput = True, builderWorkingPath = None):
     """
       Start target building process.
       :param targetName: Name of the main target (ortc or webrtc)
@@ -32,6 +33,7 @@ class Builder:
       :param cpu: Target CPU
       :param configuration: Configuration to build for
       :param shouldCombineLibs: Should all libs be merged into one library
+      :param shouldCopyToOutput: should copy libs, exes and pdbs to output folder.
       :param builderWorkingPath: Path where generated projects for specified target.
       :return: NO_ERROR if build was successfull. Otherwise returns error code
     """
@@ -64,13 +66,19 @@ class Builder:
       destinationPath = convertToPlatformPath(config.BUILT_LIBS_DESTINATION_PATH.replace('[BUILD_OUTPUT]',config.BUILD_OUTPUT_PATH).replace('[TARGET]',targetName).replace('[PLATFORM]',platform).replace('[CPU]',cpu).replace('[CONFIGURATION]',configuration))
       destinationPathLib = os.path.join(Settings.webrtcPath, destinationPath)
 
-      #Merge libraries if it is required
+      #Merge libraries if it is required. Merged lib is saved in destinationPathLib
       if shouldCombineLibs:
         ret = cls.mergeLibs(cpu,destinationPathLib)
+      elif shouldCopyToOutput:
+        #Copy lib files to the destinationPathLib folder
+        ret = cls.copyFilesToOutput(destinationPathLib, 'lib', config.COMBINE_LIB_IGNORE_SUBFOLDERS)
+      
+      if ret == NO_ERROR and shouldCopyToOutput:
+        #Copy executable files to the destinationPathLib folder
+        cls.copyFilesToOutput(destinationPathLib, 'exe', config.COMBINE_LIB_IGNORE_SUBFOLDERS, 'executables')
 
-      if ret == NO_ERROR:
-        #Copy merged libs to the output lib folder
-        cls.copyNativeLibPdbsToOutput(destinationPathLib)
+        #Copy pdb files to the destinationPathLib folder
+        cls.copyFilesToOutput(destinationPathLib, 'pdb', config.COMBINE_LIB_IGNORE_SUBFOLDERS, 'pdbs')
 
     #Switch to previously working directory
     Utility.popd()
@@ -116,13 +124,20 @@ class Builder:
       if not Utility.copyFile(solutionSourcePath,solutionDestinationPath):
         return errors.ERROR_BUILD_BUILDING_WRAPPER_FAILED
 
-      #MSBuild command for building wrapper projects
-      cmdBuild = 'msbuild ' + solutionDestinationPath + ' /t:Build' + ' /p:Configuration=\"' + configuration + '\" /p:Platform=\"' + targetCPU + '\"'
-      #Execute MSBuild command
-      result = Utility.runSubprocess([cls.cmdVcVarsAll, cmdBuild, cls.cmdVcVarsAllClean], Settings.logLevel == 'DEBUG')
-      if result != NO_ERROR:
-        ret = errors.ERROR_BUILD_BUILDING_WRAPPER_FAILED
-        cls.logger.error('Failed building ' + target + ' wrapper projects for ' + targetCPU + ' for configuration  '+ configuration)
+      #Restore nugets
+      cmdBuild = Settings.nugetExecutablePath + ' restore ' + solutionDestinationPath
+      result = NugetUtility.nuget_cli('restore', solutionDestinationPath)
+      #result = Utility.runSubprocess([cmdBuild], Settings.logLevel == 'DEBUG')
+      if result == NO_ERROR:
+        #MSBuild command for building wrapper projects
+        cmdBuild = 'msbuild ' + solutionDestinationPath + ' /t:Build' + ' /p:Configuration=\"' + configuration + '\" /p:Platform=\"' + targetCPU + '\"'
+        #Execute MSBuild command
+        result = Utility.runSubprocess([cls.cmdVcVarsAll, cmdBuild, cls.cmdVcVarsAllClean], Settings.logLevel == 'DEBUG')
+        if result != NO_ERROR:
+          ret = errors.ERROR_BUILD_BUILDING_WRAPPER_FAILED
+          cls.logger.error('Failed building ' + target + ' wrapper projects for ' + targetCPU + ' for configuration  '+ configuration)
+      else:
+        ret = errors.ERROR_BUILD_RESTORING_NUGET_FAILED
     except Exception as error:
       cls.logger.error(str(error))
       cls.logger.error('Failed building ' + target + ' wrapper projects for ' + targetCPU + ' for configuration  '+ configuration)
@@ -147,8 +162,6 @@ class Builder:
     ret = NO_ERROR
     cls.logger.info('Following targets ' + str(targets) + ' will be built for cpu '+ targetCPU)
 
-    mainBuildGnFilePath = os.path.join(Settings.webrtcPath,'BUILD.gn')
-
     try:
       for target in targets:
         cls.logger.debug('Building target ' + target)
@@ -159,7 +172,7 @@ class Builder:
         #This is necessary to do, because ninja regenerates ninja files at startup, and it is required 
         # to have the sam BUILD.gn as in prepare process.
         if target == config.WEBRTC_TARGET:
-          if not Utility.backUpAndUpdateGnFile(mainBuildGnFilePath,config.WEBRTC_TARGET,config.ADDITIONAL_TARGETS_TO_ADD):
+          if not Utility.backUpAndUpdateGnFile(Settings.mainBuildGnFilePath,config.WEBRTC_TARGET,config.ADDITIONAL_TARGETS_TO_ADD):
             ret = errors.ERROR_BUILD_UPDATING_DEPS_FAILED
 
         if ret == NO_ERROR:
@@ -174,10 +187,10 @@ class Builder:
       cls.logger.error('Build failed for following targets ' + str(targets) + ' for cpu '+ targetCPU)
       ret = errors.ERROR_BUILD_FAILED
     finally:
-      Utility.returnOriginalFile(mainBuildGnFilePath)
+      Utility.returnOriginalFile(Settings.mainBuildGnFilePath)
 
     if ret == NO_ERROR:
-      cls.logger.info('Successfully finished building libs for target ' + target)
+      cls.logger.info('Successfully finished building target ' + target)
 
     return ret
 
@@ -248,12 +261,6 @@ class Builder:
 
       result = Utility.runSubprocess([cls.cmdVcVarsAll, cmdLibExe, cls.cmdVcVarsAllClean], Settings.logLevel == 'DEBUG')
 
-      #cls.logger.debug('Command line to execute: ' + commands)
-      #Make cmdLibExe command dependent on cmdVcVarsAll
-      #commands = cls.cmdVcVarsAll + ' && ' + cmdLibExe + ' && ' + cls.cmdVcVarsAllClean
-      #FNULL = open(os.devnull, 'w')
-      #result = subprocess.call(commands,stdout=FNULL, stderr=subprocess.STDOUT)
-
       if result != 0:
         cls.logger.error(error_codes[errors.ERROR_BUILD_MERGE_LIBS_FAILED])
         ret = errors.ERROR_BUILD_MERGE_LIBS_FAILED
@@ -266,41 +273,46 @@ class Builder:
     return ret
 
   @classmethod
-  def copyNativeLibPdbsToOutput(cls, destinationPathLib):
+  def copyFilesToOutput(cls, destinationPathLib, extension, listOfIngoredSubFolders, destinationSubfolder=''):
     """
-
+      Copy files with specifed extension to the output folder.
+      :param destinationPathLib: Path to folder where files will be copied.
+      :param extension: Files extension.
+      :param listOfIngoredSubFolders: List of folders whose content will be ignored.
+      :param destinationSubfolder: Subfolder in destinationPathLib where files will be copied
+      :return ret: NO_ERROR if files are copied, othervise ERROR_BUILD_COPYING_TO_OUTPUT_FAILED
     """
-    ret = True
+    result = True
 
-    destinationPathPdb = os.path.join(destinationPathLib,'pdbs')
+    destinationFilesPath = os.path.join(destinationPathLib,destinationSubfolder)
 
     try:
       if not os.path.exists(destinationPathLib):
         os.makedirs(destinationPathLib)
 
-      if not os.path.exists(destinationPathPdb):
-        os.makedirs(destinationPathPdb)
+      if not os.path.exists(destinationFilesPath):
+        os.makedirs(destinationFilesPath)
 
-      """
-      listOfLibsToCopy = Utility.getFilesWithExtensionsInFolder(['.'],('.dll'),config.COMBINE_LIB_IGNORE_SUBFOLDERS,0)
+      listOfFilessToCopy = Utility.getFilesWithExtensionsInFolder(['.'],('.'+extension),listOfIngoredSubFolders,0)
       
-      for lib in listOfLibsToCopy:
-        ret = Utility.copyFile(pdb, os.path.join(destinationPathPdb,os.path.basename(pdb)))
-      """
-
-      listOfPdbsToCopy = Utility.getFilesWithExtensionsInFolder(['.'],('.pdb'),config.COMBINE_LIB_IGNORE_SUBFOLDERS,0)
-      
-      for pdb in listOfPdbsToCopy:
-        ret = Utility.copyFile(pdb, os.path.join(destinationPathPdb,os.path.basename(pdb)))
+      for fileToCopy in listOfFilessToCopy:
+        result = Utility.copyFile(fileToCopy, os.path.join(destinationFilesPath,os.path.basename(fileToCopy)))
     
     except Exception as error:
       cls.logger.warning(str(error))
-      cls.logger.warning('Failed copying pdbs to output folder!')
-      ret = False
+      cls.logger.warning('Failed copying files with extension .' + extension + ' to output folder ' + destinationFilesPath + '!')
+      result = False
 
-    return ret
+    if not result:
+      return  errors.ERROR_BUILD_COPYING_TO_OUTPUT_FAILED
+    return NO_ERROR
 
   @classmethod
   def getTargetGnPath(cls, target):
-    targetsToBuild, shouldCombineLibs = config.TARGETS_TO_BUILD.get(target,(target,0))
-    return targetsToBuild, shouldCombineLibs
+    #Check if target is defined in userdef.py availableTargetsForBuilding. If not, returns target name as 
+    # gn path and 0 for combininglibs flag. In that case check is performed also in config.py TARGETS_TO_BUILD
+    targetsToBuild, shouldCombineLibs, shouldCopyToOutput = Settings.availableTargetsForBuilding.get(target,([target],0,1))
+    if targetsToBuild == target and shouldCombineLibs == 0:
+      targetsToBuild, shouldCombineLibs, shouldCopyToOutput = config.TARGETS_TO_BUILD.get(target,([target],0,1))
+    
+    return targetsToBuild, shouldCombineLibs, shouldCopyToOutput
