@@ -23,22 +23,27 @@ the development environment will be prepared for win and winuwp platforms, for A
 
 ### How to prepare developement environment
 
-Before you are able to build the WebRTC projects it is required to prepare the development environemnt. To do that, run the `run.py` Python script with the 'prepare' parameter. The script will download and install missing tools. It will create junction links in the directory structure and copy files to the proper locations.  It will also generate ninja files and Visual Studio projects. The folder where these generated files will be saved is: 
+Before you are able to build the WebRTC projects it is required to prepare the development environemnt. To do that, run the `run.py` Python script with the 'prepare' parameter. The script will download and install missing tools. It will create junction links in the directory structure and copy files to the proper locations.  It will also generate ninja files and Visual Studio projects. By default, generated ninja files will use toolchain with Microsoft's cl.exe compiler. If you want to use clang-cl compiler it is necessary to pass --clang input argument.
+The folder where these generated files will be saved is: 
 
 >`webrtc-uwp-sdk\webrtc\xplatform\webrtc\out\webrtc_[platform]_[cpu]_[configuration]`
 (e.g. `webrtc-uwp-sdk\webrtc\xplatform\webrtc\out\webrtc_winuwp_x86_Release`)
 	
 ## Examples for preparing the development environment
 
-1. The easiest way for those who don't want to play with scripts and are interested in specific cpu and configuration is to open `webrtc-uwp-sdk\webrtc\windows\solutions\WebRtc.Universal.sln` and to build Org.WebRtc project. This won't just prepare environemnt but it will build the wrapper project too.
+1. The easiest way for those who don't want to play with scripts and are interested in specific cpu and configuration is to open `webrtc-uwp-sdk\webrtc\windows\solutions\WebRtc.Universal.sln` and to build Org.WebRtc project. This won't just prepare environemnt but it will build WebRTC native libs and the wrapper project too.
 
 2. If you want to prepare the environment for all platforms and CPUs and configurations, without building, you can run following command:
     >`python run.py -a prepare`
 
+    Basically, on first run, this command is creating userdef.py file from defaults.py and loading options from it, and then proceeding with preparation. By default options are set to prepare environment for all platforms, CPUs and configurations, but modifying file you can selecte options that are of interest for you. 
     This line can be used if you running this from scripts folder, otherwise you need to specify full or relative path to the run.py script. The result of prepare action can be found in the `webrtc-uwp-sdk\webrtc\xplatform\webrtc\out\` folder.
-  
+
     In case you want to prepare the environment for specific CPUs and configuration the next command will do the job:
     >`python run.py -a prepare --cpus x64 arm -c debug`
+
+    In case you want to prepare the environment only for win32 platform, x86 CPU and all configurations, and to use clang-cl compiler for building use following command:
+    >`python run.py -a prepare -p win --cpus x86 --clang`
 	
 3. If you want to have even more control over script execution, modifying userdef.py file is right solution for you. First what you need to do is to create that file. To do that it is enough to run: 
     >`python run.py -a createuserdef`
@@ -70,7 +75,76 @@ Before you are able to build the WebRTC projects it is required to prepare the d
     
     By creating templates for the most common actions you can simplify running scripts.
 
+## Building projects
+
+Beside opening WebRtc.Universal.sln and building WebRTC native libs as well as wrapper libs, from VS, these libs can be built from command line too. Using command line gives you more control over build process. 
+
+Syntax for selecting build options is the same as for prepare action.
+
+## Examples for building WebRTC native and wrapper libs
+
+1. Open `webrtc-uwp-sdk\webrtc\windows\solutions\WebRtc.Universal.sln` and build Org.WebRtc project. This will build WebRTC native and wrapper libs.
+
+2. If you want to prepare the environment and build native and wrapper libs for all platforms and CPUs and configurations that are supported, you can run following command:
+    >`python run.py -a prepare build`
+
+    If you already have prepared developer environment and you don't want to build wrapper libs, you can run scripts without prepare action:
+    >`python run.py -a build --noWrapper`
+
+    In case you want to build antive and wrapper libs for specific CPUs and configuration the next command will do the job:
+    >`python run.py -a build --cpus x64 arm -c debug`
+
+    For preparing and building WebRTC native libs for WinUWP platform, all CPUs and configurations, using clang-cl.exe compiler and skipping building wrapper libs try this:
+    >`python run.py -a prepare build -p winuwp --clang --noWrapper`
+
+3. If you want to control scripts execution by modifying userdef.py file, you have to add build action in actions list:
+   **Configuration Example:** Build WebRTC native and wrapper libs with Microsoft's cl.exe:
+    ```
+    actions = [ 'build' ]
+    #To build with clang-cl set this variable to True and run prepare action again
+    buildWithClang = False
+    #To skip building wrapper libs set this variable to False
+    buildWrapper = True
+    ```
+
+## Build cleanup
+
+  Scripts are giving an option to perform build and environment cleanup. Syntax is the same as for build and prepare actions. It is possible to pass input using userdef.py file or through command line. Depends of settings it can perform build cleanup for specified platforms, CPUs and configurations.
+
+## Cleanup examples
+
+  1.  If you were using `webrtc-uwp-sdk\webrtc\windows\solutions\WebRtc.Universal.sln` to build Org.WebRtc project, you can run just clean on that project and WebRTC native libs as well as generated ninja files and wrapper projects will be cleaned.
+
+  2.  If you want to clean WebRTC native and wrapper libs and ninja files for all platforms, CPUs and configurations, that can be achieved with this command:
+      >`python run.py -a clean --cleanOptions cleanoutput`
+
+      To perform the same cleanup, but just for winuwp platform, x64 CPU and debug configuration, it will look like this:
+      >`python run.py -a clean --cpus x64 -c debug -p winuwp --cleanOptions cleanoutput`
+
+      To delete results of idl and evenet compiler, command is this:
+      >`python run.py -a clean --cleanOptions cleanidls`
+
+      To reset userdef to default settings:
+      >`python run.py -a clean --cleanOptions cleanuserdef`
+
+      To revert to state before preparation process use following command:
+      >`python run.py -a clean --cleanOptions cleanoutput cleanidls cleanuserdef cleanprepare`
+
+  3.  All of this can be achieved using userdef.py.
+      **Configuration Example:** To clean output for all cpus and win platform (in this example targets and configurations are read from targets and configuration variable in userdef.py):
+      ```
+      actions = [ 'clean' ]
+      cleanupOptions = {
+                'actions' : ['cleanOutput'],
+                'targets' : [],
+                'cpus' : ['*'],
+                'platforms' : ['win'],
+                'configurations' : []
+              }
+      ```
+
 ## Release Notes  
+
 Creating release notes process can be done by running releasenotes action, which can be run in two ways:
 1. By running the following command:
 >```python run.py -a releasenotes```
