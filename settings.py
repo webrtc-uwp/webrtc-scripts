@@ -62,11 +62,12 @@ class Settings:
     #Import custom template if provided
     if cls.inputArgs.template:
       if cls.inputArgs.template and \
-         (os.path.isfile(cls.inputArgs.template) or 
-          os.path.isfile(cls.inputArgs.template + '.py') or
-          os.path.isfile(os.path.join(cls.templatesPath, cls.inputArgs.template)) or 
-          os.path.isfile(os.path.join(cls.templatesPath, cls.inputArgs.template + '.py'))): 
-        globals().update(import_module(cls.inputArgs.template).__dict__)
+        (os.path.isfile(cls.inputArgs.template) or 
+        os.path.isfile(cls.inputArgs.template + '.py') or
+        os.path.isfile(os.path.join(cls.templatesPath, cls.inputArgs.template)) or 
+        os.path.isfile(os.path.join(cls.templatesPath, cls.inputArgs.template + '.py'))):
+        templateModuleName = os.path.splitext(os.path.basename(cls.inputArgs.template))[0]
+        globals().update(import_module(templateModuleName).__dict__)
       print('======================================= ' + os.path.join(cls.templatesPath, cls.inputArgs.template + '.py'))
     #cls.gnOutputPath = gnOutputPath
 

@@ -4,7 +4,7 @@
 webRTCGnArgsTemplatePath='./webrtc/windows/templates/gns/args.gn'
 
 #Path where nuget package and all of the files used to create the package are stored
-nugetFolderPath = 'E:/mynugetpackages'
+nugetFolderPath = './nugetpackages'
 nugetVersionInfo = {
                       #Main version number of the NuGet package 
                       'number': '71',
