@@ -187,6 +187,11 @@ WINDOWS_COMPILER_OPTIONS = {
 
 #Additional libs to build for webrtc and ortc targets
 TARGETS_TO_BUILD = {
+                                'default' : (
+                                              [
+                                                'default'
+                                              ],1
+                                ),
                                 'webrtc'  : (
                                               [ 
                                                 'webrtc',
@@ -253,6 +258,10 @@ WEBRTC_WRAPPER_PROJECTS = [
 NUGET_WINUWP_WEBRTC_SOLUTION = 'WebRtc.Wrapper.Universal.sln'
 
 TARGET_WRAPPER_SOLUTIONS = {
+                              'default': {
+                                            'winuwp' : 'WebRtc.Wrapper.Universal.sln',
+                                            'net' : '',
+                                          },
                               'webrtc' :  {
                                             'winuwp' : 'WebRtc.Wrapper.Universal.sln',
                                             'net' : '',
@@ -266,6 +275,10 @@ TARGET_WRAPPER_SOLUTIONS = {
 WEBRTC_WRAPPER_PROJECTS_OUTPUT_PATH = './webrtc/windows/solutions/Build/Output/Org.WebRtc'
 
 TARGET_WRAPPER_PROJECTS_OUTPUT_PATHS = {
+                                          'default' :  {
+                                                        'winuwp' : './webrtc/windows/solutions/Build/Output/Org.WebRtc',
+                                                        'net' : '',
+                                                      },
                                           'webrtc' :  {
                                                         'winuwp' : './webrtc/windows/solutions/Build/Output/Org.WebRtc',
                                                         'net' : '',

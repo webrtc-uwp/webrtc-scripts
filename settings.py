@@ -134,6 +134,12 @@ class Settings:
     else:
       cls.buildWrapper = buildWrapper
 
+    #If configurations are passed like input arguments use them, instead of one loaded from template
+    if cls.inputArgs.includeTests:
+      cls.includeTests = True
+    else:
+      cls.includeTests = includeTests
+
     cls.stopExecutionOnError = stopExecutionOnError
     cls.showTraceOnError = showTraceOnError
     cls.showSettingsValuesOnError = showSettingsValuesOnError

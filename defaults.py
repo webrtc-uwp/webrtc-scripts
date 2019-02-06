@@ -63,7 +63,7 @@ supportedCPUsForPlatform = {
                             }
 
 #List of targets for which will be performed specified actions. Supported target is webrtc. In future it will be added support for ortc.
-targets = [ 'webrtc' ]
+targets = [ 'webrtc', 'default' ]
 #List of target cpus. Supported cpus are arm, x86 and x64
 targetCPUs = [ 'arm', 'x86', 'x64' ]
 #List of target platforms. Supported cpus are win and winuwp
@@ -89,7 +89,10 @@ actions = [ 'prepare', 'build' ]
 
 buildWithClang = False
 #Flag if wrapper library should be built. If it is False, it will be built only native libraries
-buildWrapper = True  
+buildWrapper = True
+
+#Flag if rtc_include_tests should be defined. If False, native tests aren't built
+includeTests = False
 
 #=========== cleanupOptions
 #'actions' : ['cleanOutput', 'cleanIdls', 'cleanUserDef','cleanPrepare'],
