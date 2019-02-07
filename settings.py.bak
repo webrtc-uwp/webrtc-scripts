@@ -41,12 +41,9 @@ class Settings:
     cls.defaultFilePath = os.path.join(os.path.dirname(__file__),'defaults.py')
     #Root path for preparation
     cls.webrtcPath = os.path.join(cls.rootSdkPath, convertToPlatformPath(config.PREPRATARION_WORKING_PATH))
-    #Main BUILD.gn path
-    cls.mainBuildGnFilePath = os.path.join(cls.webrtcPath,'BUILD.gn')
     #WebRtc solution path
     cls.webrtcSolutionPaths = os.path.join(cls.rootSdkPath,convertToPlatformPath(config.WEBRTC_SOLUTION_PATH))
-    #NuGet executable path
-    cls.nugetExecutablePath = os.path.join(cls.rootSdkPath, convertToPlatformPath(config.NUGET_EXECUTABLE_PATH))
+
     #local ninja path
     cls.localNinjaPath = os.path.join(cls.localDepotToolsPath,'ninja')
 
@@ -62,13 +59,11 @@ class Settings:
     #Import custom template if provided
     if cls.inputArgs.template:
       if cls.inputArgs.template and \
-        (os.path.isfile(cls.inputArgs.template) or 
-        os.path.isfile(cls.inputArgs.template + '.py') or
-        os.path.isfile(os.path.join(cls.templatesPath, cls.inputArgs.template)) or 
-        os.path.isfile(os.path.join(cls.templatesPath, cls.inputArgs.template + '.py'))):
-        templateModuleName = os.path.splitext(os.path.basename(cls.inputArgs.template))[0]
-        globals().update(import_module(templateModuleName).__dict__)
-      print('======================================= ' + os.path.join(cls.templatesPath, cls.inputArgs.template + '.py'))
+         (os.path.isfile(cls.inputArgs.template) or 
+          os.path.isfile(cls.inputArgs.template + '.py') or 
+          os.path.isfile(os.path.join(cls.templatesPath, cls.inputArgs.template + '.py'))): 
+        globals().update(import_module(cls.inputArgs.template).__dict__)
+
     #cls.gnOutputPath = gnOutputPath
 
     cls.supportedPlatformsForHostOs = supportedPlatformsForHostOs
@@ -79,15 +74,11 @@ class Settings:
     else:
       cls.actions = actions
 
-    #If user target (any target different from ortc and webrtc) is passed like input argument use it.
-    if cls.inputArgs.userTarget:
-       cls.targets = [cls.inputArgs.userTarget]
+    #If targets are passed like input arguments use them, instead of one loaded from template
+    if cls.inputArgs.targets:
+      cls.targets = cls.inputArgs.targets
     else:
-      #If targets are passed like input arguments use them, instead of one loaded from template
-      if cls.inputArgs.targets:
-        cls.targets = cls.inputArgs.targets
-      else:
-        cls.targets = targets
+      cls.targets = targets
 
     #If platforms are passed like input arguments use them, instead of one loaded from template
     if cls.inputArgs.platforms:
@@ -108,13 +99,6 @@ class Settings:
       cls.targetConfigurations = targetConfigurations
 
     cls.targetProgrammingLanguage = targetProgrammingLanguage
-    #cls.buildWithClang = buildWithClang
-
-    if cls.inputArgs.clang:
-      cls.buildWithClang = True
-    else:
-      cls.buildWithClang = buildWithClang
-
     cls.buildWrapper = buildWrapper
 
     cls.logFormat = logFormat
@@ -174,7 +158,7 @@ class Settings:
     cls.msvcToolsBinPath = ''
     cls.vcvarsallPath = ''
 
-    #Dictionary with additional configuration for each action and default values. Initially dictionary values are already set values (passed from command line, or read from userdef)
+    #Dictionary with additional configuration for each action and default values
     cls.__actionOptions = {
                     'targets' : cls.targets,
                     'cpus' : cls.targetCPUs,
@@ -185,15 +169,9 @@ class Settings:
 
     #Set specific clean configuration if specified in userDef.py or use default values from __actionOptions dict
     for key,value in iterateDict(cls.__actionOptions):
-      #If cleanup actions are passed from command line, take values only from __actionOptions.
-      if cls.inputArgs.cleanOptions or cls.cleanupOptions.get(key,[]) == []:
+      cls.cleanupOptions[key] = cls.cleanupOptions.get(key,[])
+      if cls.cleanupOptions[key] == []:
         cls.cleanupOptions[key] = value
-
-    #If cleanup options are passed like input arguments use them, instead of one loaded from userdef
-    if cls.inputArgs.cleanOptions:
-      cls.cleanupOptions['actions'] =  cls.inputArgs.cleanOptions
-
-    cls.availableTargetsForBuilding = availableTargetsForBuilding
 
   @classmethod
   def getGnOutputPath(cls, path, target, platform, cpu, configuration):
