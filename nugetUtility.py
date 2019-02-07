@@ -67,7 +67,7 @@ class NugetUtility:
       if '403' in err:
         print(cls.api_key_instruction)
           
-      if err:
+      if p.returncode != 0:
         ret = ERROR_ACQUIRE_NUGET_EXE_FAILED
         cls.logger.error(err)
 
