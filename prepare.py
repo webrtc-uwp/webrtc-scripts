@@ -99,6 +99,17 @@ class Preparation:
 
     cls.logger.info('Runnning preparation for target: ' + target + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration)
 
+    # if we're trying to do a full build, we need some resources
+    if target == 'default':
+      rcPath = os.path.join(Settings.webrtcPath, 'build/toolchain/win')
+      status = System.downloadFromGoogle('chromium-browser-clang/rc', rcPath, True, True)
+      if not status:
+        ret = errors.ERROR_PREPARE_DOWNLOADING_TOOLS_FAILED
+      resourcesPath = os.path.join(Settings.webrtcPath, 'resources')
+      status = System.downloadFromGoogle('chromium-webrtc-resources', resourcesPath, True, True)
+      if not status:
+        ret = errors.ERROR_PREPARE_DOWNLOADING_TOOLS_FAILED
+
     #Change working directory
     Utility.pushd(Settings.webrtcPath)
 
@@ -159,7 +170,7 @@ class Preparation:
       with open(argsPath) as argsFile:
         cls.logger.debug('Updating args.gn file. Target OS: ' + platform + '; Target CPU: ' + cpu)
         newArgs=argsFile.read().replace('-target_os-', platform).replace('-target_cpu-', cpu)
-        newArgs=newArgs.replace('-is_debug-',str(configuration.lower() == 'debug').lower()).replace('-is_clang-',bool_to_str(Settings.buildWithClang).lower())
+        newArgs=newArgs.replace('-is_debug-',str(configuration.lower() == 'debug').lower()).replace('-is_clang-',bool_to_str(Settings.buildWithClang).lower()).replace('-is_include_tests-', bool_to_str(Settings.includeTests).lower())
       with open(argsPath, 'w') as argsFile:
         argsFile.write(newArgs)
     except Exception as error:

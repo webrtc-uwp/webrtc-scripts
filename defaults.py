@@ -50,7 +50,10 @@ actions = [ 'prepare', 'build' ]
 
 buildWithClang = False
 #Flag if wrapper library should be built. If it is False, it will be built only native libraries
-buildWrapper = True  
+buildWrapper = True
+
+#Flag if rtc_include_tests should be defined. If False, native tests aren't built
+includeTests = False
 
 #=========== cleanupOptions
 #'actions' : ['cleanOutput', 'cleanIdls', 'cleanUserDef','cleanPrepare'],

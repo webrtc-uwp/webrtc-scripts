@@ -44,6 +44,8 @@ class Input:
     parser.add_argument('--setnugetkey', nargs='?', action='store', dest='setnugetkey', help='Set the api key for the nuget server')
 
     parser.add_argument('-u','--userTarget', nargs='?', help='Target to build if not webrtc or ortc')
+
+    parser.add_argument('--includeTests', action='store_true', help='Include webrtc native tests (rtc_include_tests=true)')
     
     parser.add_argument('--setservernoteversion', action='store_true', help='Set release notes version from latest nuget package on nuget.org')
     
