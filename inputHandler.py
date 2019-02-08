@@ -18,7 +18,7 @@ class Input:
     if System.checkIfTargetIsSupported('ortc'):
       parser.add_argument('-t','--targets', nargs='*', choices=['ortc', 'webrtc'], help='Target')
     else:
-      parser.add_argument('-t','--targets', nargs='*', choices=['webrtc', 'default'], help='Target')
+      parser.add_argument('-t','--targets', nargs='*', choices=['webrtc'], help='Target')
     
     if System.hostOs == 'mac':
       parser.add_argument('-p','--platforms', nargs='*', choices=['mac', 'iOS'], help='Target platform')

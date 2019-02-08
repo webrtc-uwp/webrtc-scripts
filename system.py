@@ -384,7 +384,7 @@ class System:
       Ortc is supported if ortc folder exists in sdk root
     """
     #Webrtc is always supported
-    cls.supportedTargets = ['webrtc', 'default']
+    cls.supportedTargets = ['webrtc']
     
     #If ortc folder exists in sdk root folder add ortc in the list of supported targets
     if os.path.exists(os.path.join(Settings.rootSdkPath,'ortc')):
