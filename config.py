@@ -186,6 +186,14 @@ WINDOWS_COMPILER_OPTIONS = {
                             }
 
 #Additional libs to build for webrtc and ortc targets
+#'target_name' : Name of target to build. You can name target as your wish.
+#                e.g. peercc_server. It is dictionary key for a list
+#                of gn targets that will be built for target you define, 
+#                flag for linking obj files. (0 don't link, 1 link) and 
+#                flag for copying libs, exes and pdbs to OUTPUT folder.
+# {
+#   'target_name'  : ( [list of gn target paths], merging libs flag, copying to ouptut flag ),    
+# }
 TARGETS_TO_BUILD = {
                                 'webrtc'  : (
                                               [ 
