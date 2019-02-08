@@ -318,6 +318,42 @@ class System:
         ret = errors.ERROR_SYSTEM_FAILED_DELETING_USERDEF
       
     return ret
+
+  @classmethod
+  def downloadFromGoogle(cls, bucket, path, isDirectory = False, shouldRecurse = True):
+    """
+      Download content from the google storage buckets
+      :param bucket: the name of the google bucket to download from
+      :param path: the path to a sha1 file OR the path to a directory containing sha1 files
+      :param isDirectory: must be True is path is a file, and False if path is a directory
+      :param shouldRecurse: only used if path is a directory, True to recursively scan for sha1 files, False to not
+      :return ret: True if successfully downloaded.
+    """
+    ret = True
+
+    #TODO(bengreenier): we can and should derive isDirectory
+
+    #Temporary change working directory to local depot tools path
+    Utility.pushd(Settings.localDepotToolsPath)
+    
+    operationDetails = path + ' from bucket \'' + bucket
+    cls.logger.info('Downloading ' + operationDetails + '\'...')
+
+    #Run download
+    flag = '-d' if isDirectory else '-s'
+    modifier = '-r' if shouldRecurse else ''
+    cmd = 'python download_from_google_storage.py --bucket ' + bucket + ' ' + flag + ' ' + path + ' ' + modifier
+
+    result = Utility.runSubprocess([cmd], Settings.logLevel == 'DEBUG')
+
+    #Switch to previous working directory
+    Utility.popd()
+
+    if result != NO_ERROR:
+      ret = False
+      cls.logger.error('Failed downloading ' + operationDetails)
+    
+    return ret
   #---------------------------------- Private methods --------------------------------------------
   @classmethod
   def __createUserDefFile(cls):
@@ -383,42 +419,6 @@ class System:
     if not result:
       ret = False
       cls.logger.error('Failed downloading ' + toolName)
-    
-    return ret
-
-  @classmethod
-  def downloadFromGoogle(cls, bucket, path, isDirectory = False, shouldRecurse = True):
-    """
-      Download content from the google storage buckets
-      :param bucket: the name of the google bucket to download from
-      :param path: the path to a sha1 file OR the path to a directory containing sha1 files
-      :param isDirectory: must be True is path is a file, and False if path is a directory
-      :param shouldRecurse: only used if path is a directory, True to recursively scan for sha1 files, False to not
-      :return ret: True if successfully downloaded.
-    """
-    ret = True
-
-    #TODO(bengreenier): we can and should derive isDirectory
-
-    #Temporary change working directory to local depot tools path
-    Utility.pushd(Settings.localDepotToolsPath)
-    
-    operationDetails = path + ' from bucket \'' + bucket
-    cls.logger.info('Downloading ' + operationDetails + '\'...')
-
-    #Run download
-    flag = '-d' if isDirectory else '-s'
-    modifier = '-r' if shouldRecurse else ''
-    cmd = 'python download_from_google_storage.py --bucket ' + bucket + ' ' + flag + ' ' + path + ' ' + modifier
-
-    result = Utility.runSubprocess([cmd], Settings.logLevel == 'DEBUG')
-
-    #Switch to previous working directory
-    Utility.popd()
-
-    if result != NO_ERROR:
-      ret = False
-      cls.logger.error('Failed downloading ' + operationDetails)
     
     return ret
 
