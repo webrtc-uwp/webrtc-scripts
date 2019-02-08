@@ -111,3 +111,5 @@ userdef.py
 
 # Visual Studio Code generated files
 .vscode
+
+*.bak

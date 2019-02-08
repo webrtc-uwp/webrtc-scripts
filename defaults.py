@@ -6,45 +6,6 @@
 #args.gn template path
 webRTCGnArgsTemplatePath='./webrtc/windows/templates/gns/args.gn'
 
-#Path where nuget package and all of the files used to create the package are stored
-nugetFolderPath = './webrtc/windows/nuget'
-nugetVersionInfo = {
-                      #Main version number of the NuGet package 
-                      'number': '66',
-                      #False if not prerelease, Default is based on previous version, False if not prerelease
-                      'prerelease': 'Default'
-                   }
-#Imput NuGet package version number manualy, used if selected version number does not exist on nuget.org, E.g., '1.66.0.3-Alpha'
-manualNugetVersionNumber = ''
-
-#Path to a release notes file
-releaseNotePath = 'releases.txt'
-
-#Information about the sample to be updated
-updateSampleInfo = {
-                      'package' : 'default',
-                      'samples' : [
-                        {
-                          'name' : 'PeerCC',
-                          'url' : 'https://github.com/webrtc-uwp/PeerCC-Sample',
-                          'branch': 'webrtc_merge_m66'
-                        }
-                      ]
-                   }
-
-#List of NuGet packages used to manualy publish nuget packages, E.g., 'webrtc.1.66.0.3-Alpha.nupkg'
-#Packages must be placed in a folder referenced in nugetFolderPath variable
-nugetPackagesToPublish = []
-
-#API key used to publish nuget packages nuget.org
-nugetAPIKey = ''
-
-#URL for the nuget server, if 'default' nuget.org is used
-nugetServerURL = 'default'
-
-#Output path where will be stored nuget package as well as libs and pdbs
-#releaseOutputPath = '.'
-
 #Supported platforms for specific host OS 
 supportedPlatformsForHostOs = { 
                                 'windows' : ['win', 'winuwp'],
@@ -170,3 +131,41 @@ availableTargetsForBuilding = {
                                                     ),    
                               }
                               
+#Path where nuget package and all of the files used to create the package are stored
+nugetFolderPath = './webrtc/windows/nuget'
+nugetVersionInfo = {
+                      #Main version number of the NuGet package 
+                      'number': '66',
+                      #False if not prerelease, Default is based on previous version, False if not prerelease
+                      'prerelease': 'Default'
+                   }
+#Imput NuGet package version number manualy, used if selected version number does not exist on nuget.org, E.g., '1.66.0.3-Alpha'
+manualNugetVersionNumber = ''
+
+#Path to a release notes file
+releaseNotePath = 'releases.txt'
+
+#Information about the sample to be updated
+updateSampleInfo = {
+                      'package' : 'default',
+                      'samples' : [
+                        {
+                          'name' : 'PeerCC',
+                          'url' : 'https://github.com/webrtc-uwp/PeerCC-Sample',
+                          'branch': 'webrtc_merge_m66'
+                        }
+                      ]
+                   }
+
+#List of NuGet packages used to manualy publish nuget packages, E.g., 'webrtc.1.66.0.3-Alpha.nupkg'
+#Packages must be placed in a folder referenced in nugetFolderPath variable
+nugetPackagesToPublish = []
+
+#API key used to publish nuget packages nuget.org
+nugetAPIKey = ''
+
+#URL for the nuget server, if 'default' nuget.org is used
+nugetServerURL = 'default'
+
+#Output path where will be stored nuget package as well as libs and pdbs
+#releaseOutputPath = '.'
