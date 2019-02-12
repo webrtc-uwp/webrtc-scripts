@@ -1,6 +1,7 @@
 import os
 import platform
 import sys
+import re
 import subprocess
 import traceback
 from importlib import import_module
@@ -495,3 +496,47 @@ class System:
       cls.logger.debug('Clang-cl.exe is found.')
     
     return ret
+
+  @classmethod
+  def getEnvFromBat(cls):
+    """Given a bat command, runs it and returns env vars set by it."""
+    cmd = '\"' +  Settings.vcvarsallPath + '\" '
+    cpu_arg = "amd64"
+    """ if (cpu != 'x64'):
+        # x64 is default target CPU thus any other CPU requires a target set
+        cpu_arg += '_' + cpu"""
+    cmd += cpu_arg
+    cmd += ' && set'
+    popen = subprocess.Popen(
+        cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    variables, _ = popen.communicate()
+    if popen.returncode != 0:
+      raise Exception('"%s" failed with error %d' % (cmd, popen.returncode))
+      #else:
+      #parse variables
+    return variables
+
+  @classmethod
+  def logEnvIncludeAndLibPaths(cls, platform, cpu, path):
+    """
+      Print include and lib paths for build environment.
+      :param platform: Platform of interest ('win' or 'winuwp').
+      :param cpu: CPU of interest.
+      :param path: Folder path where is save environment file.
+    """
+    if os.path.exists(path):
+      if platform == 'winuwp':
+        environmentPath = os.path.join(path, 'environment.store_' + cpu)
+      else:
+        environmentPath = os.path.join(path, 'environment.' + cpu)
+      
+      if os.path.isfile(environmentPath):
+        textfile = open(environmentPath, "r")
+        filetext = textfile.read()
+        textfile.close()
+        for envVariable in Settings.logNinjaEnvironmentFileVariables:
+          regex = r'\x00' + envVariable + '=(.*)\x00'
+          includeStr = re.findall(regex,filetext)
+          cls.logger.debug('\n\n' + envVariable + ': \n' + str(includeStr))
+    else:
+      cls.logger.error('environment file is missing!')

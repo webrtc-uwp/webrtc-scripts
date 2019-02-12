@@ -119,6 +119,7 @@ class Settings:
 
     cls.logFormat = logFormat
     cls.logLevel = logLevel
+    cls.logNinjaEnvironmentFileVariables = logNinjaEnvironmentFileVariables
     cls.logToFile = logToFile
     cls.overwriteLogFile = overwriteLogFile
 

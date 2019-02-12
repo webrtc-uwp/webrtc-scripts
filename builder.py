@@ -59,6 +59,8 @@ class Builder:
     #Change current working directory to one with generated projects
     Utility.pushd(workingDir)
 
+    if Settings.logLevel == 'DEBUG':
+      System.logEnvIncludeAndLibPaths(platform,cpu,'.')
     #Start building and merging libraries
     ret = cls.buildTargets(targets, cpu)
 
@@ -316,3 +318,4 @@ class Builder:
       targetsToBuild, shouldCombineLibs, shouldCopyToOutput = config.TARGETS_TO_BUILD.get(target,([target],0,1))
     
     return targetsToBuild, shouldCombineLibs, shouldCopyToOutput
+    

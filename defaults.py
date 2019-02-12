@@ -87,6 +87,9 @@ logFormat = '[%(levelname)-17s] - [%(name)-15s] - %(funcName)-30s - %(message)s 
 #Supported log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL (case sensitive)
 logLevel = 'DEBUG'
 
+#Select ninja environemnt variables whose values will be logged. Available values are 'LIB', 'PATHEXT', 'LIBPATH', 'PATH', 'SYSTEMROOT', 'INCLUDE'
+logNinjaEnvironmentFileVariables = ['INCLUDE', 'LIBPATH']
+
 #Log filename. If it is empty string, log will be shown in console. 
 #In other case, it will log to specified file in folder from where script is run.
 logToFile = ''
