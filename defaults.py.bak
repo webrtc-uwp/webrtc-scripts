@@ -54,7 +54,7 @@ supportedPlatformsForHostOs = {
 
 #Supported cpus for specific platform
 supportedCPUsForPlatform = { 
-                              'winuwp'  : ['arm', 'arm64', 'x86', 'x64'],
+                              'winuwp'  : ['arm', 'x86', 'x64'],
                               'win'     : ['x86', 'x64'],
                               'ios'     : ['arm'],
                               'mac'     : [ 'x86', 'x64'],
@@ -85,9 +85,8 @@ targetProgrammingLanguage = [ 'cx', 'cppwinrt', 'c', 'dotnet', 'python' ]
 #'publishnuget' : Publishes nuget package
 #'uploadbackup' : Creates a zipp file with pdb files and nuget package based on configuration and uploads it to onedrive
 #List of actions to perform
-actions = [ 'prepare', 'build' ]
+actions = [ 'prepare', 'build', 'backup' ]
 
-buildWithClang = False
 #Flag if wrapper library should be built. If it is False, it will be built only native libraries
 buildWrapper = True  
 
@@ -152,21 +151,3 @@ enabledBackup = False
 libsBackupPath = './Backup'
 #Flag for overwriting current backup folder
 overwriteBackup = False
-
-#Additional targets that can be built
-#'target_name' : Name of target to build. You can name target as your wish.
-#                e.g. peercc_server. It is dictionary key for a list
-#                of gn targets that will be built for target you define, 
-#                flag for linking obj files. (0 don't link, 1 link) and 
-#                flag for copying libs, exes and pdbs to OUTPUT folder.
-# {
-#   'target_name'  : ( [list of gn target paths], merging libs flag, copying to ouptut flag ),    
-# }
-availableTargetsForBuilding = {
-                                'peercc_server'  : (
-                                                      [ 
-                                                        'peerconnection_server'
-                                                      ],0,1
-                                                    ),    
-                              }
-                              

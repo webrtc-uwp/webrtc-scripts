@@ -8,7 +8,7 @@ from utility import Utility
 from settings import Settings
 from system import System
 from logger import Logger
-from helper import convertToPlatformPath, iterateDict, bool_to_str
+from helper import convertToPlatformPath
 import errors
 from errors import NO_ERROR
 
@@ -26,7 +26,7 @@ class Preparation:
 
     #Create logger
     cls.logger = Logger.getLogger('Prepare')
-    
+
     #Set working directory to ./webrtc/xplatform/webrtc
     if not os.path.exists(Settings.webrtcPath):
       System.stopExecution(1, 'Unable to set preparation working directory')
@@ -55,7 +55,8 @@ class Preparation:
 
       #If win is one of the selected platforms it is required to have clang-cl.
       #It is called here becuae proper folders structure is required to execute update script
-      if not System.downloadClangClIfMissing() and ret == NO_ERROR:
+      if 'win' in Settings.targetPlatforms:
+        if not System.downloadClangClIfMissing() and ret == NO_ERROR:
          ret = errors.ERROR_PREPARE_INSTALLING_CLANG_FAILED
         
       #Download missing build tools
@@ -66,10 +67,8 @@ class Preparation:
       ret = errors.ERROR_PREPARE_SET_UP_FAILED
       cls.logger.error(str(error))
     finally:
-      #Remove logger handlers added in third party scripts. (e.g. Google's lastchange.py)
-      Logger.cleanThirdPartyLoggers()
       Utility.popd()
-    
+
     return ret
     
   @classmethod
@@ -85,6 +84,7 @@ class Preparation:
     start_time = time.time()
     ret = NO_ERROR
     cls.executionTime = 0
+    mainBuildGnFilePath = None
 
     cls.logger.info('Runnning preparation for target: ' + target + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration)
 
@@ -96,17 +96,18 @@ class Preparation:
     ret = cls.__prepareOutputFolder(gnOutputPath, target, platform, cpu, configuration)
 
     if ret == NO_ERROR:
+      mainBuildGnFilePath = os.path.join(Settings.webrtcPath,'BUILD.gn')
       
       #Backup original BUILD.gn from webrtc root folder and add additional dependecies to webrtc target
-      if Utility.backUpAndUpdateGnFile(Settings.mainBuildGnFilePath,config.WEBRTC_TARGET,config.ADDITIONAL_TARGETS_TO_ADD):
+      if Utility.backUpAndUpdateGnFile(mainBuildGnFilePath,config.WEBRTC_TARGET,config.ADDITIONAL_TARGETS_TO_ADD):
         #Generate ninja files and VS projects
         ret = cls.__generateProjects(gnOutputPath)
       else:
         ret = errors.ERROR_PREPARE_UPDATING_DEPS_FAILED
 
     #Delete updated BUILD.gn from webrtc root folder and recover original file
-    Utility.returnOriginalFile(Settings.mainBuildGnFilePath)
-
+    if mainBuildGnFilePath != None:
+      Utility.returnOriginalFile(mainBuildGnFilePath)
     Utility.popd()
     
     if ret == NO_ERROR:
@@ -147,8 +148,7 @@ class Preparation:
       #Update target platform and cpu in copied args.gn file
       with open(argsPath) as argsFile:
         cls.logger.debug('Updating args.gn file. Target OS: ' + platform + '; Target CPU: ' + cpu)
-        newArgs=argsFile.read().replace('-target_os-', platform).replace('-target_cpu-', cpu)
-        newArgs=newArgs.replace('-is_debug-',str(configuration.lower() == 'debug').lower()).replace('-is_clang-',bool_to_str(Settings.buildWithClang).lower())
+        newArgs=argsFile.read().replace('-target_os-', platform).replace('-target_cpu-', cpu).replace('-is_debug-',str(configuration.lower() == 'debug').lower())
       with open(argsPath, 'w') as argsFile:
         argsFile.write(newArgs)
     except Exception as error:
@@ -175,7 +175,7 @@ class Preparation:
       cls.logger.info('Generating webrtc projects ...')
 
       #Generate Webrtc projects
-      cmd = 'gn gen ' + gnOutputPath + ' --ide=' + config.VISUAL_STUDIO_VERSION + ' -v'
+      cmd = 'gn gen ' + gnOutputPath + ' --ide=' + config.VISUAL_STUDIO_VERSION
       result = Utility.runSubprocess([cmd], Settings.logLevel == 'DEBUG',my_env)
       if result != 0:
         ret = errors.ERROR_PREPARE_GN_GENERATION_FAILED

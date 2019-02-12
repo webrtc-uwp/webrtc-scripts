@@ -40,18 +40,6 @@ def iterateDict(dictonary):
   else: 
     return iter(dictonary.items())
 
-def str_to_bool(value):
-  if value.lower() == 'true':
-    return True
-  else:
-    return False
-
-def bool_to_str(value):
-  if value:
-    return 'True'
-  else:
-    return 'False'
-
 def module_exists(module_name):
   """
   :param module_name: name of the module that needs to be checked.
