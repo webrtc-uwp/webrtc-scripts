@@ -175,3 +175,5 @@ nugetServerURL = 'default'
 
 #Output path where will be stored nuget package as well as libs and pdbs
 #releaseOutputPath = '.'
+
+enableIdlImpl = False

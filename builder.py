@@ -168,8 +168,12 @@ class Builder:
       for target in targets:
         cls.logger.debug('Building target ' + target)
         my_env = os.environ.copy()
-        my_env["DEPOT_TOOLS_WIN_TOOLCHAIN"] = "0"    
+        my_env["DEPOT_TOOLS_WIN_TOOLCHAIN"] = "0"
         
+        #Used to set pass impl flag to idl compiler
+        if Settings.enableIdlImpl:
+          my_env['IDL_COMPILER_IMPL'] = "1" 
+
         #Backup original BUILD.gn from webrtc root folder and add additional dependecies to webrtc target.
         #This is necessary to do, because ninja regenerates ninja files at startup, and it is required 
         # to have the sam BUILD.gn as in prepare process.

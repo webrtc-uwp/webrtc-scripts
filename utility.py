@@ -485,10 +485,11 @@ class Utility:
       cls.actviveSubprocessList.append(process)
 
       #Enable showing subprocess output and responsiveness on keyboard actions (terminating script on user action) 
-      process.communicate()
+      stdout, stderr = process.communicate()
 
       if process.returncode != 0:
         result = ERROR_SUBPROCESS_EXECUTAION_FAILED
+        cls.logger.error(str(stderr))
 
     except Exception as error:
       result = ERROR_SUBPROCESS_EXECUTAION_FAILED

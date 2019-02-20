@@ -202,6 +202,11 @@ class Settings:
 
     cls.availableTargetsForBuilding = availableTargetsForBuilding
 
+    if cls.inputArgs.idlImpl:
+      cls.enableIdlImpl = cls.inputArgs.idlImpl
+    else:
+      cls.enableIdlImpl = enableIdlImpl
+      
   @classmethod
   def getGnOutputPath(cls, path, target, platform, cpu, configuration):
     """

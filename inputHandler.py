@@ -49,4 +49,6 @@ class Input:
     
     parser.add_argument('--setservernoteversion', action='store_true', help='Set release notes version from latest nuget package on nuget.org')
     
+    parser.add_argument('--idlImpl', action='store_true', help='Pass impl flag when compiling idls.')
+    
     Settings.inputArgs = parser.parse_args()
