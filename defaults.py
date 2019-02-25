@@ -138,11 +138,11 @@ availableTargetsForBuilding = {
                               }
                               
 #Path where nuget package and all of the files used to create the package are stored
-nugetFolderPath = './webrtc/windows/nuget'
+nugetFolderPath = './nugetpackages'
 nugetVersionInfo = {
                       #Main version number of the NuGet package 
-                      'number': '66',
-                      #False if not prerelease, Default is based on previous version, False if not prerelease
+                      'number': '71',
+                      # 'False' or '' if not prerelease, Default is based on previous version
                       'prerelease': 'Default'
                    }
 #Imput NuGet package version number manualy, used if selected version number does not exist on nuget.org, E.g., '1.66.0.3-Alpha'
