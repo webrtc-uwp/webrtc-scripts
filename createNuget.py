@@ -66,7 +66,7 @@ class CreateNuget:
             if ret == NO_ERROR:
                 ret = cls.create_versions_storage(cls.versions, target)
             if ret == NO_ERROR:
-                ret = cls.get_latest_version(versionInfo['number'], target, versionInfo['prerelease'])
+                ret = cls.get_latest_version(versionInfo['number'], target, versionInfo['format'], versionInfo['prerelease'])
         else:
             cls.version = Settings.manualNugetVersionNumber
         if ret == NO_ERROR:
@@ -263,7 +263,7 @@ class CreateNuget:
         return ret
 
     @classmethod
-    def get_latest_version(cls, version, target, prerelease="Default"):
+    def get_latest_version(cls, version, target, v_format, prerelease="Default"):
         """
         Determines the full version number for the selected NuGet package version
         :param version: Version of the package that is to be built
@@ -275,7 +275,7 @@ class CreateNuget:
         ret = NO_ERROR
         with open(cls.versions_file, 'r') as f:
             all_versions = json.load(f)
-        if prerelease is 'false' or prerelease is 'False' or prerelease is '':
+        if prerelease is '':
             prerelease = False
         if version in all_versions[target]:
             this_version = all_versions[target][version]
@@ -292,7 +292,7 @@ class CreateNuget:
             cls.version = format_version
         # If the selected major version number has not been published, publish it's initial version.
         elif version not in all_versions[target]:
-            new_version = '1.' + version + '.0.1-Alpha'
+            new_version = v_format.replace('[number]', version)
             cls.version = new_version
         else:
             cls.logger.error("Failed retreve latest version of NuGet package for target: " + target)

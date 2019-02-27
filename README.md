@@ -198,8 +198,10 @@ To select nuget package version, change the `nugetVersionInfo` in userdef.py, th
 nugetVersionInfo = {
                       #Main version number of the NuGet package 
                       'number': '71',
-                      #'False' or '' if not prerelease, Default is based on previous version
-                      'prerelease': 'Default'
+                      #Use '' if not prerelease, 'Default' is based on previous version
+                      'prerelease': 'Default',
+                      #Initial version number format
+                      'format': '1.[number].0.1-Alpha'
                    }
 ```
 To create a NuGet package with a custom version number, use `manualNugetVersionNumber` variable in userdef.py to manually add in a version of the nuget package, for example:
