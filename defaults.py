@@ -142,7 +142,7 @@ nugetFolderPath = './nugetpackages'
 nugetVersionInfo = {
                       #Main version number of the NuGet package 
                       'number': '71',
-                      #Use '' if not prerelease, 'Default' is based on previous version
+                      #Use '' if not prerelease, 'Default' is based on previous version, or use some other prerelease ('Alpha', 'Beta', ...)
                       'prerelease': 'Default',
                       #Initial version number format
                       'format': '1.[number].0.1[prerelease]'

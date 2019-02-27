@@ -268,8 +268,9 @@ class CreateNuget:
         Determines the full version number for the selected NuGet package version
         :param version: Version of the package that is to be built
         :param target: webrtc
+        :param v_format: format for the initial version number of the NuGet package e.g. '1.[number].0.1[prerelease]'.
         :param prerelease: By default selects version number will have the same prerelease value as the previous one
-            If the version is not prerelease, the value of prerelease parameter should be False
+            If the version is not prerelease, the value of prerelease parameter should be '' (empty string)
             If the prerelease type is different put that type in the prerelease parameter instead
         """
         ret = NO_ERROR
@@ -285,7 +286,7 @@ class CreateNuget:
             format_version += str(build_no)
             if "prerelease" in this_version and prerelease is "Default":
                 format_version += '-' + str(this_version["prerelease"])
-            if prerelease is not "Default" and prerelease is not '':
+            elif prerelease is not '':
                 format_version += '-' + prerelease
             cls.version = format_version
         # If the selected major version number has not been published, publish it's initial version.
