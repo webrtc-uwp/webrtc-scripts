@@ -6,8 +6,7 @@ import time
 from xml.etree import ElementTree as ET
 
 from errors import NO_ERROR, ERROR_NUGET_CREATION_MISSING_FILE, ERROR_GET_NUGET_PACKAGE_VERSIONS_FAILED,\
-ERROR_PACKAGE_VERSION_NOT_SUPPORTED, ERROR_CREATE_NUGET_FILE_FAILED,\
-ERROR_CHANGE_NUSPEC_FAILED
+ERROR_PACKAGE_VERSION_NOT_SUPPORTED, ERROR_CREATE_NUGET_FILE_FAILED, ERROR_CHANGE_NUSPEC_FAILED
 import config
 from logger import Logger,ColoredFormatter
 from settings import Settings
@@ -67,7 +66,7 @@ class CreateNuget:
             if ret == NO_ERROR:
                 ret = cls.create_versions_storage(cls.versions, target)
             if ret == NO_ERROR:
-                ret = cls.get_latest_version(versionInfo['number'], target, versionInfo['prerelease'])
+                ret = cls.get_latest_version(versionInfo['number'], target, versionInfo['format'], versionInfo['prerelease'])
         else:
             cls.version = Settings.manualNugetVersionNumber
         if ret == NO_ERROR:
@@ -264,12 +263,14 @@ class CreateNuget:
         return ret
 
     @classmethod
-    def get_latest_version(cls, version, target, prerelease="Default"):
+    def get_latest_version(cls, version, target, v_format, prerelease="Default"):
         """
         Determines the full version number for the selected NuGet package version
         :param version: Version of the package that is to be built
+        :param target: webrtc
+        :param v_format: format for the initial version number of the NuGet package e.g. '1.[number].0.1[prerelease]'.
         :param prerelease: By default selects version number will have the same prerelease value as the previous one
-            If the version is not prerelease, the value of prerelease parameter should be False
+            If the version is not prerelease, the value of prerelease parameter should be '' (empty string)
             If the prerelease type is different put that type in the prerelease parameter instead
         """
         ret = NO_ERROR
@@ -285,13 +286,20 @@ class CreateNuget:
             format_version += str(build_no)
             if "prerelease" in this_version and prerelease is "Default":
                 format_version += '-' + str(this_version["prerelease"])
-            if prerelease is 'false' or prerelease is 'False':
-                prerelease = False
-            if prerelease is not "Default" and prerelease is not False:
+            elif prerelease is not '':
                 format_version += '-' + prerelease
             cls.version = format_version
+        # If the selected major version number has not been published, publish it's initial version.
+        elif version not in all_versions[target]:
+            new_version = v_format.replace('[number]', version)
+            if prerelease is 'Default':
+                new_version = new_version.replace('[prerelease]', '-Alpha')
+            elif prerelease is '':
+                new_version = new_version.replace('[prerelease]', '')
+            else:
+                new_version = new_version.replace('[prerelease]', '-'+prerelease)
+            cls.version = new_version
         else:
-            cls.logger.error(str(ERROR_PACKAGE_VERSION_NOT_SUPPORTED))
             cls.logger.error("Failed retreve latest version of NuGet package for target: " + target)
             ret = ERROR_PACKAGE_VERSION_NOT_SUPPORTED
         return ret

@@ -8,11 +8,13 @@ nugetFolderPath = './nugetpackages'
 nugetVersionInfo = {
                       #Main version number of the NuGet package 
                       'number': '71',
-                      #False if not prerelease, Default is based on previous version, False if not prerelease
-                      'prerelease': 'Default'
+                      #Use '' if not prerelease, 'Default' is based on previous version, or use some other prerelease ('Alpha', 'Beta', ...)
+                      'prerelease': 'Default',
+                      #Initial version number format
+                      'format': '1.[number].0.1[prerelease]'
                    }
 #Imput NuGet package version number manualy, used if selected version number does not exist on nuget.org, E.g., '1.66.0.3-Alpha'
-manualNugetVersionNumber = '1.71.0.1-Alpha'
+manualNugetVersionNumber = ''
 
 #Path to a release notes file
 releaseNotePath = 'releases.txt'
