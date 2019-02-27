@@ -193,7 +193,7 @@ Creating NuGet package for WebRtc UWP can be done by running createnuget action.
    *Assuming the prepare and build has been done beforehand*
    
    ---
-To select nuget package version, change the `nugetVersionInfo` in userdef.py, this will to automatically select a version for the WebRtc package. Use `number` to select a major number that will determine which version of the WebRtc is used. Use `prerelease` to select what will be appended to the version number E.g., 'Alpha', 'Beta', by setting the value of `prerelease` to 'Default' prerelease will be taken from the last published package for the selected major number(`number`) of the WebRtc NuGet package. If there was no previously published version of the package for the selected version of the WebRtc, created package will automatically be an 'Alpha' prerelease.  
+To select nuget package version, change the `nugetVersionInfo` in userdef.py, this will to automatically select a version for the WebRtc package. Use `number` to select a major number that will determine which version of the WebRtc is used. Use `prerelease` to select what will be appended to the version number E.g., 'Alpha', 'Beta', by setting the value of `prerelease` to 'Default' prerelease will be taken from the last published package for the selected major number(`number`) of the WebRtc NuGet package. If there was no previously published version of the package for the selected version of the WebRtc, created package will automatically be an 'Alpha' prerelease if value of `prerelease` is 'Default'.  
 ```
 nugetVersionInfo = {
                       #Main version number of the NuGet package 
@@ -201,7 +201,7 @@ nugetVersionInfo = {
                       #Use '' if not prerelease, 'Default' is based on previous version
                       'prerelease': 'Default',
                       #Initial version number format
-                      'format': '1.[number].0.1-Alpha'
+                      'format': '1.[number].0.1[prerelease]'
                    }
 ```
 To create a NuGet package with a custom version number, use `manualNugetVersionNumber` variable in userdef.py to manually add in a version of the nuget package, for example:

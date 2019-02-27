@@ -145,7 +145,7 @@ nugetVersionInfo = {
                       #Use '' if not prerelease, 'Default' is based on previous version
                       'prerelease': 'Default',
                       #Initial version number format
-                      'format': '1.[number].0.1-Alpha'
+                      'format': '1.[number].0.1[prerelease]'
                    }
 #Imput NuGet package version number manualy, used if selected version number does not exist on nuget.org, E.g., '1.66.0.3-Alpha'
 manualNugetVersionNumber = ''

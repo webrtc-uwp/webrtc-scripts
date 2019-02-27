@@ -275,8 +275,6 @@ class CreateNuget:
         ret = NO_ERROR
         with open(cls.versions_file, 'r') as f:
             all_versions = json.load(f)
-        if prerelease is '':
-            prerelease = False
         if version in all_versions[target]:
             this_version = all_versions[target][version]
             build_no = int(this_version["build_number"])
@@ -287,12 +285,18 @@ class CreateNuget:
             format_version += str(build_no)
             if "prerelease" in this_version and prerelease is "Default":
                 format_version += '-' + str(this_version["prerelease"])
-            if prerelease is not "Default" and prerelease is not False:
+            if prerelease is not "Default" and prerelease is not '':
                 format_version += '-' + prerelease
             cls.version = format_version
         # If the selected major version number has not been published, publish it's initial version.
         elif version not in all_versions[target]:
             new_version = v_format.replace('[number]', version)
+            if prerelease is 'Default':
+                new_version = new_version.replace('[prerelease]', '-Alpha')
+            elif prerelease is '':
+                new_version = new_version.replace('[prerelease]', '')
+            else:
+                new_version = new_version.replace('[prerelease]', '-'+prerelease)
             cls.version = new_version
         else:
             cls.logger.error("Failed retreve latest version of NuGet package for target: " + target)
