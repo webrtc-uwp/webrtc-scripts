@@ -20,6 +20,9 @@ class NugetUtility:
         c) running command nuget 'nuget setapikey <key>' from the command line (assuming you have nuget cli installed)
     ===================================================================================================================
     """ + '\033[0m'
+  set_source_instruction = r"""
+  To make the updated sample work, please add nuget folder as a package source inside Visual Studio. 
+  You can do this by going to Tools>Options>Nuget Package Manager>Package Sources and clicking the green + sign at the top and changing the Source value at the bottom to: """
   @classmethod
   def setUp(cls):
       cls.logger = Logger.getLogger('nugetUtility')
@@ -126,29 +129,34 @@ class NugetUtility:
     srcName = name
     if convertToPlatformPath(Settings.nugetFolderPath) in convertToPlatformPath('./webrtc/windows/nuget'):
       srcName = 'SDK_NuGet_package'
-    #Package source path for the srcName (how it will be set in NuGet.Config)
     srcPath = os.path.abspath(Settings.nugetFolderPath)
     try:
-      result = NugetUtility.nuget_cli('sources', 'Add', '-Name', srcName, '-Source', srcPath)
+      # Add source only if nuget path is absolute.
+      if os.path.isabs(Settings.nugetFolderPath):        
+        result = NugetUtility.nuget_cli('sources', 'Add', '-Name', srcName, '-Source', srcPath)
 
-      if result == NO_ERROR:
-        cls.logger.debug('Package Source with Name: ' + srcName + ' and path: ' + srcPath + ' added successfully.')
-      #If package source with the same name already exists update path for that source
-      elif 'run update' in result and 'SDK NuGet package' in srcName:
-        cls.logger.debug('Running source update.')
-        NugetUtility.nuget_cli('sources', 'update', '-Name', srcName, '-Source', srcPath)
-        cls.logger.debug('Package Source with Name: ' + srcName + ' and path: ' + srcPath + ' updated successfully.')
-      elif name in srcName and 'alerady added' not in result:
-        number = re.search(r'\d+$', srcName)
-        # if srcName does't end in number add a number, else increment that number.
-        if number is None:
-          srcName = srcName + '_2'
-        else:
-          number = number.group()
-          newNumber = int(number) + 1
-          srcName = srcName.replace(str(number), str(newNumber))
-        #Add new name to nuget sources
-        NugetUtility.add_nuget_local_source(name=srcName)
+        if result == NO_ERROR:
+          cls.logger.debug('Package Source with Name: ' + srcName + ' and path: ' + srcPath + ' added successfully.')
+        #If package source with the same name already exists update path for that source
+        elif 'run update' in result and 'SDK NuGet package' in srcName:
+          cls.logger.debug('Running source update.')
+          NugetUtility.nuget_cli('sources', 'update', '-Name', srcName, '-Source', srcPath)
+          cls.logger.debug('Package Source with Name: ' + srcName + ' and path: ' + srcPath + ' updated successfully.')
+        elif name in srcName and 'alerady added' not in result:
+          number = re.search(r'\d+$', srcName)
+          # if srcName does't end in number add a number, else increment that number.
+          if number is None:
+            srcName = srcName + '_2'
+          else:
+            number = number.group()
+            newNumber = int(number) + 1
+            srcName = srcName.replace(str(number), str(newNumber))
+          #Add new name to nuget sources
+          NugetUtility.add_nuget_local_source(name=srcName)
+      else:
+        #Use variable to show instruction for setting up NuGet source manually
+        cls.setNugetSourceManualy = srcPath
+        cls.logger.warning(cls.set_source_instruction+srcPath)
     except Exception as error:
       cls.logger.error(str(error))
 

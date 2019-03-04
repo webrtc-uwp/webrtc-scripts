@@ -96,8 +96,6 @@ class CreateNuget:
             ret = cls.check_and_move(target, cls.version)            
         if ret == NO_ERROR:
             cls.logger.info('NuGet package created succesfuly: ' + cls.nugetFolderPath + '/' + cls.version)
-            #Add nuget folder as nuget source in Nuget.Config
-            NugetUtility.add_nuget_local_source()
             cls.delete_used()
         end_time = time.time()
         cls.executionTime = end_time - start_time

@@ -10,6 +10,7 @@ from prepare import Preparation
 from builder import Builder
 from cleanup import Cleanup
 from createNuget import CreateNuget
+from nugetUtility import NugetUtility
 from publishNuget import PublishNuget
 from releaseNotes import ReleaseNotes
 from uploadBackup import UploadBackup
@@ -306,6 +307,11 @@ def main():
 
     if ACTION_UPDATE_SAMPLE in Settings.actions:
       actionUpdatePublishedSample()
+    
+    #Show a message if NuGet source needs to be set manually
+    if NugetUtility.setNugetSourceManualy:
+      Logger.printColorMessage(NugetUtility.set_source_instruction+NugetUtility.setNugetSourceManualy,ColoredFormatter.YELLOW)
+
   except KeyboardInterrupt:
     handleKeyboardInterupt()
 

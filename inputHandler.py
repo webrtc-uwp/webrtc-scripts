@@ -38,6 +38,8 @@ class Input:
     parser.add_argument('--cleanOptions', nargs='*', choices=['cleanoutput', 'cleanidls', 'cleanuserdef','cleanprepare'], type=str.lower, help='Target build configuration')
     
     parser.add_argument('--clang', action='store_true', help='Build with clang')
+    
+    parser.add_argument('--prerelease', nargs='?', action='store', dest='cmdPrerelease', help='Set the prerelease for the created nuget package')
 
     parser.add_argument('--uploadurl', nargs='?', action='store', dest='uploadBackupURL', help='Cloud storrage URL to wich backup will be uploaded')
 
