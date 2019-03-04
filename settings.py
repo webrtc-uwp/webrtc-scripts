@@ -165,6 +165,9 @@ class Settings:
       cls.nugetAPIKey = cls.inputArgs.setnugetkey
       cls.runSetNugetKey = True
     
+    if cls.inputArgs.cmdPrerelease:
+      cls.nugetVersionInfo['prerelease'] = cls.inputArgs.cmdPrerelease
+    
     # If true sets release note version by geting latest published nuget version from nuget.org
     cls.setservernoteversion = False
     if cls.inputArgs.setservernoteversion:
