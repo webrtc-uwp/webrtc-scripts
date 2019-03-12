@@ -23,6 +23,7 @@ class NugetUtility:
   set_source_instruction = r"""
   To make the updated sample work, please add nuget folder as a package source inside Visual Studio. 
   You can do this by going to Tools>Options>Nuget Package Manager>Package Sources and clicking the green + sign at the top and changing the Source value at the bottom to: """
+  setNugetSourceManualy = False
   @classmethod
   def setUp(cls):
       cls.logger = Logger.getLogger('nugetUtility')
