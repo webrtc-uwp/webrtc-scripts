@@ -23,6 +23,7 @@ GN_TARGET_OUTPUT_PATH = '[GN_OUT]/[TARGET]_[PLATFORM]_[CPU]_[CONFIGURATION]'
 BUILT_LIBS_DESTINATION_PATH = '/[BUILD_OUTPUT]/[TARGET]/[PLATFORM]/[CPU]/[CONFIGURATION]/'
 
 #Paths are relative to the root SDK path
+LICENSE_PATH = './webrtc/windows/LICENSE'
 NUGET_TEMPLATES_FOLDER = './webrtc/windows/nuget/templates/'
 NUGET_LIBRARIES = '/libraries/[TARGET]/[PLATFORM]/[CPU]/[CONFIGURATION]/'
 NUGET_URL = 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe'
