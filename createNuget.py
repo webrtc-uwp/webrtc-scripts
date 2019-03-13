@@ -317,6 +317,8 @@ class CreateNuget:
             # Create libraries directory if needed
             if not os.path.exists(cls.nugetFolderPath + '/libraries'):
                 os.makedirs(cls.nugetFolderPath + '/libraries')
+            #Copy license file
+            shutil.copy(config.LICENSE_PATH, cls.nugetFolderPath+'/libraries/LICENSE.txt')
             
             for ft in f_type:
                 f_name = 'Org.' + target + ft
