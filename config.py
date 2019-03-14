@@ -218,7 +218,8 @@ COMBINE_LIB_FOLDERS = (
                         '/obj',
                         '/gen',
                         '/uwp_x86',
-                        '/uwp_x64'
+                        '/uwp_x64',
+                        '/uwp_arm'
                       )
 
 COMBINE_LIB_IGNORE_SUBFOLDERS = (

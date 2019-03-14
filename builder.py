@@ -318,7 +318,7 @@ class Builder:
     #Check if target is defined in userdef.py availableTargetsForBuilding. If not, returns target name as 
     # gn path and 0 for combininglibs flag. In that case check is performed also in config.py TARGETS_TO_BUILD
     targetsToBuild, shouldCombineLibs, shouldCopyToOutput = Settings.availableTargetsForBuilding.get(target,([target],0,1))
-    if targetsToBuild == target and shouldCombineLibs == 0:
+    if target in targetsToBuild and shouldCombineLibs == 0:
       targetsToBuild, shouldCombineLibs, shouldCopyToOutput = config.TARGETS_TO_BUILD.get(target,([target],0,1))
     
     return targetsToBuild, shouldCombineLibs, shouldCopyToOutput
