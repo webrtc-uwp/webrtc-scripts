@@ -5,13 +5,16 @@ import re
 import subprocess
 import traceback
 from importlib import import_module
-from _winreg import HKEY_LOCAL_MACHINE
+try:
+  from _winreg import HKEY_LOCAL_MACHINE
+except:
+  pass
 
 import config
 from utility import Utility
 from nugetUtility import NugetUtility
 from settings import Settings
-from logger import Logger
+from logger import Logger, ColoredFormatter
 import errors
 from errors import error_codes, NO_ERROR
 from helper import convertToPlatformPath, getCPUFamily
@@ -159,6 +162,22 @@ class System:
     ret = cls.checkVSDebugTools()
     
     return ret
+  
+  @classmethod
+  def checkIsPythonVersionSupported(cls):
+    """
+    Checks if the correct python version is being used.
+    :return: True/False based on python version.
+    """
+    python_version_number = str(sys.version_info.major) + '.' + str(sys.version_info.minor) + '.' + str(sys.version_info.micro)
+    if sys.version_info.major is not int(config.SUPPORTED_PYTHON_VERSION[0]):
+      Logger.printColorMessage('Google GN compilation requires Python version ' + 
+                                config.SUPPORTED_PYTHON_VERSION + ' but your python version is ' + 
+                                python_version_number + ' Please re-run using the proper version of Python.', 
+                                ColoredFormatter.RED)
+      return False
+    else:
+      return True
 
   @classmethod
   def checkVSDebugTools(cls):

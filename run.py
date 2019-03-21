@@ -321,4 +321,6 @@ def main():
   end_time = time.time()
   Summary.printSummary(end_time - start_time)
 
-if  __name__ =='__main__': main()
+if  __name__ =='__main__': 
+  if System.checkIsPythonVersionSupported() == True:
+    main()

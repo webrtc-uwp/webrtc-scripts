@@ -9,6 +9,9 @@ USER_DEFAULTS_FILE = 'userdef'
 #args.gn template path. 
 WEBRTC_GN_ARGS_TEMPLATE_PATH='./webrtc/windows/templates/gns/args.gn'
 
+#Supported Python version
+SUPPORTED_PYTHON_VERSION = '2.7.16'
+
 #Paths are relative to the root SDK path
 TEMPLATES_PATH = './templates'
 ORTC_DEFAULTS_PATH = './ortc'
