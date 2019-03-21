@@ -5,7 +5,10 @@ import re
 import subprocess
 import traceback
 from importlib import import_module
-from _winreg import HKEY_LOCAL_MACHINE
+try:
+  from _winreg import HKEY_LOCAL_MACHINE
+except:
+  pass
 
 import config
 from utility import Utility
@@ -159,6 +162,15 @@ class System:
     ret = cls.checkVSDebugTools()
     
     return ret
+  
+  @classmethod
+  def checkPythonVersion(cls):
+
+    python_version_number = str(sys.version_info.major) + '.' + str(sys.version_info.minor) + '.' + str(sys.version_info.micro)
+    if sys.version_info.major is not 2:
+      return ('\033[31m' + 'Google GN compilation requires Python version ' + 
+              config.PYTHON_VERSION + ' but your python version is ' + 
+              python_version_number + ' Please re-run using the proper version of Python.' + '\033[0m')
 
   @classmethod
   def checkVSDebugTools(cls):

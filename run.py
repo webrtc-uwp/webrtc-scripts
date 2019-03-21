@@ -321,4 +321,10 @@ def main():
   end_time = time.time()
   Summary.printSummary(end_time - start_time)
 
-if  __name__ =='__main__': main()
+if  __name__ =='__main__': 
+
+  checkPythonMessage = System.checkPythonVersion()
+  if checkPythonMessage:
+    print(checkPythonMessage)
+  else:
+    main()

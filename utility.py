@@ -5,7 +5,10 @@ import logging
 import subprocess
 import signal
 import shutil
-from _winreg import HKEY_LOCAL_MACHINE, OpenKey, QueryValueEx, CloseKey
+try:
+  from _winreg import HKEY_LOCAL_MACHINE, OpenKey, QueryValueEx, CloseKey
+except:
+  pass
 
 from logger import Logger
 from helper import convertToPlatformPath

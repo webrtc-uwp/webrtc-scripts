@@ -83,7 +83,7 @@ targetProgrammingLanguage = [ 'cx', 'cppwinrt', 'c', 'dotnet', 'python' ]
 #'publishnuget' : Publishes nuget package
 #'uploadbackup' : Creates a zipp file with pdb files and nuget package based on configuration and uploads it to onedrive
 #List of actions to perform
-actions = [ 'prepare', 'build', 'createnuget', 'releasenotes', 'publishnuget', 'updatesample' ]
+actions = [ 'prepare', 'build', 'backup', 'createnuget', 'releasenotes', 'publishnuget', 'updatesample' ]
 
 #Flag if wrapper library should be built. If it is False, it will be built only native libraries
 buildWrapper = True  
