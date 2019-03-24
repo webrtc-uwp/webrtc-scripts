@@ -84,6 +84,7 @@ class UploadBackup:
                 count += 1
         file_no = 0
         nugetPackage = False
+        Utility.pushd(Settings.rootSdkPath)
         #Get nuget package that was just created
         if hasattr(CreateNuget, 'version'):
             #Path to a newly created nuget package
@@ -104,10 +105,12 @@ class UploadBackup:
                 nugetPackage = max(list_of_files, key=os.path.getctime)
         if nugetPackage is not False:
             zipf.write(nugetPackage, os.path.basename(nugetPackage))
+            cls.logger.debug('Zipping nuget package: ' + convertToPlatformPath(nugetPackage))
         else:
             cls.logger.warning('Missing NuGet package!')
+        Utility.popd()
             
-        cls.logger.debug('Zipping pdb files:')
+        cls.logger.debug('Zipping pdb files.')
         toolbar_width = 60
         sys.stdout.write("[%s]" % (" " * toolbar_width))
         sys.stdout.flush()
@@ -142,13 +145,14 @@ class UploadBackup:
         Get the latest backup folder name
         :return latest_backup: Name of the latest backup folder
         """
+        backupName = os.path.basename(Settings.libsBackupPath)
         latest_backup = ''
-        all_backups = [b_dir for b_dir in os.listdir('.') if os.path.isdir(b_dir) and 'Backup' in b_dir]
+        all_backups = [b_dir for b_dir in os.listdir('.') if os.path.isdir(b_dir) and backupName in b_dir]
 
         if len(all_backups) > 1:
-            all_backups.remove('Backup')
-            latest_backup = max(datetime.strptime(date, 'Backup_%Y-%m-%d_%H-%M-%S') for date in all_backups)
-            latest_backup = latest_backup.strftime('Backup_%Y-%m-%d_%H-%M-%S')
+            all_backups.remove(backupName)
+            latest_backup = max(datetime.strptime(date, backupName + '_%Y-%m-%d_%H-%M-%S') for date in all_backups)
+            latest_backup = latest_backup.strftime(backupName + '_%Y-%m-%d_%H-%M-%S')
         elif len(all_backups) == 1:
             latest_backup = all_backups[0]
         return latest_backup
@@ -218,6 +222,7 @@ class UploadBackup:
             cls.logger.error(err)
         if file_name in output:
             ret = NO_ERROR
+            cls.logger.debug('Backup uploaded successfully.')
         else:
             ret = ERROR_UPLOAD_BACKUP_FAILED
     
