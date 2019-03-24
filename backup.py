@@ -52,6 +52,10 @@ class Backup:
       nativeDestinationPath = os.path.join(cls.backupPath,targetFolder,'native')
       if not Utility.copyFolder(nativeOutputPathLib, nativeDestinationPath):
         ret = errors.ERROR_BUILD_BACKUP_FAILED
+      if ret == NO_ERROR:
+        cls.logger.debug("Native output copied: " + nativeOutputPathLib)
+      else:
+        cls.logger.error("Failed to copy native output: " + nativeOutputPathLib)
 
     if ret == NO_ERROR:  
       if Settings.buildWrapper:
@@ -64,6 +68,10 @@ class Backup:
           wrapperDestinationPath = os.path.join(cls.backupPath,targetFolder,'wrapper')
           if not Utility.copyFolder(wrapperOutputPath, wrapperDestinationPath):
             ret = errors.ERROR_BUILD_BACKUP_FAILED
+          if ret == NO_ERROR:
+            cls.logger.debug("Wrapper projects copied: " + wrapperOutputPath)
+          else:
+            cls.logger.error("Failed to copy wrapper projects: " + wrapperOutputPath)
         else:
           cls.logger.warning('Wrapper output folder doesn\'t exist!')
 
