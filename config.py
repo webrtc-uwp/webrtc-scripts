@@ -222,7 +222,8 @@ COMBINE_LIB_FOLDERS = (
                         '/gen',
                         '/uwp_x86',
                         '/uwp_x64',
-                        '/uwp_arm'
+                        '/uwp_arm',
+                        '/win_clang_x64'
                       )
 
 COMBINE_LIB_IGNORE_SUBFOLDERS = (
