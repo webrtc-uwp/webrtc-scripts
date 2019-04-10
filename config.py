@@ -297,8 +297,8 @@ FILES_TO_COPY_FOR_WRAPPER_BUILD = [
                 ]
 
 RUNTIME_STORE_DLLS = {
-                        'Debug' :  [ 'msvcp140d_app.dll', 'vcruntime140d_app.dll' ],
-                        'Release' :  [ 'msvcp140_app.dll', 'vcruntime140_app.dll' ]
+                        'debug' :  [ 'msvcp140d_app.dll', 'vcruntime140d_app.dll' ],
+                        'release' :  [ 'msvcp140_app.dll', 'vcruntime140_app.dll' ]
                       }
 
 ACTION_START_MESSAGE = '\n===================================== [ACTION] STARTED =====================================\n'
