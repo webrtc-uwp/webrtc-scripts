@@ -129,6 +129,9 @@ class Preparation:
     #Delete updated BUILD.gn from webrtc root folder and recover original file
     Utility.returnOriginalFile(Settings.mainBuildGnFilePath)
 
+    if Settings.includeTests and platform == 'winuwp':
+      cls.copyStoreRuntimeDlls(cpu,configuration,gnOutputPath)
+
     Utility.popd()
     
     if ret == NO_ERROR:
@@ -255,3 +258,44 @@ class Preparation:
       Utility.popd()
 
     return ret
+
+  @classmethod
+  def copyStoreRuntimeDlls(cls, cpu, configuration, destinatioPath):
+    """
+
+    """
+    runtimeDllsInPlace = True
+    for file in config.RUNTIME_STORE_DLLS[configuration]:
+      destinationFile =  os.path.join(destinatioPath, file)
+      runtimeDllsInPlace = runtimeDllsInPlace and os.path.isfile(destinationFile)
+
+    if runtimeDllsInPlace:
+      return runtimeDllsInPlace
+
+    programFilesPath = os.environ['ProgramFiles']
+    windowsAppPath = os.path.join(programFilesPath, 'WindowsApps\\')
+    mainVersionNumber = Settings.msvcToolsVersion.split('.')[0]
+    buildVersionNumber = Settings.msvcToolsVersion.split('.')[-1]
+    counter = 1
+    found = False
+    while counter >= 0 and not found: 
+      pathToUse = config.VC_LIBS_STORE_PATH.replace('[MAIN_VERSION_NUMBER]',mainVersionNumber).replace('[BUILD_VERSION_NUMBER]',buildVersionNumber).replace('[COUNTER]',str(counter)).replace('[CPU]',cpu)
+      windowsAppPath = os.path.join(windowsAppPath,pathToUse)
+      if os.path.isdir(windowsAppPath):    
+        for root, dirs, files in os.walk(windowsAppPath):
+          for file in files:
+            if file in config.RUNTIME_STORE_DLLS[configuration]:
+              if cpu in root:
+                sourceFile =  os.path.join(root, file)
+                destinationFile =  os.path.join(destinatioPath, file)
+                Utility.copyFile(sourceFile,destinationFile)
+                counter=-1
+                found = True
+      else:
+        counter -= 1
+
+    if not found:
+      for file in config.RUNTIME_STORE_DLLS[configuration]:
+        sourceFile =  os.path.join(destinatioPath, file.replace('_app',''))
+        destinationFile =  os.path.join(destinatioPath, file)
+        Utility.copyFile(sourceFile,destinationFile)

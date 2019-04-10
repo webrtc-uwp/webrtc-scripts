@@ -183,7 +183,8 @@ class Settings:
     cls.msvcToolsPath = ''
     cls.msvcToolsBinPath = ''
     cls.vcvarsallPath = ''
-
+    cls.msvcToolsVersion = ''
+    
     #Dictionary with additional configuration for each action and default values. Initially dictionary values are already set values (passed from command line, or read from userdef)
     cls.__actionOptions = {
                     'targets' : cls.targets,

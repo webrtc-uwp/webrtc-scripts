@@ -171,7 +171,9 @@ MSVS_VERSIONS = (
 
 #MSVC tools path relative to VS path
 MSVC_TOOLS_PATH = '/VC/Tools/MSVC'
+VC_AUXILIARY_BUILD_PATH = '/VC/Auxiliary/Build'
 VCVARSALL_PATH = '/VC/Auxiliary/Build/vcvarsall.bat'
+VC_LIBS_STORE_PATH = 'Microsoft.VCLibs.140.00.Debug_[MAIN_VERSION_NUMBER].0.[BUILD_VERSION_NUMBER].[COUNTER]_[CPU]__8wekyb3d8bbwe'
 
 #Compiler otions combinations for host CPU and target CPU
 WINDOWS_COMPILER_OPTIONS = {
@@ -293,6 +295,11 @@ TARGET_WRAPPER_PROJECTS_OUTPUT_PATHS = {
 FILES_TO_COPY_FOR_WRAPPER_BUILD = [
                   {'../chromium/third_party/BUILD.gn' : './third_party/BUILD.gn'},
                 ]
+
+RUNTIME_STORE_DLLS = {
+                        'Debug' :  [ 'msvcp140d_app.dll', 'vcruntime140d_app.dll' ],
+                        'Release' :  [ 'msvcp140_app.dll', 'vcruntime140_app.dll' ]
+                      }
 
 ACTION_START_MESSAGE = '\n===================================== [ACTION] STARTED =====================================\n'
 ACTION_END_MESSAGE = '\n====================================== [ACTION] ENDED ======================================\n'
