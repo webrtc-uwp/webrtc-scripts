@@ -569,3 +569,18 @@ class Utility:
        cls.logger.error(str(error))
 
     return ret
+
+  @classmethod
+  def checkIfFolderContainsFiles(cls, folderPath, fileNames):
+    """
+      Checks if specified folder contains all specified files.
+      :param folderPath: Path of the folder where files will be searched
+      :param fileNames: list of the filenames to check
+      :return ret: True if all files are found, otherwise False
+    """
+    ret = True
+    for file in fileNames:
+      destinationFile =  os.path.join(folderPath, file)
+      ret = ret and os.path.isfile(destinationFile)
+
+    return ret

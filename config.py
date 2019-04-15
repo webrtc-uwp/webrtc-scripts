@@ -171,7 +171,9 @@ MSVS_VERSIONS = (
 
 #MSVC tools path relative to VS path
 MSVC_TOOLS_PATH = '/VC/Tools/MSVC'
+VC_AUXILIARY_BUILD_PATH = '/VC/Auxiliary/Build'
 VCVARSALL_PATH = '/VC/Auxiliary/Build/vcvarsall.bat'
+VC_LIBS_STORE_PATH = 'Microsoft.VCLibs.140.00.Debug_[MAIN_VERSION_NUMBER].0.[BUILD_VERSION_NUMBER].[COUNTER]_[CPU]__8wekyb3d8bbwe'
 
 #Compiler otions combinations for host CPU and target CPU
 WINDOWS_COMPILER_OPTIONS = {
@@ -222,7 +224,8 @@ COMBINE_LIB_FOLDERS = (
                         '/gen',
                         '/uwp_x86',
                         '/uwp_x64',
-                        '/uwp_arm'
+                        '/uwp_arm',
+                        '/win_clang_x64'
                       )
 
 COMBINE_LIB_IGNORE_SUBFOLDERS = (
@@ -268,7 +271,7 @@ NUGET_WINUWP_WEBRTC_SOLUTION = 'WebRtc.Wrapper.Universal.sln'
 TARGET_WRAPPER_SOLUTIONS = {
                               'webrtc' :  {
                                             'winuwp' : 'WebRtc.Wrapper.Universal.sln',
-                                            'net' : '',
+                                            'win' : 'WebRtc.Wrapper.Win32.sln',
                                           },
                               'ortc' :  {
                                           'winuwp' : '',
@@ -281,7 +284,7 @@ WEBRTC_WRAPPER_PROJECTS_OUTPUT_PATH = './webrtc/windows/solutions/Build/Output/O
 TARGET_WRAPPER_PROJECTS_OUTPUT_PATHS = {
                                           'webrtc' :  {
                                                         'winuwp' : './webrtc/windows/solutions/Build/Output/Org.WebRtc',
-                                                        'net' : '',
+                                                        'win' : './webrtc/windows/solutions/Build/Output/Net/Org.WebRtc',
                                                       },
                                           'ortc' :  {
                                                       'winuwp' : '',
@@ -292,6 +295,11 @@ TARGET_WRAPPER_PROJECTS_OUTPUT_PATHS = {
 FILES_TO_COPY_FOR_WRAPPER_BUILD = [
                   {'../chromium/third_party/BUILD.gn' : './third_party/BUILD.gn'},
                 ]
+
+RUNTIME_STORE_DLLS = {
+                        'debug' :  [ 'msvcp140d_app.dll', 'vcruntime140d_app.dll' ],
+                        'release' :  [ 'msvcp140_app.dll', 'vcruntime140_app.dll' ]
+                      }
 
 ACTION_START_MESSAGE = '\n===================================== [ACTION] STARTED =====================================\n'
 ACTION_END_MESSAGE = '\n====================================== [ACTION] ENDED ======================================\n'
