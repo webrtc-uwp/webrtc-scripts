@@ -179,3 +179,6 @@ nugetServerURL = 'default'
 #releaseOutputPath = '.'
 
 enableIdlImpl = False
+
+enableRunningUnitTests = True
+unitTests = ['*']

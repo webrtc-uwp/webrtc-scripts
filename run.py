@@ -15,6 +15,7 @@ from publishNuget import PublishNuget
 from releaseNotes import ReleaseNotes
 from uploadBackup import UploadBackup
 from updateSample import UpdateSample
+from unitTestRunner import UnitTestRunner
 from errors import NO_ERROR, ERROR_TARGET_NOT_SUPPORTED, ERROR_PLATFORM_NOT_SUPPORTED, TERMINATED_BY_USER, ERROR_BUILD_FAILED
 from summary import Summary
 from backup import Backup
@@ -198,10 +199,29 @@ def actionUpdatePublishedSample():
           #Terminate script execution if stopExecutionOnError is set to True in userdef
           shouldEndOnError(result)
       else:
-          Logger.printEndActionMessage('Update published sample')
+          Logger.printEndActionMessage('Updated sample')
   else:
       Logger.printColorMessage('Update published sample cannot run because Create Nuget has failed',ColoredFormatter.YELLOW)
       Logger.printEndActionMessage('Update published sample not run',ColoredFormatter.YELLOW)
+
+def actionRunUnitTests():
+  """
+  """
+  UnitTestRunner.init()
+  
+  for target in Settings.targets:
+    for platform in Settings.targetPlatforms:
+      for cpu in Settings.targetCPUs:
+        for configuration in Settings.targetConfigurations:
+          Logger.printStartActionMessage('Running unit tests for ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration, ColoredFormatter.YELLOW)
+          result = UnitTestRunner.run(target, platform, cpu, configuration)
+          if result != NO_ERROR:
+            Logger.printEndActionMessage('Failed to execute unit tests!')
+            #Terminate script execution if stopExecutionOnError is set to True in userdef
+            shouldEndOnError(result)
+          else:
+            Logger.printEndActionMessage('Executed all unit tests')
+
 
 def shouldEndOnError(error):
   """
@@ -307,7 +327,10 @@ def main():
 
     if ACTION_UPDATE_SAMPLE in Settings.actions:
       actionUpdatePublishedSample()
-    
+
+    if ACTION_RUN_UNITTESTS in Settings.actions:
+      actionRunUnitTests()
+
     #Show a message if NuGet source needs to be set manually
     if NugetUtility.setNugetSourceManualy:
       Logger.printColorMessage(NugetUtility.set_source_instruction+NugetUtility.setNugetSourceManualy,ColoredFormatter.YELLOW)

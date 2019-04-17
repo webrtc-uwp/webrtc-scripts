@@ -13,7 +13,7 @@ class Input:
     parser = argparse.ArgumentParser()
     parser.add_argument('template', nargs='?', help='Template name, where default settings are overwritten')
     
-    parser.add_argument('-a','--actions', nargs='*', choices=['clean', 'createuserdef', 'prepare', 'build', 'backup', 'uploadbackup', 'createnuget', 'releasenotes', 'updatesample', 'publishnuget'], type=str.lower, help='Actions to perform')
+    parser.add_argument('-a','--actions', nargs='*', choices=['clean', 'createuserdef', 'prepare', 'build', 'backup', 'uploadbackup', 'createnuget', 'releasenotes', 'updatesample', 'publishnuget', 'rununittests'], type=str.lower, help='Actions to perform')
 
     if System.checkIfTargetIsSupported('ortc'):
       parser.add_argument('-t','--targets', nargs='*', choices=['ortc', 'webrtc'], help='Target')
@@ -53,4 +53,6 @@ class Input:
     
     parser.add_argument('--idlImpl', action='store_true', help='Pass impl flag when compiling idls.')
     
+    parser.add_argument('--unitTests', nargs='*', help='Unit tests to run.')
+
     Settings.inputArgs = parser.parse_args()

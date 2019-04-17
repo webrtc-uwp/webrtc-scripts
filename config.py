@@ -301,5 +301,43 @@ RUNTIME_STORE_DLLS = {
                         'release' :  [ 'msvcp140_app.dll', 'vcruntime140_app.dll' ]
                       }
 
+
+AVAILABLE_UNIT_TESTS = {
+                          'audio_codec_speed_tests' : ['*'],
+                          'audio_decoder_unittests' : ['*'],
+                          'common_audio_unittests' : ['*'],
+                          'common_video_unittests' : ['*'],
+                          'fake_network_unittests' : ['*'],
+                          'modules_tests' : ['*'],
+                          'modules_unittests' : [ '*', 
+                                                  'CommonFormats/AudioProcessingTest.Formats/0'],
+                          'ortc_unittests' : ['*'],
+                          'peerconnection_unittests' : ['*'],
+                          'rtc_media_unittests' : ['*'],
+                          'rtc_pc_unittests' : ['*'],
+                          'rtc_stats_unittests' : ['*'],
+                          'rtc_unittests' : ['*',
+                                            'NetworkTest.DefaultLocalAddress'],
+                          'system_wrappers_unittests' : ['*'],
+                          'test_packet_masks_metrics' : ['*'],
+                          'tools_unittests' : ['*'],
+                          'video_capture_tests' : ['*'],
+                          'video_engine_tests' : ['*', 
+                                                  'BandwidthEndToEndTest.VerifyRecvSideBweStats', 
+                                                  'FieldTrials/ProbingEndToEndTest.ProbeOnVideoEncoderReconfiguration/0', 
+                                                  'FieldTrials/ProbingEndToEndTest.ProbeOnVideoEncoderReconfiguration/1',
+                                                  'FieldTrials/TransportFeedbackEndToEndTest.StopsAndResumesMediaWhenCongestionWindowFull/0',
+                                                  'FieldTrials/TransportFeedbackEndToEndTest.StopsAndResumesMediaWhenCongestionWindowFull/1',
+                                                  'Default/VideoSendStreamTest.Vp9NonFlexMode_3Tl2SLayers/0',
+                                                  'TaskQueueTrial/VideoSendStreamTest.Vp9NonFlexMode_1Tl1SLayers/0'],
+                          'webrtc_nonparallel_tests' : ['*'],
+                          'webrtc_opus_fec_test' : ['*'],
+                          'webrtc_perf_tests' : ['*'
+                                                'CallPerfTest.PlaysOutAudioAndVideoInSyncWithVideoFasterThanAudioDrift',
+                                                'CallPerfTest.CaptureNtpTimeWithNetworkJitter'],
+                        }
+
+UNIT_TESTS_LOG_SEPARATOR = '***UNIT_TEST_FINISHED***'
+UNIT_TEST_RESULTS_SEPARATOR = '[----------] Global test environment tear-down'
 ACTION_START_MESSAGE = '\n===================================== [ACTION] STARTED =====================================\n'
 ACTION_END_MESSAGE = '\n====================================== [ACTION] ENDED ======================================\n'

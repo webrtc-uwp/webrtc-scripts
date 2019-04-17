@@ -210,7 +210,15 @@ class Settings:
       cls.enableIdlImpl = cls.inputArgs.idlImpl
     else:
       cls.enableIdlImpl = enableIdlImpl
-      
+
+    if cls.inputArgs.unitTests:
+      cls.unitTests = cls.inputArgs.unitTests
+    else:
+      cls.unitTests = unitTests
+
+    if '*' in cls.unitTests:
+      cls.unitTests = list(config.AVAILABLE_UNIT_TESTS)
+
   @classmethod
   def getGnOutputPath(cls, path, target, platform, cpu, configuration):
     """
