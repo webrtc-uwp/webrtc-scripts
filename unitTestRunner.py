@@ -54,7 +54,12 @@ class UnitTestRunner:
     cls.unitTestFailuresLog.close()
     
     if cls.failedTestsCounter > 0:
-      cls.logger.warning('Some unit tests has failed. You can see the details in file ' + os.path.abspath(cls.unitTestFailuresLog))
+      if cls.failedTestsCounter == 1:
+        cls.logger.warning(str(cls.failedTestsCounter) + ' unit test has failed. You can check details in file ' + os.path.abspath(cls.unitTestFailuresLog.name))
+      else:
+        cls.logger.warning(str(cls.failedTestsCounter) + ' unit tests have failed. You can see the details in file ' + os.path.abspath(cls.unitTestFailuresLog.name))
+    else:
+      cls.logger.info('All unit tests passed.')
 
     #Switch to previously working directory
     Utility.popd()
@@ -70,12 +75,13 @@ class UnitTestRunner:
     """
     """
     ret = NO_ERROR
-
+    
     listOfTests = config.AVAILABLE_UNIT_TESTS[unittest]
     cmdLine = unittest
     testsToRunSeparately = ''
     filter = '--gtest_filter='
     outputFile = unittest + '.txt'
+    
     if '*' in listOfTests:
       if len(listOfTests) > 1:
         for testName in listOfTests[1:]:
@@ -109,14 +115,14 @@ class UnitTestRunner:
     for unitTest in unitTests:
       testResults = unitTest.split(config.UNIT_TEST_RESULTS_SEPARATOR)
       testResult = testResults[-1]
-      if 'FAILED' in testResult:
+      if '[  FAILED  ]' in testResult:
         cls.unitTestFailuresLog.write(unitTestName)
-        cls.unitTestFailuresLog.write('==============')
+        cls.unitTestFailuresLog.write('\n==============\n')
         for line in testResult.split('\n'):
-          if 'FAILED' in line:
+          if '[  FAILED  ]' in line and 'listed below' not in line:
             cls.failedTestsCounter += 1
-            cls.unitTestFailuresLog.write(line)
-        cls.unitTestFailuresLog.write('==============')
+            cls.unitTestFailuresLog.write(line + '\n')
+        cls.unitTestFailuresLog.write('==============\n\n')
         cls.unitTestFailuresLog.flush()
     return True
 
@@ -130,6 +136,7 @@ class UnitTestRunner:
     """
     result = NO_ERROR
     logFile = None
+    strLog = ''
     commandToExecute = ''
 
     try:
@@ -141,7 +148,7 @@ class UnitTestRunner:
 
       #Execute command
       cls.logger.debug('\n Running unit test: ' + unittest + '\n')
-      process = subprocess.Popen(unittest, shell=False, stdin=subprocess.PIPE, stdout=logFile, stderr=subprocess.PIPE)
+      process = subprocess.Popen(unittest, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
    
       #Enable showing subprocess output and responsiveness on keyboard actions (terminating script on user action) 
       stdout, stderr = process.communicate()
@@ -149,7 +156,8 @@ class UnitTestRunner:
       if process.returncode != 0:
         if stderr != '':
           cls.logger.warning(str(stderr))
-
+      if stdout != None and stdout != '':
+        logFile.write(stdout)
     except Exception as error:
       result = errors.ERROR_UNIT_TESTS_EXECUTION_FAILED
       cls.logger.error(str(error))

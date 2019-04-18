@@ -337,7 +337,7 @@ AVAILABLE_UNIT_TESTS = {
                                                 'CallPerfTest.CaptureNtpTimeWithNetworkJitter'],
                         }
 
-UNIT_TESTS_LOG_SEPARATOR = '***UNIT_TEST_FINISHED***'
+UNIT_TESTS_LOG_SEPARATOR = '***UNIT_TEST_FINISHED***\n'
 UNIT_TEST_RESULTS_SEPARATOR = '[----------] Global test environment tear-down'
 ACTION_START_MESSAGE = '\n===================================== [ACTION] STARTED =====================================\n'
 ACTION_END_MESSAGE = '\n====================================== [ACTION] ENDED ======================================\n'
