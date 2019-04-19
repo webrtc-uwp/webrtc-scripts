@@ -25,6 +25,7 @@ class UnitTestRunner:
       :param targetName: Name of the main target (ortc or webrtc)
       :param platform: Platform name
       :param cpu: Target CPU
+      :param configuration: Configuration
       :param builderWorkingPath: Path where generated projects for specified target.
       :return: NO_ERROR if build was successfull. Otherwise returns error code
     """
@@ -34,7 +35,7 @@ class UnitTestRunner:
     cls.totalNumberOfTests = 0
     cls.logger.info('Running unit tests for target: ' + targetName + '; platform: ' + platform + '; cpu: ' + cpu + '; configuration: ' + configuration)
 
-    #If path with generated projects is not specified generate path from input arguments
+    #If path with generated projects is not specified generate path from the input arguments
     if builderWorkingPath == None:
       builderWorkingPath = Settings.getGnOutputPath(config.GN_OUTPUT_PATH, targetName, platform, cpu, configuration)
 
@@ -45,34 +46,34 @@ class UnitTestRunner:
       cls.logger.error('Output folder at ' + workingDir + ' doesn\'t exist. It looks like prepare is not executed. Please run prepare action.')
       return errors.ERROR_UNIT_TESTS_WORKING_FOLDER_NOT_EXIST
 
-    #Change current working directory to one with generated projects
+    #Change current working directory to one with built unit tests
     Utility.pushd(workingDir)
 
     #Unit tests summary file
     summaryFileName = 'UnitTests_' + platform + '_' + cpu + '_' + configuration
-    summaryPath = os.path.join(Settings.userWorkingPath ,summaryFileName + '.txt')
+    summaryPath = os.path.join(Settings.userWorkingPath ,summaryFileName + '.log')
+    #If unit tests summary file already exists add date and time sufix
     if os.path.isfile(summaryPath):
-      summaryFileName += '_' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + '.txt'
+      summaryFileName += '_' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + '.log'
       summaryPath = os.path.join(Settings.userWorkingPath ,summaryFileName)
-    cls.unitTestFailuresLog = open(summaryPath,'w')
+    cls.unitTestSummaryLogFile = open(summaryPath,'w')
 
+    #Run all specified unit tests
     for unitTest in Settings.unitTests:
       cls.executeUnitTest(unitTest)
     
-    cls.unitTestFailuresLog.write('***********************************\nTOTAL NUMBER OF TESTS: ' + str(cls.totalNumberOfTests) + '\n')
-    cls.unitTestFailuresLog.write('TOTAL NUMBER OF FAILED TESTS: ' + str(cls.failedTestsCounter) + '\n')
-    
-    cls.unitTestFailuresLog.close()
+    cls.unitTestSummaryLogFile.write(config.UNIT_TEST_SUMMARY_TOTAL_SEPARATOR + 'TOTAL NUMBER OF TESTS: ' + str(cls.totalNumberOfTests) + '\n')
+    cls.unitTestSummaryLogFile.write('TOTAL NUMBER OF FAILED TESTS: ' + str(cls.failedTestsCounter) + '\n')
+    cls.unitTestSummaryLogFile.close()
     
     cls.logger.info('Total number of unit tests is ' + str(cls.totalNumberOfTests))
 
-    if cls.failedTestsCounter > 0:
-      if cls.failedTestsCounter == 1:
-        cls.logger.warning(str(cls.failedTestsCounter) + ' unit test has failed. You can check details in file ' + os.path.abspath(cls.unitTestFailuresLog.name))
-      else:
-        cls.logger.warning(str(cls.failedTestsCounter) + ' unit tests have failed. You can see the details in file ' + os.path.abspath(cls.unitTestFailuresLog.name))
-    else:
+    if cls.failedTestsCounter == 0:
       cls.logger.info('All unit tests passed.')
+    elif cls.failedTestsCounter == 1:
+      cls.logger.warning(str(cls.failedTestsCounter) + ' unit test has failed. You can check details in file ' + os.path.abspath(cls.unitTestSummaryLogFile.name))
+    else:
+        cls.logger.warning(str(cls.failedTestsCounter) + ' unit tests have failed. You can see the details in file ' + os.path.abspath(cls.unitTestSummaryLogFile.name))      
 
     #Switch to previously working directory
     Utility.popd()
@@ -86,83 +87,97 @@ class UnitTestRunner:
   @classmethod
   def executeUnitTest(cls, unittest):
     """
+      Executes specified unit test.
+      :param unittest: Unit test executable
+      :return: NO_ERROR if build was successfull. Otherwise returns error code
     """
     ret = NO_ERROR
-    
+    #Take tests that would be execute under specified unit test
     listOfTests = config.AVAILABLE_UNIT_TESTS[unittest]
+    #Unit test is an exeutable file
     cmdLine = unittest
     testsToRunSeparately = ''
     filter = '--gtest_filter='
     outputFile = unittest + '.txt'
     
     if '*' in listOfTests:
+      #Check if there are some tests that needs to be run separately
       if len(listOfTests) > 1:
+        #Tests that wiil be executed eparately, needs to be excluded from main tests bundle
         for testName in listOfTests[1:]:
           testsToRunSeparately += testName + ':'
         cmdLine += ' ' + filter + '-' + testsToRunSeparately
         ret = cls.runUnitTestSubprocess(cmdLine, outputFile)
         if ret == NO_ERROR:
+          #Run separately tests
           cmdLine += ' ' + filter + testsToRunSeparately
           ret = cls.runUnitTestSubprocess(cmdLine, outputFile, True)
         else:
           cls.logger.error('Failed running unit test ' + unittest)
       else:
+        #Run all unit tests in the bundle
         ret = cls.runUnitTestSubprocess(cmdLine, outputFile)
     else:
+      #Run only specified unit tests
       for testName in listOfTests:
         testsToRunSeparately += testName + ':'
       cmdLine += ' ' + filter + testsToRunSeparately
       ret = cls.runUnitTestSubprocess(cmdLine, outputFile)
     
+    #Parse output file to get info about total/failed tests
     cls.parseResults(unittest, outputFile)
     return ret
 
   @classmethod
-  def parseResults(cls, unitTestName, outputFile):
-
-    ret = True
+  def parseResults(cls, unitTestName, unitTestLogFile):
+    """
+      Parses unit tests log file, and writes to summary info about total number of tests, and list of failed tests.
+      :param unitTestName: Unit test name
+      :param unitTestLogFile: File to parse
+    """
     unitTestFailures = 0
     numberOfUnitTests = 0
-    with open(outputFile, 'r') as fileToParse:
+    with open(unitTestLogFile, 'r') as fileToParse:
       fileContent = fileToParse.read()
 
     unitTests = fileContent.split(config.UNIT_TESTS_LOG_SEPARATOR)
 
-    cls.unitTestFailuresLog.write(unitTestName)
-    cls.unitTestFailuresLog.write('\n========================\n')
+    cls.unitTestSummaryLogFile.write(unitTestName)
+    cls.unitTestSummaryLogFile.write('\n' + config.UNIT_TEST_SUMMARY_SEPARATOR + '\n')
 
     for unitTest in unitTests:
       testResults = unitTest.split(config.UNIT_TEST_RESULTS_SEPARATOR)
       testResult = testResults[-1]
       
       for line in testResult.split('\n'):
-        if '[==========] ' in line:
+        if config.UNIT_TEST_RESULTS_TOTAL_NUMBER_SEPARATOR in line:
           listForNumberOfTests = line.split(' ')
           if len(listForNumberOfTests) > 1:
             numberOfTests = listForNumberOfTests[1]
             numberOfUnitTests += int(numberOfTests)
-        if '[  FAILED  ]' in line and 'listed below' not in line:
+        if config.UNIT_TEST_RESULTS_FAILED_SEPARATOR in line and 'listed below' not in line:
           unitTestFailures += 1
-          cls.unitTestFailuresLog.write(line + '\n')
+          cls.unitTestSummaryLogFile.write(line + '\n')
 
     cls.totalNumberOfTests += numberOfUnitTests
     cls.failedTestsCounter += unitTestFailures
     
+    #Write log to unit tests summary file
     if unitTestFailures > 0:
-      cls.unitTestFailuresLog.write('-----------------------------\n')
-    cls.unitTestFailuresLog.write('Total number of tests: ' + str(numberOfUnitTests) + '\n') 
-    cls.unitTestFailuresLog.write('Total number of failed tests: ' + str(unitTestFailures) + '\n')
-    cls.unitTestFailuresLog.write('========================\n\n\n\n')
-    cls.unitTestFailuresLog.flush()
-    
-    return True
+      cls.unitTestSummaryLogFile.write(config.UNIT_TEST_SUMMARY_TEST_SEPARATOR)
+    cls.unitTestSummaryLogFile.write('Total number of tests: ' + str(numberOfUnitTests) + '\n') 
+    cls.unitTestSummaryLogFile.write('Total number of failed tests: ' + str(unitTestFailures) + '\n')
+    cls.unitTestSummaryLogFile.write(config.UNIT_TEST_SUMMARY_SEPARATOR + '\n\n\n\n')
+    cls.unitTestSummaryLogFile.flush()
+
 
   @classmethod
   def runUnitTestSubprocess(cls, unittest, logToFile = '', appendToFile = False):
     """
-      Runs provided command line as subprocess.
-      :param commands: List of commands to execute.
-      :param shouldLog: Flag if subprocess stdout should be logged or not
+      Runs specified unit test as subprocess.
+      :param unittest: Unit test to run.
+      :param logToFile: Path to unit tests log file
+      :para, appendToFile: Flag to append to existing log file.
       :return result: NO_ERROR if subprocess is executed successfully. Otherwise error or subprocess returncode
     """
     result = NO_ERROR
@@ -171,13 +186,14 @@ class UnitTestRunner:
     commandToExecute = ''
 
     try:
+      #Create a new log file, or open existing, depending on appendToFile flag
       if len(logToFile) > 0:
         if appendToFile:
           logFile = open(logToFile, 'a')
         else:
           logFile = open(logToFile, 'w')
 
-      #Execute command
+      #Execute command. Log goes to stdout
       cls.logger.debug('\n Running unit test: ' + unittest + '\n')
       process = subprocess.Popen(unittest, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
    
@@ -187,6 +203,7 @@ class UnitTestRunner:
       if process.returncode != 0:
         if stderr != '':
           cls.logger.warning(str(stderr))
+      #Write unit test log to file
       if stdout != None and stdout != '':
         logFile.write(stdout)
     except Exception as error:

@@ -339,5 +339,12 @@ AVAILABLE_UNIT_TESTS = {
 
 UNIT_TESTS_LOG_SEPARATOR = '***UNIT_TEST_FINISHED***\n'
 UNIT_TEST_RESULTS_SEPARATOR = '[----------] Global test environment tear-down'
+UNIT_TEST_RESULTS_TOTAL_NUMBER_SEPARATOR = '[==========] '
+UNIT_TEST_RESULTS_FAILED_SEPARATOR = '[  FAILED  ]'
+UNIT_TEST_SUMMARY_SEPARATOR = '========================'
+UNIT_TEST_SUMMARY_TEST_SEPARATOR = '-----------------------------\n'
+UNIT_TEST_SUMMARY_TOTAL_SEPARATOR = '***********************************\n'
+
+  
 ACTION_START_MESSAGE = '\n===================================== [ACTION] STARTED =====================================\n'
 ACTION_END_MESSAGE = '\n====================================== [ACTION] ENDED ======================================\n'

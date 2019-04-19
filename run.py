@@ -206,6 +206,7 @@ def actionUpdatePublishedSample():
 
 def actionRunUnitTests():
   """
+    Run all specified unit tests.
   """
   UnitTestRunner.init()
   
@@ -215,10 +216,9 @@ def actionRunUnitTests():
         for configuration in Settings.targetConfigurations:
           Logger.printStartActionMessage('Running unit tests for ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration, ColoredFormatter.YELLOW)
           result = UnitTestRunner.run(target, platform, cpu, configuration)
+          Summary.addSummary(ACTION_RUN_UNITTESTS, target, platform, cpu, configuration, result, UnitTestRunner.executionTime)
           if result != NO_ERROR:
             Logger.printEndActionMessage('Failed to execute unit tests!')
-            #Terminate script execution if stopExecutionOnError is set to True in userdef
-            shouldEndOnError(result)
           else:
             Logger.printEndActionMessage('Executed all unit tests')
 
