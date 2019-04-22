@@ -90,3 +90,8 @@ def yes_no(question):
       return False
     else:
       sys.stdout.write("Please respond with 'yes' or 'no'\n")
+
+def remove_prefix(text, prefix):
+  if text.startswith(prefix):
+    return text[len(prefix):]
+  return text

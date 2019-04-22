@@ -9,6 +9,7 @@ from utility import Utility
 from settings import Settings
 import errors
 from errors import error_codes, NO_ERROR
+import helper
 
 class UnitTestRunner:
   @classmethod
@@ -97,21 +98,22 @@ class UnitTestRunner:
     #Unit test is an exeutable file
     cmdLine = unittest
     testsToRunSeparately = ''
-    filter = '--gtest_filter='
+    cls.filter = '--gtest_filter='
     outputFile = unittest + '.txt'
-    
+    """
     if '*' in listOfTests:
       #Check if there are some tests that needs to be run separately
       if len(listOfTests) > 1:
         #Tests that wiil be executed eparately, needs to be excluded from main tests bundle
         for testName in listOfTests[1:]:
           testsToRunSeparately += testName + ':'
-        cmdLine += ' ' + filter + '-' + testsToRunSeparately
+        cmdLine += ' ' + cls.filter + '-' + testsToRunSeparately
         ret = cls.runUnitTestSubprocess(cmdLine, outputFile)
-        if ret == NO_ERROR:
+        if ret == NO_ERROR or ret == errors.ERROR_UNIT_TEST_FAILED:
           #Run separately tests
-          cmdLine += ' ' + filter + testsToRunSeparately
-          ret = cls.runUnitTestSubprocess(cmdLine, outputFile, True)
+          for testName in listOfTests[1:]:
+            cmdLine = unittest + ' ' + cls.filter + testName
+            ret = cls.runUnitTestSubprocess(cmdLine, outputFile, True)
         else:
           cls.logger.error('Failed running unit test ' + unittest)
       else:
@@ -121,9 +123,10 @@ class UnitTestRunner:
       #Run only specified unit tests
       for testName in listOfTests:
         testsToRunSeparately += testName + ':'
-      cmdLine += ' ' + filter + testsToRunSeparately
+      cmdLine += ' ' + cls.filter + testsToRunSeparately
       ret = cls.runUnitTestSubprocess(cmdLine, outputFile)
-    
+    """
+    #if ret == NO_ERROR or ret == errors.ERROR_UNIT_TEST_FAILED:
     #Parse output file to get info about total/failed tests
     cls.parseResults(unittest, outputFile)
     return ret
@@ -137,6 +140,8 @@ class UnitTestRunner:
     """
     unitTestFailures = 0
     numberOfUnitTests = 0
+    outputRecoveryFile = unitTestName + '_Recovery.txt'
+    #listOfFailedTests = list()
     with open(unitTestLogFile, 'r') as fileToParse:
       fileContent = fileToParse.read()
 
@@ -156,8 +161,19 @@ class UnitTestRunner:
             numberOfTests = listForNumberOfTests[1]
             numberOfUnitTests += int(numberOfTests)
         if config.UNIT_TEST_RESULTS_FAILED_SEPARATOR in line and 'listed below' not in line:
-          unitTestFailures += 1
-          cls.unitTestSummaryLogFile.write(line + '\n')
+          testName = helper.remove_prefix(line, config.UNIT_TEST_RESULTS_FAILED_SEPARATOR + ' ')
+          testName = testName.split(',')[0]
+          cmdLine = unitTestName + ' ' + cls.filter + testName
+          recoveryTestCounter = 0
+          testPassed = False
+          while recoveryTestCounter < 5 and not testPassed:
+            ret = cls.runUnitTestSubprocess(cmdLine, outputRecoveryFile, True)
+            if ret == NO_ERROR:
+              testPassed = True
+          if not testPassed:
+            unitTestFailures += 1
+            cls.unitTestSummaryLogFile.write(line + '\n')
+          
 
     cls.totalNumberOfTests += numberOfUnitTests
     cls.failedTestsCounter += unitTestFailures
@@ -189,7 +205,7 @@ class UnitTestRunner:
       #Create a new log file, or open existing, depending on appendToFile flag
       if len(logToFile) > 0:
         if appendToFile:
-          logFile = open(logToFile, 'a')
+          logFile = open(logToFile, 'a+')
         else:
           logFile = open(logToFile, 'w')
 
@@ -201,6 +217,7 @@ class UnitTestRunner:
       stdout, stderr = process.communicate()
 
       if process.returncode != 0:
+        result = errors.ERROR_UNIT_TEST_FAILED
         if stderr != '':
           cls.logger.warning(str(stderr))
       #Write unit test log to file
