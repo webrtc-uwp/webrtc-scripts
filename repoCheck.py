@@ -4,27 +4,8 @@ import argparse
 from datetime import datetime
 
 from consts import MAX_SDK_ROOT_PATH_LENGTH
+from helper import executeCommand
 import run
-
-def executeCommand(commandToExecute):
-  """
-    Runs provided command line as subprocess, and returns stdout.
-    :param commandToExecute: Command to execute.
-    :param stdout: Returns stdout, if command is executes successfully.  Otherwise it returns 'error' string.
-  """
-  process = subprocess.Popen(commandToExecute, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-  stdout, stderr = process.communicate()
-
-  if process.returncode == 0:
-    if stdout.endswith("\r\n"): return stdout[:-2]
-    if stdout.endswith("\n") or stdout.endswith("\r"): return stdout[:-1]
-  else:
-    print('Subprocess execution failed.')
-    print(str(stderr))
-    return 'error'
-
-  return stdout
 
 def createDestinationFolder(repo, destinationRootPath, generateFolderName = True):
   """

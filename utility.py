@@ -11,7 +11,7 @@ except:
   pass
 
 from logger import Logger
-from helper import convertToPlatformPath
+from helper import convertToPlatformPath, executeCommand
 from errors import error_codes, NO_ERROR, ERROR_SUBPROCESS_EXECUTAION_FAILED, TERMINATED_BY_USER
 import config
 class Utility:
@@ -97,6 +97,24 @@ class Utility:
     """
     newPath = os.environ['PATH'].replace(path + os.pathsep,'').replace(path,'')
     os.environ['PATH'] = newPath
+
+  @classmethod
+  def getBranch(cls):
+    """
+      Returns the branch name for the root SDK git repository
+      :return branch: branch name
+    """
+    branch = executeCommand('git rev-parse --abbrev-ref HEAD')
+    return branch
+    
+  @classmethod
+  def getRepo(cls):
+    """
+      Returns the repo url for the root SDK git repository
+      :return repo: repo url
+    """
+    repo = executeCommand('git remote get-url origin')
+    return repo
 
   @classmethod
   def makeLink(cls, source, destination):
