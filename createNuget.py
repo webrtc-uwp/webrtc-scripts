@@ -121,6 +121,9 @@ class CreateNuget:
         ret = NO_ERROR
         branch = Utility.getBranch()
         repo = Utility.getRepo()
+        
+        if repo.endswith('.git'):
+            repo = repo[:-len('.git')]
 
         fullRepo = repo + "/tree/" + branch
         
