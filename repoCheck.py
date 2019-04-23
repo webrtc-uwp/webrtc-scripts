@@ -4,7 +4,7 @@ import argparse
 from datetime import datetime
 
 from consts import MAX_SDK_ROOT_PATH_LENGTH
-from helper import executeCommand
+from utility import Utility
 import run
 
 def createDestinationFolder(repo, destinationRootPath, generateFolderName = True):
@@ -77,8 +77,8 @@ def main():
   #Change to sdk root folder, and get info about repo and branch
   sdk_root_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),'..')
   os.chdir(sdk_root_path)
-  gitRepo = executeCommand('git remote get-url origin')
-  gitBranch = executeCommand('git rev-parse --abbrev-ref HEAD')
+  gitRepo = Utility.getRepo()
+  gitBranch = Utility.getBranch()
   
   os.chdir('..')
   
@@ -95,7 +95,7 @@ def main():
     print('Cloning into ' + destinationPath + '  ...')
     #Change current working folder to one just created and clone repo in it
     os.chdir(destinationPath)
-    result = executeCommand('git clone --recursive ' + gitRepo + ' -b ' + gitBranch + ' .')
+    result = Utility.executeCommand('git clone --recursive ' + gitRepo + ' -b ' + gitBranch + ' .')
     
     if result != 'error':
       #If repo is successfully cloned, run script for building webrtc libs. Log  will be saved in repoCheckLog_folder_name.txt
