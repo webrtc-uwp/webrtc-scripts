@@ -100,7 +100,7 @@ class UnitTestRunner:
     testsToRunSeparately = ''
     cls.filter = '--gtest_filter='
     outputFile = unittest + '.txt'
-    """
+    
     if '*' in listOfTests:
       #Check if there are some tests that needs to be run separately
       if len(listOfTests) > 1:
@@ -125,10 +125,10 @@ class UnitTestRunner:
         testsToRunSeparately += testName + ':'
       cmdLine += ' ' + cls.filter + testsToRunSeparately
       ret = cls.runUnitTestSubprocess(cmdLine, outputFile)
-    """
-    #if ret == NO_ERROR or ret == errors.ERROR_UNIT_TEST_FAILED:
-    #Parse output file to get info about total/failed tests
-    cls.parseResults(unittest, outputFile)
+    
+    if ret == NO_ERROR or ret == errors.ERROR_UNIT_TEST_FAILED:
+      #Parse output file to get info about total/failed tests
+      cls.parseResults(unittest, outputFile)
     return ret
 
   @classmethod
@@ -163,11 +163,13 @@ class UnitTestRunner:
         if config.UNIT_TEST_RESULTS_FAILED_SEPARATOR in line and 'listed below' not in line:
           testName = helper.remove_prefix(line, config.UNIT_TEST_RESULTS_FAILED_SEPARATOR + ' ')
           testName = testName.split(',')[0]
+          testName = helper.remove_carriage_return(testName)
           cmdLine = unitTestName + ' ' + cls.filter + testName
           recoveryTestCounter = 0
           testPassed = False
           while recoveryTestCounter < 5 and not testPassed:
             ret = cls.runUnitTestSubprocess(cmdLine, outputRecoveryFile, True)
+            recoveryTestCounter += 1
             if ret == NO_ERROR:
               testPassed = True
           if not testPassed:

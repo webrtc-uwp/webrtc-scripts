@@ -95,3 +95,10 @@ def remove_prefix(text, prefix):
   if text.startswith(prefix):
     return text[len(prefix):]
   return text
+
+def remove_carriage_return(str):
+  if str.endswith("\r\n"): 
+    str = str[:-2]
+  if str.endswith("\n") or str.endswith("\r"): 
+    str = str[:-1]
+  return str
