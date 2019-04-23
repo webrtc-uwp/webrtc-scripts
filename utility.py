@@ -542,9 +542,11 @@ class Utility:
       else:
         raise Exception('Subprocess execution failed.\n' + str(stderr))
 
-      return stdout
     except Exception as error:
       print("Error executing command: " + commandToExecute)
+      print(str(error))
+      return 'error'
+    return stdout
 
   @classmethod
   def terminateSubprocess(cls, process = None):
