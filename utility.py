@@ -97,29 +97,6 @@ class Utility:
     """
     newPath = os.environ['PATH'].replace(path + os.pathsep,'').replace(path,'')
     os.environ['PATH'] = newPath
-    
-  @staticmethod
-  def executeCommand(commandToExecute):
-    """
-      Runs provided command line as subprocess, and returns stdout.
-      :param commandToExecute: Command to execute.
-      :param stdout: Returns stdout, if command is executes successfully.  Otherwise it returns 'error' string.
-    """
-    try:
-      process = subprocess.Popen(commandToExecute, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-      stdout, stderr = process.communicate()
-
-      if process.returncode == 0:
-        if stdout.endswith("\r\n"): return stdout[:-2]
-        if stdout.endswith("\n") or stdout.endswith("\r"): return stdout[:-1]
-      else:
-        raise Exception('Subprocess execution failed.\n' + str(stderr))
-
-      return stdout
-    except Exception as error:
-      cls.logger.error("Error executing command: " + commandToExecute)
-      
 
   @staticmethod
   def getBranch():
@@ -546,6 +523,28 @@ class Utility:
       cls.logger.error(error_codes[result])
 
     return result
+  
+  @staticmethod
+  def executeCommand(commandToExecute):
+    """
+      Runs provided command line as subprocess, and returns stdout.
+      :param commandToExecute: Command to execute.
+      :param stdout: Returns stdout, if command is executes successfully.  Otherwise it returns 'error' string.
+    """
+    try:
+      process = subprocess.Popen(commandToExecute, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+      stdout, stderr = process.communicate()
+
+      if process.returncode == 0:
+        if stdout.endswith("\r\n"): return stdout[:-2]
+        if stdout.endswith("\n") or stdout.endswith("\r"): return stdout[:-1]
+      else:
+        raise Exception('Subprocess execution failed.\n' + str(stderr))
+
+      return stdout
+    except Exception as error:
+      print("Error executing command: " + commandToExecute)
 
   @classmethod
   def terminateSubprocess(cls, process = None):
