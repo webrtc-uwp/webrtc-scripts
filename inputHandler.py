@@ -56,3 +56,4 @@ class Input:
     parser.add_argument('--unitTests', nargs='*', help='Unit tests to run.')
 
     Settings.inputArgs = parser.parse_args()
+    

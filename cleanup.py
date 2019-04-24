@@ -253,3 +253,4 @@ class Cleanup:
       cls.logger.error(error_codes[ret])
       cls.logger.error('Cleanup action ' + action + ' has failed for ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration)
     return ret
+    

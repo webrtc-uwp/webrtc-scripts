@@ -254,3 +254,4 @@ class UnitTestRunner:
       cls.logger.error(error_codes[result])
 
     return result
+    

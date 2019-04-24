@@ -11,4 +11,3 @@ ACTION_UPLOAD_BACKUP = 'uploadbackup'
 ACTION_RUN_UNITTESTS = 'rununittests'
 
 MAX_SDK_ROOT_PATH_LENGTH = 64
-

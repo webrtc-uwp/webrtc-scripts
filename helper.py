@@ -102,3 +102,4 @@ def remove_carriage_return(str):
   if str.endswith("\n") or str.endswith("\r"): 
     str = str[:-1]
   return str
+  

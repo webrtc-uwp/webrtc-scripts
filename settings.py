@@ -234,3 +234,4 @@ class Settings:
     """
     outputPath = config.GN_TARGET_OUTPUT_PATH.replace('[GN_OUT]', path).replace('[TARGET]',target).replace('[PLATFORM]',platform).replace('[CPU]',cpu).replace('[CONFIGURATION]',configuration)
     return convertToPlatformPath(outputPath)
+    
