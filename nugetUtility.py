@@ -160,4 +160,3 @@ class NugetUtility:
         cls.logger.warning(cls.set_source_instruction+srcPath)
     except Exception as error:
       cls.logger.error(str(error))
-

@@ -8,6 +8,6 @@ ACTION_PUBLISH_NUGET = 'publishnuget'
 ACTION_UPDATE_SAMPLE = 'updatesample'
 ACTION_RELEASE_NOTES = 'releasenotes'
 ACTION_UPLOAD_BACKUP = 'uploadbackup'
+ACTION_RUN_UNITTESTS = 'rununittests'
 
 MAX_SDK_ROOT_PATH_LENGTH = 64
-

@@ -301,5 +301,16 @@ RUNTIME_STORE_DLLS = {
                         'release' :  [ 'msvcp140_app.dll', 'vcruntime140_app.dll' ]
                       }
 
+
+UNIT_TESTS_LOG_SEPARATOR = '***UNIT_TEST_FINISHED***\n'
+UNIT_TEST_RESULTS_SEPARATOR = '[----------] Global test environment tear-down'
+UNIT_TEST_RESULTS_TOTAL_NUMBER_SEPARATOR = '[==========] '
+UNIT_TEST_RESULTS_FAILED_SEPARATOR = '[  FAILED  ]'
+UNIT_TEST_SUMMARY_SEPARATOR = '========================'
+UNIT_TEST_SUMMARY_TEST_SEPARATOR = '-----------------------------\n'
+UNIT_TEST_SUMMARY_TOTAL_SEPARATOR = '***********************************\n'
+UNIT_TEST_RETRY_NUMBER_FALIED_TESTS = 5
+  
 ACTION_START_MESSAGE = '\n===================================== [ACTION] STARTED =====================================\n'
 ACTION_END_MESSAGE = '\n====================================== [ACTION] ENDED ======================================\n'
+  

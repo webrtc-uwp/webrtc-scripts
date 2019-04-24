@@ -210,7 +210,17 @@ class Settings:
       cls.enableIdlImpl = cls.inputArgs.idlImpl
     else:
       cls.enableIdlImpl = enableIdlImpl
-      
+
+    if cls.inputArgs.unitTests:
+      cls.unitTestsToRun = cls.inputArgs.unitTests
+    else:
+      cls.unitTestsToRun = unitTestsToRun
+
+    if '*' in cls.unitTestsToRun:
+      cls.unitTestsToRun = list(unitTests)
+
+    cls.unitTests = unitTests
+    
   @classmethod
   def getGnOutputPath(cls, path, target, platform, cpu, configuration):
     """
@@ -224,3 +234,4 @@ class Settings:
     """
     outputPath = config.GN_TARGET_OUTPUT_PATH.replace('[GN_OUT]', path).replace('[TARGET]',target).replace('[PLATFORM]',platform).replace('[CPU]',cpu).replace('[CONFIGURATION]',configuration)
     return convertToPlatformPath(outputPath)
+    
