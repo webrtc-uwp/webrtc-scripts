@@ -302,30 +302,6 @@ RUNTIME_STORE_DLLS = {
                       }
 
 
-AVAILABLE_UNIT_TESTS = {
-                          'audio_codec_speed_tests' : ['*'],
-                          'audio_decoder_unittests' : ['*'],
-                          'common_audio_unittests' : ['*'],
-                          'common_video_unittests' : ['*'],
-                          'fake_network_unittests' : ['*'],
-                          'modules_tests' : ['*'],
-                          'modules_unittests' : [ '*'],
-                          'ortc_unittests' : ['*'],
-                          'peerconnection_unittests' : ['*'],
-                          'rtc_media_unittests' : ['*'],
-                          'rtc_pc_unittests' : ['*'],
-                          'rtc_stats_unittests' : ['*'],
-                          'rtc_unittests' : ['*'],
-                          'system_wrappers_unittests' : ['*'],
-                          'test_packet_masks_metrics' : ['*'],
-                          'tools_unittests' : ['*'],
-                          'video_capture_tests' : ['*'],
-                          'video_engine_tests' : ['*'],
-                          'webrtc_nonparallel_tests' : ['*'],
-                          'webrtc_opus_fec_test' : ['*'],
-                          'webrtc_perf_tests' : ['*'],
-                        }
-
 UNIT_TESTS_LOG_SEPARATOR = '***UNIT_TEST_FINISHED***\n'
 UNIT_TEST_RESULTS_SEPARATOR = '[----------] Global test environment tear-down'
 UNIT_TEST_RESULTS_TOTAL_NUMBER_SEPARATOR = '[==========] '
@@ -333,7 +309,7 @@ UNIT_TEST_RESULTS_FAILED_SEPARATOR = '[  FAILED  ]'
 UNIT_TEST_SUMMARY_SEPARATOR = '========================'
 UNIT_TEST_SUMMARY_TEST_SEPARATOR = '-----------------------------\n'
 UNIT_TEST_SUMMARY_TOTAL_SEPARATOR = '***********************************\n'
-
+UNIT_TEST_RETRY_NUMBER_FALIED_TESTS = 5
   
 ACTION_START_MESSAGE = '\n===================================== [ACTION] STARTED =====================================\n'
 ACTION_END_MESSAGE = '\n====================================== [ACTION] ENDED ======================================\n'

@@ -214,13 +214,14 @@ def actionRunUnitTests():
     for platform in Settings.targetPlatforms:
       for cpu in Settings.targetCPUs:
         for configuration in Settings.targetConfigurations:
-          Logger.printStartActionMessage('Running unit tests for ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration, ColoredFormatter.YELLOW)
-          result = UnitTestRunner.run(target, platform, cpu, configuration)
-          Summary.addSummary(ACTION_RUN_UNITTESTS, target, platform, cpu, configuration, result, UnitTestRunner.executionTime)
-          if result != NO_ERROR:
-            Logger.printEndActionMessage('Failed to execute unit tests!')
-          else:
-            Logger.printEndActionMessage('Executed all unit tests')
+          if not Summary.checkIfActionFailed(ACTION_BUILD, target, platform, cpu, configuration):
+            Logger.printStartActionMessage('Running unit tests for ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration, ColoredFormatter.YELLOW)
+            result = UnitTestRunner.run(target, platform, cpu, configuration)
+            Summary.addSummary(ACTION_RUN_UNITTESTS, target, platform, cpu, configuration, result, UnitTestRunner.executionTime)
+            if result != NO_ERROR:
+              Logger.printEndActionMessage('Failed to execute unit tests!')
+            else:
+              Logger.printEndActionMessage('Executed all unit tests')
 
 
 def shouldEndOnError(error):

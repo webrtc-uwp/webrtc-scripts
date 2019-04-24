@@ -60,8 +60,8 @@ class UnitTestRunner:
     cls.unitTestSummaryLogFile = open(summaryPath,'w')
 
     #Run all specified unit tests
-    for unitTest in Settings.unitTests:
-      cls.executeUnitTest(unitTest)
+    for unitTest in Settings.unitTestsToRun:
+      ret = cls.executeUnitTest(unitTest)
     
     cls.unitTestSummaryLogFile.write(config.UNIT_TEST_SUMMARY_TOTAL_SEPARATOR + 'TOTAL NUMBER OF TESTS: ' + str(cls.totalNumberOfTests) + '\n')
     cls.unitTestSummaryLogFile.write('TOTAL NUMBER OF FAILED TESTS: ' + str(cls.failedTestsCounter) + '\n')
@@ -94,13 +94,17 @@ class UnitTestRunner:
     """
     ret = NO_ERROR
     #Take tests that would be execute under specified unit test
-    listOfTests = config.AVAILABLE_UNIT_TESTS[unittest]
+    #listOfTests = config.AVAILABLE_UNIT_TESTS[unittest]
+    listOfTests = Settings.unitTests[unittest]
     #Unit test is an exeutable file
     cmdLine = unittest
     testsToRunSeparately = ''
     cls.filter = '--gtest_filter='
     outputFile = unittest + '.txt'
-    
+    #Delete old unit test log file
+    if not Utility.deleteFiles([outputFile]):
+      return errors.ERROR_UNIT_TESTS_FAILED_TO_DELETE_OLD_LOG
+
     if '*' in listOfTests:
       #Check if there are some tests that needs to be run separately
       if len(listOfTests) > 1:
@@ -114,6 +118,9 @@ class UnitTestRunner:
           for testName in listOfTests[1:]:
             cmdLine = unittest + ' ' + cls.filter + testName
             ret = cls.runUnitTestSubprocess(cmdLine, outputFile, True)
+            if not ret == NO_ERROR and not ret == errors.ERROR_UNIT_TEST_FAILED:
+              cls.logger.error('Failed running unit test ' + cmdLine)
+              break
         else:
           cls.logger.error('Failed running unit test ' + unittest)
       else:
@@ -122,13 +129,15 @@ class UnitTestRunner:
     else:
       #Run only specified unit tests
       for testName in listOfTests:
-        testsToRunSeparately += testName + ':'
-      cmdLine += ' ' + cls.filter + testsToRunSeparately
-      ret = cls.runUnitTestSubprocess(cmdLine, outputFile)
+        cmdLine = unittest + ' ' + cls.filter + testName
+        ret = cls.runUnitTestSubprocess(cmdLine, outputFile, True)
+        if not ret == NO_ERROR and not ret == errors.ERROR_UNIT_TEST_FAILED:
+          cls.logger.error('Failed running unit test ' + cmdLine)
+          break
     
     if ret == NO_ERROR or ret == errors.ERROR_UNIT_TEST_FAILED:
       #Parse output file to get info about total/failed tests
-      cls.parseResults(unittest, outputFile)
+      ret = cls.parseResults(unittest, outputFile)
     return ret
 
   @classmethod
@@ -138,19 +147,23 @@ class UnitTestRunner:
       :param unitTestName: Unit test name
       :param unitTestLogFile: File to parse
     """
+    ret = NO_ERROR
     unitTestFailures = 0
     numberOfUnitTests = 0
     outputRecoveryFile = unitTestName + '_Recovery.txt'
-    #listOfFailedTests = list()
+    
+    if not Utility.deleteFiles([outputRecoveryFile]):
+      return errors.ERROR_UNIT_TESTS_FAILED_TO_DELETE_OLD_LOG
+
     with open(unitTestLogFile, 'r') as fileToParse:
       fileContent = fileToParse.read()
 
-    unitTests = fileContent.split(config.UNIT_TESTS_LOG_SEPARATOR)
+    executedUnitTests = fileContent.split(config.UNIT_TESTS_LOG_SEPARATOR)
 
     cls.unitTestSummaryLogFile.write(unitTestName)
     cls.unitTestSummaryLogFile.write('\n' + config.UNIT_TEST_SUMMARY_SEPARATOR + '\n')
 
-    for unitTest in unitTests:
+    for unitTest in executedUnitTests:
       testResults = unitTest.split(config.UNIT_TEST_RESULTS_SEPARATOR)
       testResult = testResults[-1]
       
@@ -167,7 +180,7 @@ class UnitTestRunner:
           cmdLine = unitTestName + ' ' + cls.filter + testName
           recoveryTestCounter = 0
           testPassed = False
-          while recoveryTestCounter < 5 and not testPassed:
+          while recoveryTestCounter < config.UNIT_TEST_RETRY_NUMBER_FALIED_TESTS and not testPassed:
             ret = cls.runUnitTestSubprocess(cmdLine, outputRecoveryFile, True)
             recoveryTestCounter += 1
             if ret == NO_ERROR:
@@ -187,6 +200,8 @@ class UnitTestRunner:
     cls.unitTestSummaryLogFile.write('Total number of failed tests: ' + str(unitTestFailures) + '\n')
     cls.unitTestSummaryLogFile.write(config.UNIT_TEST_SUMMARY_SEPARATOR + '\n\n\n\n')
     cls.unitTestSummaryLogFile.flush()
+
+    return ret
 
 
   @classmethod
