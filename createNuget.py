@@ -74,6 +74,12 @@ class CreateNuget:
                 release_note = ReleaseNotes.get_note(Settings.releaseNotePath)
             ret = cls.create_nuspec(cls.version, target, release_note)
         if ret == NO_ERROR:
+            # go to specified nuget folder
+            Utility.pushd(cls.nugetFolderPath)
+            ret = cls.add_repo(target)
+            # return to the root sdk directory
+            Utility.popd()
+        if ret == NO_ERROR:
             ret = cls.create_targets(target)
         if ret == NO_ERROR:
             for cpu, configuration in itertools.product(cpus, configurations):                
@@ -106,11 +112,46 @@ class CreateNuget:
         return ret
 
     @classmethod
+    def add_repo(cls, target):
+        """
+        Adds a repository element to the metadata element inside .nuspec file
+        :param target: webrtc or ortc
+        :return: NO_ERROR if successfull. Otherwise returns error code
+        """
+        ret = NO_ERROR
+        branch = Utility.getBranch()
+        repo = Utility.getRepo()
+        
+        if repo.endswith('.git'):
+            repo = repo[:-len('.git')]
+
+        fullRepo = repo + "/tree/" + branch
+        
+        try:
+            nuspecName = target + '.nuspec'
+            with open(nuspecName, 'rb') as nuspec:
+                tree = ET.parse(nuspec)
+            metadata = tree.find('metadata')
+            
+            #Attribute for the repository element
+            repo_attrib = {'type': "git", 'url': fullRepo}
+            # Make a new repository element with the attributes from above
+            new_file = ET.SubElement(metadata, 'repository', attrib=repo_attrib)
+            new_file.tail = "\n\t\t"
+            cls.logger.debug("repository element added with url: " + repo_attrib['url'])
+            tree.write(nuspecName)
+        except Exception as error:
+            cls.logger.error(str(error))
+            ret = ERROR_CHANGE_NUSPEC_FAILED
+            cls.logger.error("Failed to add repo element to .nuspec file")
+        return ret
+
+    @classmethod
     def get_versions(cls, target):
         """
         Get NuGet package versions from nuget.org
         :param target: webrtc and/or ortc
-        :return versions: List of NuGet package versions
+        :return: NO_ERROR if successfull. Otherwise returns error code
         """
         ret = NO_ERROR
         # Works only if number of published versions of the nuget packet is less than 500
@@ -154,6 +195,7 @@ class CreateNuget:
         Creates a file with the NuGet package versions
         :param versions: list of NuGet package versions
         :param target: webrtc and/or ortc
+        :return: NO_ERROR if successfull. Otherwise returns error code
         """
         ret = NO_ERROR
         try:
@@ -270,6 +312,7 @@ class CreateNuget:
         :param prerelease: By default selects version number will have the same prerelease value as the previous one
             If the version is not prerelease, the value of prerelease parameter should be '' (empty string)
             If the prerelease type is different put that type in the prerelease parameter instead
+        :return: NO_ERROR if successfull. Otherwise returns error code
         """
         ret = NO_ERROR
         with open(cls.versions_file, 'r') as f:
@@ -311,6 +354,7 @@ class CreateNuget:
         :param configuration: Release or Debug.
         :param cpu: target cpu.
         :param f_type: array of file types to be updated (Default ['.dll', '.pri']).
+        :return: NO_ERROR if successfull. Otherwise returns error code
         """
         ret = NO_ERROR
         try:
@@ -366,6 +410,7 @@ class CreateNuget:
         :param f_name: name of the lib file that needs to be added(Default: Org.WebRtc)
         :param target_path: path for the target attribute of the file element that
             needs to be provided for all non default file types (.dll, .pri).
+        :return: NO_ERROR if successfull. Otherwise returns error code
         """
         ret = NO_ERROR
         try:
@@ -459,6 +504,7 @@ class CreateNuget:
         :param f_name: name of the lib file that needs to be added(Default: Org.WebRtc)
         :param target_path: path for the target attribute of the file element that
             needs to be provided for all non default file types (.dll, .pri).
+        :return: NO_ERROR if successfull. Otherwise returns error code
         """
         ret = NO_ERROR
         try:
@@ -582,6 +628,7 @@ class CreateNuget:
         :param version: version of the nuget package must be specified when
             copying nuspec file
         :param target: webrtc or ortc
+        :return: NO_ERROR if successfull. Otherwise returns error code
         """
         ret = NO_ERROR
         try:
@@ -614,6 +661,7 @@ class CreateNuget:
         """
         Create .targets file based on a template with default values
         :param target: webrtc or ortc
+        :return: NO_ERROR if successfull. Otherwise returns error code
         """
         ret = NO_ERROR
         try:
@@ -638,6 +686,7 @@ class CreateNuget:
         Checks if nuget package was made successfully and moves it to nuget folder
         :param target: webrtc or ortc
         :param version: Version of the created NuGet file
+        :return: NO_ERROR if successfull. Otherwise returns error code
         """
         ret = NO_ERROR
         try:

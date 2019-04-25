@@ -4,27 +4,8 @@ import argparse
 from datetime import datetime
 
 from consts import MAX_SDK_ROOT_PATH_LENGTH
+from utility import Utility
 import run
-
-def executeCommand(commandToExecute):
-  """
-    Runs provided command line as subprocess, and returns stdout.
-    :param commandToExecute: Command to execute.
-    :param stdout: Returns stdout, if command is executes successfully.  Otherwise it returns 'error' string.
-  """
-  process = subprocess.Popen(commandToExecute, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-  stdout, stderr = process.communicate()
-
-  if process.returncode == 0:
-    if stdout.endswith("\r\n"): return stdout[:-2]
-    if stdout.endswith("\n") or stdout.endswith("\r"): return stdout[:-1]
-  else:
-    print('Subprocess execution failed.')
-    print(str(stderr))
-    return 'error'
-
-  return stdout
 
 def createDestinationFolder(repo, destinationRootPath, generateFolderName = True):
   """
@@ -96,8 +77,8 @@ def main():
   #Change to sdk root folder, and get info about repo and branch
   sdk_root_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),'..')
   os.chdir(sdk_root_path)
-  gitRepo = executeCommand('git remote get-url origin')
-  gitBranch = executeCommand('git rev-parse --abbrev-ref HEAD')
+  gitRepo = Utility.getRepo()
+  gitBranch = Utility.getBranch()
   
   os.chdir('..')
   
@@ -114,7 +95,7 @@ def main():
     print('Cloning into ' + destinationPath + '  ...')
     #Change current working folder to one just created and clone repo in it
     os.chdir(destinationPath)
-    result = executeCommand('git clone --recursive ' + gitRepo + ' -b ' + gitBranch + ' .')
+    result = Utility.executeCommand('git clone --recursive ' + gitRepo + ' -b ' + gitBranch + ' .')
     
     if result != 'error':
       #If repo is successfully cloned, run script for building webrtc libs. Log  will be saved in repoCheckLog_folder_name.txt
