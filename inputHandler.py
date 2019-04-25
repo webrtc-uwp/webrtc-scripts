@@ -55,5 +55,6 @@ class Input:
     
     parser.add_argument('--unitTests', nargs='*', help='Unit tests to run.')
 
+    parser.add_argument('--logToFile', action='store_true',  help='Log to file.')
+
     Settings.inputArgs = parser.parse_args()
-    

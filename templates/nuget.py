@@ -120,9 +120,12 @@ logFormat = '[%(levelname)-17s] - [%(name)-15s] - %(funcName)-30s - %(message)s 
 #Supported log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL (case sensitive)
 logLevel = 'DEBUG'
 
-#Log filename. If it is empty string, log will be shown in console. 
-#In other case, it will log to specified file in folder from where script is run.
-logToFile = ''
+#If true logs to file with generic filename (platform-cpu-configuration-date), or to file with name entered in logFileName.
+#If it is false, log will be shown in console. 
+logToFile = False
+#Log file name
+logFileName = 'Log.txt'
+
 #If true overwrite old log file, otherwise it will create a new log file with time suffix.
 overwriteLogFile = False
 

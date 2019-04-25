@@ -467,7 +467,10 @@ class Utility:
       :return result: NO_ERROR if subprocess is executed successfully. Otherwise error or subprocess returncode
     """
     result = NO_ERROR
-    tempFile = None
+    if cls.logger.logToFile:
+      tempFile = subprocess.PIPE
+    else:
+      tempFile = None
     commandToExecute = ''
     for command in commands:
       if len(commandToExecute) > 0:
@@ -480,16 +483,18 @@ class Utility:
       #Execute command
       cls.logger.debug('Running subprocess: \n' + commandToExecute)
       if userEnv == None:
-        process = subprocess.Popen(commandToExecute, shell=False, stdin=subprocess.PIPE, stdout=tempFile, stderr=subprocess.PIPE)
+        process = subprocess.Popen(commandToExecute, shell=False, stdin=subprocess.PIPE, stdout=tempFile, stderr=subprocess.STDOUT)
       else:
-        process = subprocess.Popen(commandToExecute, shell=False, stdin=subprocess.PIPE, stdout=tempFile, stderr=subprocess.PIPE, env=userEnv)
+        process = subprocess.Popen(commandToExecute, shell=False, stdin=subprocess.PIPE, stdout=tempFile, stderr=subprocess.STDOUT, env=userEnv)
 
       #Add created subprocess to the list of active subprocesses, so it can be terminated on script termination.
       cls.actviveSubprocessList.append(process)
 
       #Enable showing subprocess output and responsiveness on keyboard actions (terminating script on user action) 
       stdout, stderr = process.communicate()
-
+      
+      if cls.logger.logToFile:
+        cls.logger.debug(stdout)
       if process.returncode != 0:
         result = ERROR_SUBPROCESS_EXECUTAION_FAILED
         cls.logger.error(str(stderr))

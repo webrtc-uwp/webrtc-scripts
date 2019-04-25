@@ -72,7 +72,7 @@ class System:
     Settings.init()
 
     #After logger settings are loaded (log level, log format, ...), logger can be prepared for usage
-    Logger.setUp(Settings.logFormat, Settings.noColoredOutput, Settings.logToFile, Settings.overwriteLogFile)
+    Logger.setUp()
     cls.logger = Logger.getLogger('System')
     
     #Set utility logger
