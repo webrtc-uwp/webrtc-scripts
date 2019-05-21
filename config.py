@@ -72,7 +72,7 @@ FOLDERS_TO_GENERATE_ORTC =  [
 
 #List of folders and its links to create
 FOLDERS_TO_LINK = [
-                   {'../buildtools' : './buildtools'},
+                   {'../chromium/buildtools' : './buildtools'},
                    {'../chromium/build' : './build'},
                    {'../chromium/third_party/abseil-cpp' : './chromium/src/third_party/abseil-cpp' },
                    {'../chromium/third_party/jsoncpp' : './chromium/src/third_party/jsoncpp'},
@@ -120,6 +120,7 @@ FOLDERS_TO_LINK = [
                    {'../winsdk_samples_v71' : './third_party/winsdk_samples'},
                    {'../gyp' : './tools/gyp'},
                    {'../chromium/tools/clang' : './tools/clang'},
+                   {'../chromium/tools/generate_stubs' : './tools/generate_stubs'},
                    {'../chromium/third_party/harfbuzz-ng' : './third_party/harfbuzz-ng'},
                    {'../chromium/third_party/freetype' : './third_party/freetype'},
                    {'../chromium/third_party/zlib' : './third_party/zlib'},

@@ -132,9 +132,9 @@ class System:
     """
     ret = True
 
-    if not Utility.checkIfToolIsInstalled(config.BUILD_TOOL_GN):
-      cls.logger.warning(config.BUILD_TOOL_GN + ' build tool is not found.')
-      ret = cls.__downloadBuildTool(config.BUILD_TOOL_GN)
+    #if not Utility.checkIfToolIsInstalled(config.BUILD_TOOL_GN):
+    #  cls.logger.warning(config.BUILD_TOOL_GN + ' build tool is not found.')
+    #  ret = cls.__downloadBuildTool(config.BUILD_TOOL_GN)
 
     if not Utility.checkIfToolIsInstalled(config.BUILD_TOOL_CLANG_FORMAT) and ret:
       cls.logger.warning(config.BUILD_TOOL_CLANG_FORMAT + ' build tool is not found.')
