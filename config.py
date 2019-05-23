@@ -125,6 +125,8 @@ FOLDERS_TO_LINK = [
                    {'../chromium/third_party/freetype' : './third_party/freetype'},
                    {'../chromium/third_party/zlib' : './third_party/zlib'},
                    {'../chromium/third_party/libpng' : './third_party/libpng'},
+                   {'../chromium/third_party/pffft' : './third_party/pffft'},
+                   {'../nasm' : './third_party/nasm'},
                    {'../icu' : './third_party/icu'},
                    {'../cryptopp' : './third_party/idl/cryptopp'},
                    {'../zsLib' : './third_party/idl/zsLib'},

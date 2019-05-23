@@ -26,7 +26,7 @@ supportedCPUsForPlatform = {
 #List of targets for which will be performed specified actions. Supported target is webrtc. In future it will be added support for ortc.
 targets = [ 'webrtc' ]
 #List of target cpus. Supported cpus are arm, x86 and x64
-targetCPUs = [ 'arm', 'x86', 'x64' ]
+targetCPUs = [ 'arm', 'arm64', 'x86', 'x64' ]
 #List of target platforms. Supported cpus are win and winuwp
 targetPlatforms = [ 'win', 'winuwp' ]
 #List of target configurations. Supported cpus are Release and Debug
