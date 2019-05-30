@@ -220,15 +220,11 @@ TARGETS_TO_BUILD = {
                                             )
                               }
 
-
-#TODO: !!!!! Make this platform dependent and generic !!!!!
 COMBINE_LIB_FOLDERS = (
                         '/obj',
                         '/gen',
-                        '/uwp_x86',
-                        '/uwp_x64',
-                        '/uwp_arm',
-                        '/win_clang_x64'
+                        '/uwp_*', 
+                        '/win_clang_*'
                       )
 
 COMBINE_LIB_IGNORE_SUBFOLDERS = (

@@ -327,7 +327,7 @@ class Utility:
 
 
   @classmethod
-  def getFilesWithExtensionsInFolder(cls, folders, extensions, folderToIgnores = (), stringLimit = 7000):
+  def getFilesWithExtensionsInFolder(cls, targetCPU, folders, extensions, folderToIgnores = (), stringLimit = 7000):
     """
       Creates list of all file paths with specified extensions in specified list of folders.
       :param folders: List of folders in which search for specified files will be performed.
@@ -339,6 +339,8 @@ class Utility:
     listOfFiles = ''
     listOfPaths = []
     for folder in folders:
+      if folder.endswith('*'):
+        folder = folder.replace('*',targetCPU)
       if os.path.exists(convertToPlatformPath(folder)):
         for root, dirs, files in os.walk(convertToPlatformPath(folder)):
           if not root.endswith(folderToIgnores):

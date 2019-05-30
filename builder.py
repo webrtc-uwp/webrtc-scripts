@@ -73,14 +73,14 @@ class Builder:
         ret = cls.mergeLibs(cpu,destinationPathLib)
       elif shouldCopyToOutput:
         #Copy lib files to the destinationPathLib folder
-        ret = cls.copyFilesToOutput(destinationPathLib, 'lib', config.COMBINE_LIB_IGNORE_SUBFOLDERS)
+        ret = cls.copyFilesToOutput(cpu, destinationPathLib, 'lib', config.COMBINE_LIB_IGNORE_SUBFOLDERS)
       
       if ret == NO_ERROR and shouldCopyToOutput:
         #Copy executable files to the destinationPathLib folder
-        cls.copyFilesToOutput(destinationPathLib, 'exe', config.COMBINE_LIB_IGNORE_SUBFOLDERS, 'executables')
+        cls.copyFilesToOutput(cpu, destinationPathLib, 'exe', config.COMBINE_LIB_IGNORE_SUBFOLDERS, 'executables')
 
         #Copy pdb files to the destinationPathLib folder
-        cls.copyFilesToOutput(destinationPathLib, 'pdb', config.COMBINE_LIB_IGNORE_SUBFOLDERS, 'pdbs')
+        cls.copyFilesToOutput(cpu, destinationPathLib, 'pdb', config.COMBINE_LIB_IGNORE_SUBFOLDERS, 'pdbs')
 
     #Switch to previously working directory
     Utility.popd()
@@ -220,7 +220,7 @@ class Builder:
       return errors.ERROR_BUILD_MISSING_LIB_EXECUTABLE
 
     #Get list of strings, with file paths total length less than 7000,,
-    listOfObjesToCombine = Utility.getFilesWithExtensionsInFolder(config.COMBINE_LIB_FOLDERS, ('.obj','.o'), config.COMBINE_LIB_IGNORE_SUBFOLDERS)
+    listOfObjesToCombine = Utility.getFilesWithExtensionsInFolder(targetCPU, config.COMBINE_LIB_FOLDERS, ('.obj','.o'), config.COMBINE_LIB_IGNORE_SUBFOLDERS)
 
     #Create temporary folder where will be save libs created from the obj files ^^^
     tempCombinePath = 'combine'
@@ -279,7 +279,7 @@ class Builder:
     return ret
 
   @classmethod
-  def copyFilesToOutput(cls, destinationPathLib, extension, listOfIngoredSubFolders, destinationSubfolder=''):
+  def copyFilesToOutput(cls, targetCPU, destinationPathLib, extension, listOfIngoredSubFolders, destinationSubfolder=''):
     """
       Copy files with specifed extension to the output folder.
       :param destinationPathLib: Path to folder where files will be copied.
@@ -299,7 +299,7 @@ class Builder:
       if not os.path.exists(destinationFilesPath):
         os.makedirs(destinationFilesPath)
 
-      listOfFilessToCopy = Utility.getFilesWithExtensionsInFolder(['.'],('.'+extension),listOfIngoredSubFolders,0)
+      listOfFilessToCopy = Utility.getFilesWithExtensionsInFolder(targetCPU,['.'],('.'+extension),listOfIngoredSubFolders,0)
       
       for fileToCopy in listOfFilessToCopy:
         result = Utility.copyFile(fileToCopy, os.path.join(destinationFilesPath,os.path.basename(fileToCopy)))
