@@ -300,6 +300,16 @@ RUNTIME_STORE_DLLS = {
                         'release' :  [ 'msvcp140_app.dll', 'vcruntime140_app.dll' ]
                       }
 
+#Gn revision to download
+GN_REVISION = '64b846c96daeb3eaf08e26d8a84d8451c6cb712b'
+#Google server from where are downloaded gn, and later some other tools too
+GOOGLE_DOWNLOAD_TOOLS_SERVER = 'https://chrome-infra-packages.appspot.com'
+#Mapping buildtoos platform names to platform names used for downloading tools from Google's server
+GOOGLE_DOWNLOAD_PLATFORMS = {
+                              'win' : 'windows-amd64',
+                              'linux64' : 'linux-amd64',
+                              'mac' : 'mac-amd64'
+                            }
 
 UNIT_TESTS_LOG_SEPARATOR = '***UNIT_TEST_FINISHED***\n'
 UNIT_TEST_RESULTS_SEPARATOR = '[----------] Global test environment tear-down'

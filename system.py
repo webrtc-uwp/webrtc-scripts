@@ -5,6 +5,13 @@ import re
 import subprocess
 import traceback
 from importlib import import_module
+import io
+import stat
+import zipfile
+try:
+  import urllib2 as urllib
+except ImportError:
+  import urllib.request as urllib
 try:
   from _winreg import HKEY_LOCAL_MACHINE
 except:
@@ -50,7 +57,7 @@ class System:
     Utility.addModulePath(Settings.rootScriptsPath)       #Folder where are scripts file
     Utility.addModulePath(Settings.templatesPath)         #Subfolder in scripts folder, that contains only template files
 
-    Utility.addPath(Settings.localBuildToolsPath)
+    Utility.addPath(os.path.join(Settings.localBuildToolsPath, cls.getOsName()))
 
     #Determine python executable path and add python's Scripts folder in the system PATH
     executablePath = Utility.getExecutablePath('python')
@@ -132,9 +139,9 @@ class System:
     """
     ret = True
 
-    #if not Utility.checkIfToolIsInstalled(config.BUILD_TOOL_GN):
-    #  cls.logger.warning(config.BUILD_TOOL_GN + ' build tool is not found.')
-    #  ret = cls.__downloadBuildTool(config.BUILD_TOOL_GN)
+    if not Utility.checkIfToolIsInstalled(config.BUILD_TOOL_GN):
+     cls.logger.warning(config.BUILD_TOOL_GN + ' build tool is not found.')
+     ret = cls.downloadGN()
 
     if not Utility.checkIfToolIsInstalled(config.BUILD_TOOL_CLANG_FORMAT) and ret:
       cls.logger.warning(config.BUILD_TOOL_CLANG_FORMAT + ' build tool is not found.')
@@ -264,9 +271,26 @@ class System:
       Checks if Windows is host OS.
       :return: True if Windows
     """
-    if cls.hostOs.lower() == 'windows':
+    if cls.hostOs == 'windows':
       return True
     return False
+
+  @classmethod
+  def getOsName(cls):
+    """
+      Based on system.platfrom returns os name that is used by buildtools
+      :return: os name
+    """
+    ret = 'win'
+
+    if cls.hostOs == 'windows':
+      ret = 'win'
+    elif cls.hostOs == 'linux':
+      ret = 'linux64'
+    elif cls.hostOs == 'darwin':
+      ret = 'mac'
+
+    return ret
 
   @classmethod
   def stopExecution(cls, error = NO_ERROR, message = ''):
@@ -374,6 +398,73 @@ class System:
       cls.logger.error('Failed downloading ' + operationDetails)
     
     return ret
+
+  @classmethod
+  def updateGn(cls):
+    """
+      If installed gn, updates it to revision set in config. If gn is not present fails.
+      If Google update used scripts for downloading this should be proper way for downloading gn.
+      Till then use downloadGN() method.
+      return: True if updated or it is up to date.
+    """
+    ret = True
+
+    Utility.pushd(Settings.localBuildToolsPath)
+
+    cmd = 'python ensure_gn_version.py git_revision:' + config.GN_REVISION
+    result = Utility.runSubprocess([cmd], Settings.logLevel == 'DEBUG')
+
+    Utility.popd()
+
+    if result != NO_ERROR:
+      ret = False
+      cls.logger.error('Failed updating gn.exe')
+    
+    return ret
+
+  @classmethod
+  def downloadGN(cls):
+    """
+      Downloads gn.exe tool with specified revision from the Googles server.
+      return: True if downloaded and unpacked. 
+    """
+    ret = True
+
+    osName = cls.getOsName()
+    url = '%s/dl/gn/gn/%s/+/git_revision:%s' % (config.GOOGLE_DOWNLOAD_TOOLS_SERVER, config.GOOGLE_DOWNLOAD_PLATFORMS[osName], config.GN_REVISION)
+    try:
+      zipdata = urllib.urlopen(url).read()
+    except urllib.HTTPError as e:
+      cls.logger.error('Failed to download the package from %s: %d %s' % (
+          url, e.code, e.reason))
+      ret  = False
+    except Exception as e:
+      cls.logger.error('Failed to download the package from %s:\n%s' % (url, e.message))
+      ret  = False
+
+    destinationPath = os.path.join(Settings.localBuildToolsPath, osName)
+    if ret:
+      try:
+        zf = zipfile.ZipFile(io.BytesIO(zipdata))
+        zf.extract('gn.exe', destinationPath)
+      except Exception as e:
+        cls.logger.error('Failed to extract the binary:\n%s\n' % e.msg)
+        ret = False
+
+    if ret:
+      try:
+        path_to_exe = os.path.join(destinationPath, 'gn.exe')
+        os.chmod(path_to_exe,
+                stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR |  # This is 0o755.
+                stat.S_IRGRP | stat.S_IXGRP |
+                stat.S_IROTH | stat.S_IXOTH)
+      except Exception as e:
+        cls.logger.error('Failed to make the binary executable:\n%s\n' %
+                e.message)
+        ret = False
+
+    return ret
+
   #---------------------------------- Private methods --------------------------------------------
   @classmethod
   def __createUserDefFile(cls):
@@ -434,7 +525,7 @@ class System:
     """
     ret = True
 
-    result = cls.downloadFromGoogle('chromium-' + toolName, os.path.join(Settings.localBuildToolsPath,toolName + '.exe.sha1'), False, False)
+    result = cls.downloadFromGoogle('chromium-' + toolName, os.path.join(Settings.localBuildToolsPath,cls.getOsName(),toolName + '.exe.sha1'), False, False)
 
     if not result:
       ret = False

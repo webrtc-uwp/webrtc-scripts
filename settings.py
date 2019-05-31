@@ -36,7 +36,7 @@ class Settings:
     cls.localDepotToolsPath = os.path.join(Settings.rootSdkPath, convertToPlatformPath(config.RELATIVE_DEPOT_TOOLS_PATH))
     #Local buildtools path
     #TODO: Make platform dependent - check host os and add proper subfolder name
-    cls.localBuildToolsPath = os.path.join(Settings.rootSdkPath, convertToPlatformPath(config.RELATIVE_BUILD_TOOLS_PATH),'win')
+    cls.localBuildToolsPath = os.path.join(Settings.rootSdkPath, convertToPlatformPath(config.RELATIVE_BUILD_TOOLS_PATH))
     #defaults.py path
     cls.defaultFilePath = os.path.join(os.path.dirname(__file__),'defaults.py')
     #Root path for preparation
