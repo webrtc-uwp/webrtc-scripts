@@ -70,7 +70,7 @@ class Builder:
 
       #Merge libraries if it is required. Merged lib is saved in destinationPathLib
       if shouldCombineLibs:
-        ret = cls.mergeLibs(cpu,destinationPathLib)
+        ret = cls.mergeLibs(platform,cpu,destinationPathLib)
       elif shouldCopyToOutput:
         #Copy lib files to the destinationPathLib folder
         ret = cls.copyFilesToOutput(cpu, destinationPathLib, 'lib', config.COMBINE_LIB_IGNORE_SUBFOLDERS)
@@ -201,7 +201,7 @@ class Builder:
     return ret
 
   @classmethod
-  def mergeLibs(cls, targetCPU, destinationPath):
+  def mergeLibs(cls, platform, targetCPU, destinationPath):
     """
       Merges obj files and creates fat webrtc library.
       :param targetCPU: Target CPU.
@@ -219,8 +219,17 @@ class Builder:
       cls.logger.warning('Please, install VS component Visual c++ compiler and libraries for ' + targetCPU)
       return errors.ERROR_BUILD_MISSING_LIB_EXECUTABLE
 
+    objFolders = []
+    #Filter folders for merging libs. Don't merge win32 folders when built winuwp and vice verse.
+    for folder in config.COMBINE_LIB_FOLDERS:
+      if platform =='winuwp':
+        if 'win_clang' not in folder:
+          objFolders.append(folder)
+      elif platform == 'win':
+        if 'uwp' not in folder:
+          objFolders.append(folder)
     #Get list of strings, with file paths total length less than 7000,,
-    listOfObjesToCombine = Utility.getFilesWithExtensionsInFolder(targetCPU, config.COMBINE_LIB_FOLDERS, ('.obj','.o'), config.COMBINE_LIB_IGNORE_SUBFOLDERS)
+    listOfObjesToCombine = Utility.getFilesWithExtensionsInFolder(targetCPU, objFolders, ('.obj','.o'), config.COMBINE_LIB_IGNORE_SUBFOLDERS)
 
     #Create temporary folder where will be save libs created from the obj files ^^^
     tempCombinePath = 'combine'
