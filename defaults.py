@@ -49,6 +49,7 @@ targetProgrammingLanguage = [ 'cx', 'cppwinrt', 'c', 'dotnet', 'python' ]
 actions = [ 'prepare', 'build' ]
 
 buildWithClang = False
+buildWithCpp17 = False
 #Flag if wrapper library should be built. If it is False, it will be built only native libraries
 buildWrapper = True
 
