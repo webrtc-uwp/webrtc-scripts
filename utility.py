@@ -115,6 +115,69 @@ class Utility:
     """
     repo = Utility.executeCommand('git remote get-url origin')
     return repo
+    
+  @staticmethod
+  def getCommitHash():
+    """
+      Returns the last commit hash for the root SDK git repository
+      :return commitHash: commit hash
+    """
+    commitHash = Utility.executeCommand('git rev-parse HEAD')
+    return commitHash
+    
+  @staticmethod
+  def getCommitTitle(commitHash):
+    """
+      Returns title for the given commit hash
+      :param commitHash: hash value for the commit
+      :return commitTitle: commit title
+    """
+    commitTitle = Utility.executeCommand('git log --format=%B -n 1 ' + commitHash)
+    commitTitle = commitTitle.strip()
+    return commitTitle
+
+  @staticmethod
+  def addGitTag(tagNumber):
+    """
+      Adds a tag to the git repository with a specific version number.
+      :param tagNumber: Tag number
+    """
+    ret = Utility.executeCommand('git tag ' + tagNumber)
+    if 'error' not in ret:
+      cls.logger.debug("Git tag added: " + tagNumber)
+
+  @staticmethod
+  def pushGitTag(tagNumber):
+    """
+      Publishes a tag with a specific tag number to the git repository.
+      :param tagNumber: Tag number
+    """
+    ret = Utility.executeCommand('git push origin ' + tagNumber)
+    if 'error' not in ret:
+      cls.logger.debug("Tag pushed to git repository: " + tagNumber)
+  
+  @classmethod
+  def getCommitLog(cls, currentTag, commitKeywords):
+    """
+      Returns all the commits that contain at least one of the keywords in between current tag and a tag before that one 
+      :param currentTag: Current tag
+      :param commitKeywords: Array of keywords
+      :return commits: Distionary with pairs of commit hashes and commit texts
+    """
+    commits = {}
+    #Get previous tag
+    previousTag = Utility.executeCommand('git describe --abbrev=0 ' + currentTag + '^')
+    cls.logger.debug("Getting commits between " + previousTag + " and " + currentTag + " tags")
+    #Get all commits between two tags
+    log = Utility.executeCommand('git log ' + previousTag + '..' + currentTag + ' --pretty=oneline')
+    log = log.splitlines()
+    # check if any of the keywords are contained in commit
+    for commit in log:
+      if any(keyword in commit for keyword in commitKeywords):
+        commit = commit.split(' ', 1)
+        commits[commit[0]] = commit[1]
+
+    return commits
 
   @classmethod
   def makeLink(cls, source, destination):

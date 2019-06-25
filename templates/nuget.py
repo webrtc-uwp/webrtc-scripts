@@ -19,6 +19,10 @@ manualNugetVersionNumber = ''
 #Path to a release notes file
 releaseNotePath = 'releases.txt'
 
+#Keywords for selecting commits that should be placed inside release notes
+#(commits that have at least one of keywords will be placed inside release notes)
+commitKeywords = ['notes', 'merge']
+
 #Information about the sample to be updated
 updateSampleInfo = {
                       'package' : 'default',

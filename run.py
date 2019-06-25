@@ -129,7 +129,7 @@ def actionCreateNuget():
 
   for target in Settings.targets:
     for platform in Settings.targetPlatforms:
-        Logger.printStartActionMessage('Create Nuget for ' + target)
+        Logger.printStartActionMessage('Create Nuget for ' + target + ' ' + platform)
         if checkIfBuildWasSuccessful() == True:
           result = CreateNuget.run(
             target, platform, Settings.targetCPUs, 
@@ -154,7 +154,7 @@ def actionPublishNuget():
     for platform in Settings.targetPlatforms:
       if not Summary.checkIfCreateNugetFailed(target, platform):
         Logger.printStartActionMessage("Publish Nuget for " + target + ' ' + platform)
-        result = PublishNuget.run()
+        result = PublishNuget.run(target, platform)
         if result != NO_ERROR:
             Logger.printEndActionMessage('Failed to publish NuGet package ' + target + ' ' + platform,ColoredFormatter.RED)
             #Terminate script execution if stopExecutionOnError is set to True in userdef
