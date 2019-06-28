@@ -115,6 +115,11 @@ class Settings:
     else:
       cls.buildWithClang = buildWithClang
 
+    if cls.inputArgs.cpp17:
+      cls.buildWithCpp17 = True
+    else:
+      cls.buildWithCpp17 = buildWithCpp17
+
     cls.buildWrapper = buildWrapper
 
     cls.logFormat = logFormat
