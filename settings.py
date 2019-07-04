@@ -156,6 +156,7 @@ class Settings:
     cls.manualNugetVersionNumber = manualNugetVersionNumber
     cls.nugetPackagesToPublish = nugetPackagesToPublish
     cls.releaseNotePath = releaseNotePath
+    cls.commitKeywords = commitKeywords
     cls.nugetAPIKey = nugetAPIKey
     cls.nugetServerURL = nugetServerURL
     cls.updateSampleInfo = updateSampleInfo
