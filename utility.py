@@ -172,8 +172,13 @@ class Utility:
     log = Utility.executeCommand('git log ' + previousTag + '..' + currentTag + ' --pretty=oneline')
     log = log.splitlines()
     # check if any of the keywords are contained in commit
-    for commit in log:
-      if any(keyword in commit for keyword in commitKeywords):
+    if '*' not in commitKeywords[0]:
+      for commit in log:
+        if any(keyword in commit for keyword in commitKeywords):
+          commit = commit.split(' ', 1)
+          commits[commit[0]] = commit[1]
+    else:
+      for commit in log:
         commit = commit.split(' ', 1)
         commits[commit[0]] = commit[1]
 

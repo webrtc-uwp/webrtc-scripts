@@ -38,6 +38,7 @@ NUGET_EXECUTABLE_PATH = './webrtc/windows/nuget/nuget.exe'
 WIN_LIB_SRC = './[TARGET]/windows/solutions/Build/Output/Net/Org.WebRtc/[CONFIGURATION]/AnyCPU/netstandard2.0/[FILE]'
 WIN_LIB_DST = '/libraries/[TARGET]/[PLATFORM]/AnyCPU/netstandard2.0/'
 WIN_RUNTIMES_SRC = './[TARGET]/windows/solutions/Build/Output/Net/Org.WebRtc.WrapperC/[CONFIGURATION]/[CPU]/[FILE]'
+WRAPPERC_NAME  = 'libOrg.WebRtc.WrapperC'
 
 #Paths are relative to the webrtc root path
 GN_OUTPUT_PATH = './out'

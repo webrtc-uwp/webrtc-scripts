@@ -70,7 +70,7 @@ class CreateNuget:
         if Settings.manualNugetVersionNumber is '':
             #Get array with NuGet package info from nuget.org
             cls.onlinePackageInfo = NugetUtility.get_package_info(packageName)
-            #Get dictionary with the releasenotes from the info
+            #Get dictionary with the release notes from the info
             notes = NugetUtility.get_notes(cls.onlinePackageInfo)
             ret = cls.get_versions()
             if ret == NO_ERROR:
@@ -80,12 +80,12 @@ class CreateNuget:
         else:
             cls.version = Settings.manualNugetVersionNumber
         if ret == NO_ERROR:
-            #Add a git tag vith nuget version number
+            #Add a git tag with nuget version number
             if 'winuwp' in platform:
                 Utility.addGitTag(cls.version)
-            #Add automatically releasenotes to the package
+            #Add automatically release notes to the package
             release_note = cls.auto_note(cls.version, packageName)
-            #If releasenotes action is run, add the string from the action as additional info
+            #If release notes action is run, add the string from the action as additional info
             if os.path.isfile(Settings.releaseNotePath) and ReleaseNotes.get_note(Settings.releaseNotePath):
                 release_note += "Additional information:\n" + ReleaseNotes.get_note(Settings.releaseNotePath)
             #Create .nuspec file based on a specific template from config.NUGET_TEMPLATES_FOLDER
@@ -106,7 +106,7 @@ class CreateNuget:
                     ret = cls.copy_files(target, platform, configuration, cpu)
                 else:
                     ret = cls.copy_files(target, platform, configuration, cpu, src_path=config.WIN_LIB_SRC, dst_path=config.WIN_LIB_DST, f_type=['.dll'])
-                    ret = cls.copy_files(target, platform, configuration, cpu, src_path=config.WIN_RUNTIMES_SRC, f_type=['.dll'], f_name='libOrg')
+                    ret = cls.copy_files(target, platform, configuration, cpu, src_path=config.WIN_RUNTIMES_SRC, f_type=['.dll'], f_name=config.WRAPPERC_NAME)
                 
                 # go to specified nuget folder
                 Utility.pushd(cls.nugetFolderPath)
@@ -116,7 +116,7 @@ class CreateNuget:
                         ret = cls.add_nuspec_files(target, platform, configuration, cpu)
                     else:
                         # add .dll files to .nuspec file
-                        ret = cls.add_nuspec_files(target, platform, configuration, cpu, f_type=['.dll'], f_name='libOrg')
+                        ret = cls.add_nuspec_files(target, platform, configuration, cpu, f_type=['.dll'], f_name=config.WRAPPERC_NAME)
                 if ret == NO_ERROR and 'winuwp' in platform:
                     # update .winmd and .xml tags in nuspec file with the copied files
                     ret = cls.update_nuspec_files(target, platform, configuration, cpu,f_type=['.winmd', '.xml'], target_path=r'lib\uap10.0')
@@ -134,7 +134,7 @@ class CreateNuget:
 
         # return to the base directory
         Utility.popd()
-        # create a releasenotes file for the package (taken from nuget.org)
+        # create a release notes file for the package (taken from nuget.org)
         NugetUtility.create_release_history(cls.onlinePackageInfo, packageName)
         return ret
 
@@ -169,6 +169,8 @@ class CreateNuget:
             tree.write(nuspecName)
         except Exception as error:
             cls.logger.error(str(error))
+            if 'mismatched tag: line' in str(error):
+                cls.logger.error('Possibly too many commits added to release notes.')
             ret = ERROR_CHANGE_NUSPEC_FAILED
             cls.logger.error("Failed to add repo element to .nuspec file")
         return ret
@@ -359,7 +361,7 @@ class CreateNuget:
         return ret
 
     @classmethod
-    def copy_files(cls, target, platform, configuration, cpu, f_type=['.dll', '.pri', '.winmd', '.xml'], f_name='Org', src_path=config.NATIVE_LIB_SRC, dst_path=config.NUGET_LIBRARIES):
+    def copy_files(cls, target, platform, configuration, cpu, f_type=['.dll', '.pri', '.winmd', '.xml'], f_name='Default', src_path=config.NATIVE_LIB_SRC, dst_path=config.NUGET_LIBRARIES):
         """
         Copy lib files that will be used for building nuget package to the destination folder
         :param target: webrtc or ortc
@@ -376,6 +378,8 @@ class CreateNuget:
         start_src = src_path
         dst_path = cls.nugetFolderPath + dst_path
         start_dst = dst_path
+        if 'Default' in f_name:
+            f_name = 'Org.' + target
         try:
             # Create libraries directory if needed
             if not os.path.exists(cls.nugetFolderPath + '/libraries'):
@@ -384,7 +388,7 @@ class CreateNuget:
             shutil.copy(config.LICENSE_PATH, cls.nugetFolderPath+'/libraries/LICENSE.txt')
             
             for ft in f_type:
-                file_name = f_name + '.' + target + ft
+                file_name = f_name + ft
                 if '[TARGET]' in src_path:
                     src_path = src_path.replace('[TARGET]', target)
                 if '[PLATFORM]' in src_path:
@@ -523,7 +527,7 @@ class CreateNuget:
             cls.logger.error("Failed to delete file elements inside .nuspec file")
 
     @classmethod
-    def add_nuspec_files(cls, target, platform, configuration, cpu, f_type=['.dll', '.pri'], f_name='Org', target_path=False):
+    def add_nuspec_files(cls, target, platform, configuration, cpu, f_type=['.dll', '.pri'], f_name='Default', target_path=False):
         """
         Add file elements to .nuspec file based on config
         Every cpu type that you want to add to NuGet package must be built in
@@ -540,6 +544,8 @@ class CreateNuget:
         :return: NO_ERROR if successfull. Otherwise returns error code
         """
         ret = NO_ERROR
+        if 'Default' in f_name:
+            f_name = 'Org.' + target
         try:
             """
             in order for update to work nuspec must not have   xmlns="..."
@@ -551,7 +557,7 @@ class CreateNuget:
             files = tree.find('files')
             for ft in f_type:
                 # Add extention to the file name
-                file_name = f_name + '.' + target + ft
+                file_name = f_name + ft
                 # Src path to the lib file with required cpu, configuration and file type
                 src_path = convertToPlatformPath(
                     config.NUGET_LIBRARIES

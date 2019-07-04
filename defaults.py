@@ -153,7 +153,7 @@ manualNugetVersionNumber = ''
 #Path to a release notes file
 releaseNotePath = 'releases.txt'
 
-#Keywords for selecting commits that should be placed inside release notes
+#Keywords for selecting commits that should be placed inside release notes (use ['*'] in order to use all commits)
 #(commits that have at least one of keywords will be placed inside release notes)
 commitKeywords = ['notes', 'merge']
 
