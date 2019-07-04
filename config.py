@@ -45,7 +45,10 @@ BUILD_TOOL_GN = 'gn'
 BUILD_TOOL_CLANG_FORMAT = 'clang-format'
 
 #Supported VS version
-VISUAL_STUDIO_VERSION = 'vs2017'
+VISUAL_STUDIO_VERSIONS = [ 
+                            'vs2017',
+                            'vs2019'
+                          ]
 
 #Comment that will be printed at the begining of userdef.py file
 USERDEF_DESCRIPTION_MESSAGE = 'This file is generated from defaults.py. Be free to change any variable listed below.'
@@ -162,10 +165,10 @@ FILES_TO_IGNORE_FOR_COPYING = [
                               '.git',
                               '.gitignore'
                             ]
-#VS2017 folders name to append to Program files or Program Files (x86) parent folder
-MSVS_FOLDER_NAME = '/Microsoft Visual Studio/2017'
+#VS folders name to append to Program files or Program Files (x86) parent folder
+MSVS_FOLDER_NAME = '/Microsoft Visual Studio/'
 
-#List of VS2017 supported versions
+#List of VS supported versions
 MSVS_VERSIONS = (
                   'Community',
                   'Professional',
@@ -301,7 +304,7 @@ RUNTIME_STORE_DLLS = {
                       }
 
 #Gn revision to download
-GN_REVISION = '64b846c96daeb3eaf08e26d8a84d8451c6cb712b'
+GN_REVISION = '81ee1967d3fcbc829bac1c005c3da59739c88df9'
 #Google server from where are downloaded gn, and later some other tools too
 GOOGLE_DOWNLOAD_TOOLS_SERVER = 'https://chrome-infra-packages.appspot.com'
 #Mapping buildtoos platform names to platform names used for downloading tools from Google's server

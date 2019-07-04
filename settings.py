@@ -225,6 +225,11 @@ class Settings:
       cls.unitTestsToRun = list(unitTests)
 
     cls.unitTests = unitTests
+
+    if cls.inputArgs.vsVersion:
+      cls.vsVersion = cls.inputArgs.vsVersion
+    else:
+      cls.version = vsVersion
     
   @classmethod
   def getGnOutputPath(cls, path, target, platform, cpu, configuration):

@@ -216,3 +216,5 @@ unitTests = {
               'webrtc_perf_tests' : ['*'],
             }
             
+#Visual Studio version to use
+vsVersion = '2017'

@@ -204,7 +204,7 @@ class Preparation:
       cls.logger.info('Generating webrtc projects ...')
 
       #Generate Webrtc projects
-      cmd = 'gn gen ' + gnOutputPath + ' --ide=' + config.VISUAL_STUDIO_VERSION + ' -v'
+      cmd = 'gn gen ' + gnOutputPath + ' --ide=vs' + Settings.vsVersion + ' -v'
       result = Utility.runSubprocess([cmd], Settings.logLevel == 'DEBUG',my_env)
       if result != 0:
         ret = errors.ERROR_PREPARE_GN_GENERATION_FAILED

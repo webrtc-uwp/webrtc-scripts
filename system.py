@@ -550,10 +550,13 @@ class System:
       else:
         vsPath = os.environ['ProgramFiles(x86)']
        
-      #Create exoected VS2017 path
-      vsPath = os.path.join(vsPath,convertToPlatformPath(config.MSVS_FOLDER_NAME))
+      #Sets working Visual Studio version
+      os.environ['GYP_MSVS_VERSION'] = Settings.vsVersion
 
-      #Indetify installed VS2017 version 
+      #Create expected VS path
+      vsPath = os.path.join(vsPath,convertToPlatformPath(config.MSVS_FOLDER_NAME + Settings.vsVersion))
+
+      #Indetify installed VS version 
       if os.path.exists(vsPath):
         for version in config.MSVS_VERSIONS:
           versionPath = os.path.join(vsPath,version)
@@ -561,7 +564,7 @@ class System:
             Settings.msvsPath = versionPath
             break
       else:
-        cls.logger.warning('Visual studio 2017 is not found at ' + vsPath + '. Please install it, or if it is installed, set msvsPath variable in userdef.py to point to correct path.')
+        cls.logger.warning('Visual studio is not found at ' + vsPath + '. Please install it, or if it is installed, set msvsPath variable in userdef.py to point to correct path.')
 
     #Determine msvc tools and vcvarsall.bat path
     if Settings.msvsPath != '':

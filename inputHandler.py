@@ -57,5 +57,7 @@ class Input:
     
     parser.add_argument('--unitTests', nargs='*', help='Unit tests to run.')
 
+    parser.add_argument('-v','--vsVersion', nargs='?', choices=['2017', '2019'], help='Select Visual Studio version to use for development.')
+
     Settings.inputArgs = parser.parse_args()
     
