@@ -19,7 +19,7 @@ manualNugetVersionNumber = ''
 #Path to a release notes file
 releaseNotePath = 'releases.txt'
 
-#Keywords for selecting commits that should be placed inside release notes
+#Keywords for selecting commits that should be placed inside release notes (use ['*'] in order to use all commits)
 #(commits that have at least one of keywords will be placed inside release notes)
 commitKeywords = ['notes', 'merge']
 
@@ -87,7 +87,7 @@ targetProgrammingLanguage = [ 'cx', 'cppwinrt', 'c', 'dotnet', 'python' ]
 #'publishnuget' : Publishes nuget package
 #'uploadbackup' : Creates a zipp file with pdb files and nuget package based on configuration and uploads it to onedrive
 #List of actions to perform
-actions = [ 'prepare', 'build', 'backup', 'createnuget', 'releasenotes', 'publishnuget', 'updatesample' ]
+actions = [ 'prepare', 'build', 'backup', 'createnuget', 'publishnuget', 'updatesample' ]
 
 #Flag if wrapper library should be built. If it is False, it will be built only native libraries
 buildWrapper = True  
