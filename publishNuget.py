@@ -41,9 +41,9 @@ class PublishNuget:
         #Select package that was just created.
         if hasattr(CreateNuget, 'createdPackage'):
             if 'winuwp' in platform:
-                packageName = 'webrtc.'+CreateNuget.createdPackage[(target, platform)]+'.nupkg'
+                packageName = 'webrtc.'+CreateNuget.createdPackage[(target)]+'.nupkg'
             else:
-                packageName = 'webrtc.net.'+CreateNuget.createdPackage[(target, platform)]+'.nupkg'
+                packageName = 'webrtc.NET.'+CreateNuget.createdPackage[(target+'.NET')]+'.nupkg'
             ret = cls.load_packages([packageName])
         #Select package list from userdef.py
         elif Settings.nugetPackagesToPublish:
