@@ -229,7 +229,7 @@ class Settings:
     if cls.inputArgs.vsVersion:
       cls.vsVersion = cls.inputArgs.vsVersion
     else:
-      cls.version = vsVersion
+      cls.vsVersion = vsVersion
     
   @classmethod
   def getGnOutputPath(cls, path, target, platform, cpu, configuration):

@@ -102,6 +102,9 @@ class Cleanup:
           cls.logger.warning('Solution with wrapper projects is not specified in config!')
           continue
 
+        if Settings.vsVersion == '2019':
+          solutionName = solutionName.replace('.sln','.' + Settings.vsVersion+'.sln')
+          
         for cpu in cpus:
           #Set the PATH and environment variables for command-line builds (e.g. vcvarsall.bat x64_x86)
           cls.cmdVcVarsAll = '\"' +  Settings.vcvarsallPath + '\" ' + config.WINDOWS_COMPILER_OPTIONS[System.hostCPU][cpu]
