@@ -19,6 +19,13 @@ manualNugetVersionNumber = ''
 #Path to a release notes file
 releaseNotePath = 'releases.txt'
 
+#Keywords for selecting commits that should be placed inside release notes (use ['*'] in order to use all commits)
+#(commits that have at least one of keywords will be placed inside release notes)
+commitKeywords = ['notes', 'merge']
+
+#Place where zipped backup(pdb) files will be uploaded inside onedrive folder for the uploadbackup action
+onedrivePath = 'Public Symbols/WebRTC'
+
 #Information about the sample to be updated
 updateSampleInfo = {
                       'package' : 'default',
@@ -64,7 +71,7 @@ supportedCPUsForPlatform = {
 #List of targets for which will be performed specified actions. Supported target is webrtc. In future it will be added support for ortc.
 targets = [ 'webrtc' ]
 #List of target cpus. Supported cpus are arm, x86 and x64
-targetCPUs = [ 'x86', 'x64' ]
+targetCPUs = [ 'arm', 'x86', 'x64' ]
 #List of target platforms. Supported cpus are win and winuwp
 targetPlatforms = [ 'winuwp' ]
 #List of target configurations. Supported cpus are Release and Debug
@@ -83,7 +90,7 @@ targetProgrammingLanguage = [ 'cx', 'cppwinrt', 'c', 'dotnet', 'python' ]
 #'publishnuget' : Publishes nuget package
 #'uploadbackup' : Creates a zipp file with pdb files and nuget package based on configuration and uploads it to onedrive
 #List of actions to perform
-actions = [ 'prepare', 'build', 'backup', 'createnuget', 'releasenotes', 'publishnuget', 'updatesample' ]
+actions = [ 'prepare', 'build', 'backup', 'createnuget', 'publishnuget', 'updatesample' ]
 
 #Flag if wrapper library should be built. If it is False, it will be built only native libraries
 buildWrapper = True  

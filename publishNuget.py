@@ -24,7 +24,7 @@ class PublishNuget:
         cls.packages = []
 
     @classmethod
-    def run(cls):
+    def run(cls, target, platform):
         """
         Start publish NuGet package process
         :return: NO_ERROR if successfull. Otherwise returns error code
@@ -39,8 +39,12 @@ class PublishNuget:
             cls.set_api_key(cls.serverKey, cls.serverURL)
         
         #Select package that was just created.
-        if hasattr(CreateNuget, 'version'):
-            ret = cls.load_packages(['webrtc.'+CreateNuget.version+'.nupkg'])
+        if hasattr(CreateNuget, 'createdPackage'):
+            if 'winuwp' in platform:
+                packageName = 'webrtc.'+CreateNuget.createdPackage[(target)]+'.nupkg'
+            else:
+                packageName = 'webrtc.NET.'+CreateNuget.createdPackage[(target+'.NET')]+'.nupkg'
+            ret = cls.load_packages([packageName])
         #Select package list from userdef.py
         elif Settings.nugetPackagesToPublish:
             ret = cls.load_packages(Settings.nugetPackagesToPublish)
@@ -57,7 +61,11 @@ class PublishNuget:
         end_time = time.time()
         
         if ret == NO_ERROR:
+            if 'winuwp' in platform:
+                Utility.pushGitTag(package['packageVersionNumber'])
             ReleaseNotes.set_note_version(package['packageVersionNumber'])
+        #Delete package list
+        cls.packages = []
         cls.executionTime = end_time - start_time
         
         # return to the base directory

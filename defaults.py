@@ -49,6 +49,7 @@ targetProgrammingLanguage = [ 'cx', 'cppwinrt', 'c', 'dotnet', 'python' ]
 actions = [ 'prepare', 'build' ]
 
 buildWithClang = False
+buildWithCpp17 = False
 #Flag if wrapper library should be built. If it is False, it will be built only native libraries
 buildWrapper = True
 
@@ -154,6 +155,13 @@ manualNugetVersionNumber = ''
 
 #Path to a release notes file
 releaseNotePath = 'releases.txt'
+
+#Keywords for selecting commits that should be placed inside release notes (use ['*'] in order to use all commits)
+#(commits that have at least one of keywords will be placed inside release notes)
+commitKeywords = ['notes', 'merge']
+
+#Place where zipped backup(pdb) files will be uploaded inside onedrive folder for the uploadbackup action
+onedrivePath = 'Public Symbols/WebRTC'
 
 #Information about the sample to be updated
 updateSampleInfo = {

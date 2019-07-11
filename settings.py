@@ -115,6 +115,11 @@ class Settings:
     else:
       cls.buildWithClang = buildWithClang
 
+    if cls.inputArgs.cpp17:
+      cls.buildWithCpp17 = True
+    else:
+      cls.buildWithCpp17 = buildWithCpp17
+
     cls.buildWrapper = buildWrapper
 
     cls.logFormat = logFormat
@@ -149,6 +154,8 @@ class Settings:
     cls.manualNugetVersionNumber = manualNugetVersionNumber
     cls.nugetPackagesToPublish = nugetPackagesToPublish
     cls.releaseNotePath = releaseNotePath
+    cls.commitKeywords = commitKeywords
+    cls.onedrivePath = onedrivePath
     cls.nugetAPIKey = nugetAPIKey
     cls.nugetServerURL = nugetServerURL
     cls.updateSampleInfo = updateSampleInfo
