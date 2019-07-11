@@ -745,8 +745,9 @@ Latest commit hash value: {hash}
 Latest commit title: {title}
 Latest commit URL: {url}
 Date created: {date}
-Docs link: {docs}
-'''.format(version=version,hash=commitHash, title=commitTitle, url=commitURL, date=date, docs=config.GITHUB_DOCS_LINK)
+Additional documentation: {docs}
+Backup of PDBs on OneDrive: {onedrive}
+'''.format(version=version,hash=commitHash, title=commitTitle, url=commitURL, date=date, docs=config.GITHUB_DOCS_LINK, onedrive=config.ONEDRIVE_READ_LINK)
         
         # if '.NET' not in packageID:
         note += 'Github tag link: {tag}\n'.format(tag=tagLink)

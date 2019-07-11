@@ -41,6 +41,7 @@ WIN_RUNTIMES_SRC = './[TARGET]/windows/solutions/Build/Output/Net/Org.WebRtc.Wra
 WRAPPERC_NAME  = 'libOrg.WebRtc.WrapperC'
 
 GITHUB_DOCS_LINK = 'https://webrtc-uwp.github.io/'
+ONEDRIVE_READ_LINK = 'https://1drv.ms/u/s!AtgCZyBqq2SY3MBCBUFoB0vW3VEMQg?e=TP4ErH'
 
 #Paths are relative to the webrtc root path
 GN_OUTPUT_PATH = './out'
