@@ -114,6 +114,8 @@ class Utility:
       :return repo: repo url
     """
     repo = Utility.executeCommand('git remote get-url origin')
+    if repo.endswith('.git'):
+        repo = repo[:-len('.git')]
     return repo
     
   @staticmethod

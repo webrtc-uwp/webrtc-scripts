@@ -148,9 +148,6 @@ class CreateNuget:
         ret = NO_ERROR
         branch = Utility.getBranch()
         repo = Utility.getRepo()
-        
-        if repo.endswith('.git'):
-            repo = repo[:-len('.git')]
 
         fullRepo = repo + "/tree/" + branch
         
@@ -748,7 +745,8 @@ Latest commit hash value: {hash}
 Latest commit title: {title}
 Latest commit URL: {url}
 Date created: {date}
-'''.format(version=version, tag=tagLink,hash=commitHash, title=commitTitle, url=commitURL, date=date)
+Docs link: {docs}
+'''.format(version=version,hash=commitHash, title=commitTitle, url=commitURL, date=date, docs=config.GITHUB_DOCS_LINK)
         
         # if '.NET' not in packageID:
         note += 'Github tag link: {tag}\n'.format(tag=tagLink)

@@ -40,6 +40,8 @@ WIN_LIB_DST = '/libraries/[TARGET]/[PLATFORM]/AnyCPU/netstandard2.0/'
 WIN_RUNTIMES_SRC = './[TARGET]/windows/solutions/Build/Output/Net/Org.WebRtc.WrapperC/[CONFIGURATION]/[CPU]/[FILE]'
 WRAPPERC_NAME  = 'libOrg.WebRtc.WrapperC'
 
+GITHUB_DOCS_LINK = 'https://webrtc-uwp.github.io/'
+
 #Paths are relative to the webrtc root path
 GN_OUTPUT_PATH = './out'
 #Path where will ba saved built libs, referenced by wrapper projects
