@@ -158,6 +158,9 @@ releaseNotePath = 'releases.txt'
 #(commits that have at least one of keywords will be placed inside release notes)
 commitKeywords = ['notes', 'merge']
 
+#Place where zipped backup(pdb) files will be uploaded inside onedrive folder for the uploadbackup action
+onedrivePath = 'Public Symbols/WebRTC'
+
 #Information about the sample to be updated
 updateSampleInfo = {
                       'package' : 'default',

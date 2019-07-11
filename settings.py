@@ -157,6 +157,7 @@ class Settings:
     cls.nugetPackagesToPublish = nugetPackagesToPublish
     cls.releaseNotePath = releaseNotePath
     cls.commitKeywords = commitKeywords
+    cls.onedrivePath = onedrivePath
     cls.nugetAPIKey = nugetAPIKey
     cls.nugetServerURL = nugetServerURL
     cls.updateSampleInfo = updateSampleInfo
