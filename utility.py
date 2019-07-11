@@ -138,8 +138,8 @@ class Utility:
     commitTitle = commitTitle.strip()
     return commitTitle
 
-  @staticmethod
-  def addGitTag(tagNumber):
+  @classmethod
+  def addGitTag(cls, tagNumber):
     """
       Adds a tag to the git repository with a specific version number.
       :param tagNumber: Tag number
@@ -148,8 +148,8 @@ class Utility:
     if 'error' not in ret:
       cls.logger.debug("Git tag added: " + tagNumber)
 
-  @staticmethod
-  def pushGitTag(tagNumber):
+  @classmethod
+  def pushGitTag(cls, tagNumber):
     """
       Publishes a tag with a specific tag number to the git repository.
       :param tagNumber: Tag number
