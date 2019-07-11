@@ -56,27 +56,31 @@ class Logger:
   loggerHandle = None #logging.StreamHandler()
 
   @classmethod
-  def setUp(cls, logFormat, noColoredOutput = False, logToFile = '', overwriteLogFile = True):
-
+  def setUp(cls):
+    cls.logToFile = Settings.logToFile
     if cls.loggerHandle == None:
-      if logToFile == '':
+      if not Settings.logToFile:
         cls.loggerHandle = logging.StreamHandler()
       else:
-        filename = logToFile
-        if os.path.isfile(filename) and  not overwriteLogFile:
+        if Settings.logFileName != '':
+          filename = Settings.logFileName
+        else:
+          filename = 'Log_' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S.txt')
+        if os.path.isfile(filename) and  not Settings.overwriteLogFile:
           filename = os.path.splitext(filename)[0] + '_' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S' + os.path.splitext(filename)[1])
         cls.loggerHandle = logging.FileHandler(filename,'w')
 
-    if cls.formatter == None and logFormat != "":
-      if logToFile == "" and not noColoredOutput:
-        cls.formatter = ColoredFormatter(logFormat)
+    if cls.formatter == None and Settings.logFormat != "":
+      if not Settings.logToFile and not Settings.noColoredOutput:
+        cls.formatter = ColoredFormatter(Settings.logFormat)
       else:
-        cls.formatter = logging.Formatter(logFormat)
+        cls.formatter = logging.Formatter(Settings.logFormat)
       cls.loggerHandle.setFormatter(cls.formatter)
 
   @classmethod
   def getLogger(cls,name):
     logger=logging.getLogger(name)
+    logger.logToFile = Settings.logToFile
     if logger.handlers == []:
       logger.setLevel(logging.getLevelName(Settings.logLevel))
       logger.addHandler(cls.loggerHandle)
