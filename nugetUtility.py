@@ -1,6 +1,8 @@
 import os
 import glob
 import re
+import json
+import collections
 from subprocess import Popen, PIPE, call
 
 from errors import NO_ERROR, ERROR_ACQUIRE_NUGET_EXE_FAILED
@@ -160,3 +162,65 @@ class NugetUtility:
         cls.logger.warning(cls.set_source_instruction+srcPath)
     except Exception as error:
       cls.logger.error(str(error))
+
+  @classmethod
+  def get_package_info(cls, packageID):
+    """
+      Finds information about the NuGet package from nuget.org and returns it as array
+      :param packageID: Id of the NuGet package
+      :return data: Info about package (Array of Dictionaries)
+    """
+    # Works only if number of published versions of the nuget packet is less than 500
+    search = 'https://api-v2v3search-0.nuget.org/search/query?q=packageid:' + packageID + '&ignoreFilter=true&prerelease=true&take=500'
+
+    cls.logger.info('Collecting ' + packageID + ' NuGet package information from nuget.org...')
+    try:
+      # Python 3:
+      if module_exists('urllib.request'):
+        import urllib.request
+        with urllib.request.urlopen(search) as url:
+          rawData = json.loads(url.read().decode())
+      # Python 2:
+      if module_exists('urllib.request') is False:
+        import urllib
+        response = urllib.urlopen(search)
+        rawData = json.loads(response.read())
+      data = rawData['data']
+      return data
+    except Exception as error:
+      cls.logger.error(str(error))
+
+  @classmethod
+  def get_notes(cls, packageInfo):
+    """
+      Takes in an array with NuGet package information and returns a dictionary with version number and releasenotes pairs
+      :param packageInfo: array with the information about NuGet package (get it with NugetUtility.get_package_info)
+      :return notes: dictionary with NuGet Version:ReleaseNotes pairs
+    """
+    notes = {}
+    for item in packageInfo:
+      if 'Version' in item and 'ReleaseNotes' in item:
+        notes[item['Version']] = item['ReleaseNotes']
+    #Sort the notes in descending order
+    notes = collections.OrderedDict(sorted(notes.items(), reverse=True))
+    return notes
+
+  @classmethod
+  def create_release_history(cls, packageInfo, packageName):
+    """
+      Creates a file with release notes taken from the nuget.org server
+      :param packageInfo: array with the information about NuGet package (get it with NugetUtility.get_package_info)
+    """
+    text = ''
+    onlineNotesFile = 'ReleaseNotes(' + packageName + ').txt'
+    onlineNotes = cls.get_notes(packageInfo)
+    for key, value in onlineNotes.iteritems():
+      text += '======================================================================\n' + \
+        'Version:   '  + key + '\n' + \
+        '----------------------------------------------------------------------\n\n'
+      text += value
+      text += '\n======================================================================\n\n\n'
+    
+    with open(onlineNotesFile, 'w') as release_notes:
+      release_notes.writelines(text)
+    cls.logger.debug(onlineNotesFile + ' file created.')

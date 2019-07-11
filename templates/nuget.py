@@ -7,9 +7,9 @@ webRTCGnArgsTemplatePath='./webrtc/windows/templates/gns/args.gn'
 nugetFolderPath = './nugetpackages'
 nugetVersionInfo = {
                       #Main version number of the NuGet package 
-                      'number': '71',
+                      'number': '75',
                       #Use '' if not prerelease, 'Default' is based on previous version, or use some other prerelease ('Alpha', 'Beta', ...)
-                      'prerelease': 'Default',
+                      'prerelease': 'Alpha',
                       #Initial version number format
                       'format': '1.[number].0.1[prerelease]'
                    }
@@ -18,6 +18,13 @@ manualNugetVersionNumber = ''
 
 #Path to a release notes file
 releaseNotePath = 'releases.txt'
+
+#Keywords for selecting commits that should be placed inside release notes (use ['*'] in order to use all commits)
+#(commits that have at least one of keywords will be placed inside release notes)
+commitKeywords = ['notes', 'merge']
+
+#Place where zipped backup(pdb) files will be uploaded inside onedrive folder for the uploadbackup action
+onedrivePath = 'Public Symbols/WebRTC'
 
 #Information about the sample to be updated
 updateSampleInfo = {
@@ -64,7 +71,7 @@ supportedCPUsForPlatform = {
 #List of targets for which will be performed specified actions. Supported target is webrtc. In future it will be added support for ortc.
 targets = [ 'webrtc' ]
 #List of target cpus. Supported cpus are arm, x86 and x64
-targetCPUs = [ 'x86', 'x64' ]
+targetCPUs = [ 'arm', 'x86', 'x64' ]
 #List of target platforms. Supported cpus are win and winuwp
 targetPlatforms = [ 'winuwp' ]
 #List of target configurations. Supported cpus are Release and Debug
@@ -83,7 +90,7 @@ targetProgrammingLanguage = [ 'cx', 'cppwinrt', 'c', 'dotnet', 'python' ]
 #'publishnuget' : Publishes nuget package
 #'uploadbackup' : Creates a zipp file with pdb files and nuget package based on configuration and uploads it to onedrive
 #List of actions to perform
-actions = [ 'prepare', 'build', 'backup', 'createnuget', 'releasenotes', 'publishnuget', 'updatesample' ]
+actions = [ 'prepare', 'build', 'backup', 'createnuget', 'publishnuget', 'updatesample' ]
 
 #Flag if wrapper library should be built. If it is False, it will be built only native libraries
 buildWrapper = True  
@@ -120,9 +127,12 @@ logFormat = '[%(levelname)-17s] - [%(name)-15s] - %(funcName)-30s - %(message)s 
 #Supported log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL (case sensitive)
 logLevel = 'DEBUG'
 
-#Log filename. If it is empty string, log will be shown in console. 
-#In other case, it will log to specified file in folder from where script is run.
-logToFile = ''
+#If true logs to file with generic filename (platform-cpu-configuration-date), or to file with name entered in logFileName.
+#If it is false, log will be shown in console. 
+logToFile = False
+#Log file name
+logFileName = 'Log.txt'
+
 #If true overwrite old log file, otherwise it will create a new log file with time suffix.
 overwriteLogFile = False
 

@@ -41,6 +41,8 @@ class Input:
 
     parser.add_argument('--cpp17', action='store_true', help='Build with /std:c++17')
     
+    parser.add_argument('--cpp17', action='store_true', help='Build with /std:c++17')
+    
     parser.add_argument('--prerelease', nargs='?', action='store', dest='cmdPrerelease', help='Set the prerelease for the created nuget package')
 
     parser.add_argument('--uploadurl', nargs='?', action='store', dest='uploadBackupURL', help='Cloud storrage URL to wich backup will be uploaded')
@@ -57,5 +59,6 @@ class Input:
     
     parser.add_argument('--unitTests', nargs='*', help='Unit tests to run.')
 
+    parser.add_argument('--logToFile', action='store_true',  help='Log to file.')
+
     Settings.inputArgs = parser.parse_args()
-    

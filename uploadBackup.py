@@ -1,4 +1,5 @@
 import os
+from os.path import isfile, join
 import zipfile
 import time
 import tempfile
@@ -85,24 +86,21 @@ class UploadBackup:
         file_no = 0
         nugetPackage = False
         Utility.pushd(Settings.rootSdkPath)
-        #Get nuget package that was just created
-        if hasattr(CreateNuget, 'version'):
-            #Path to a newly created nuget package
-            new_package_path = convertToPlatformPath(Settings.nugetFolderPath + '/' + 'webrtc.' + CreateNuget.version + '.nupkg')
-            if os.path.isfile(new_package_path):
-                nugetPackage = new_package_path
-            else:
-                ret = ERROR_UPLOAD_BACKUP_FILES_MISSING
-        #Get latest nuget package created, if uploadBackup is called without calling createNuget
-        else:
-            has_package = False
-            for fname in os.listdir(Settings.nugetFolderPath):
-                if fname.endswith('.nupkg'):
-                    has_package = True
-                    break
-            if has_package is True:
-                list_of_files = glob.iglob(Settings.nugetFolderPath + '/*.nupkg')
-                nugetPackage = max(list_of_files, key=os.path.getctime)
+        #Get latest nuget package created
+        has_package = False
+        for fname in os.listdir(Settings.nugetFolderPath):
+            if fname.endswith('.nupkg') and '.NET' not in fname:
+                has_package = True
+                break
+        if has_package is True:
+            #Get all files from nuget folder
+            files = []
+            onlyfiles = [f for f in os.listdir(Settings.nugetFolderPath) if isfile(join(Settings.nugetFolderPath, f))]
+            for f in onlyfiles:
+                if '.nupkg' in f and '.NET' not in f:
+                    files.append(join(Settings.nugetFolderPath, f))
+            #Latest nuget package created
+            nugetPackage = max(files, key=os.path.getctime)
         if nugetPackage is not False:
             zipf.write(nugetPackage, os.path.basename(nugetPackage))
             cls.logger.debug('Zipping nuget package: ' + convertToPlatformPath(nugetPackage))
@@ -207,10 +205,11 @@ class UploadBackup:
         file_name = cls.zip_name
         # Full path of the file to be uploaded
         file_path = r'./' + file_name
-        dir_name_onedrive = 'WebRTC'
+        #Path where file will be uploaded inside onedrive(can be changed in userdef.py)
+        dir_path_onedrive = Settings.onedrivePath
 
-        upload = ['onedrivecmd', 'put', file_path, 'od:/'+dir_name_onedrive+'/']
-        list_files = ['onedrivecmd', 'list', 'od:/'+dir_name_onedrive+'/']
+        upload = ['onedrivecmd', 'put', file_path, 'od:/'+dir_path_onedrive+'/']
+        list_files = ['onedrivecmd', 'list', 'od:/'+dir_path_onedrive+'/']
 
         call(upload)
 

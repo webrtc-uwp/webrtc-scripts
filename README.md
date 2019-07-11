@@ -145,7 +145,17 @@ Syntax for selecting build options is the same as for prepare action.
 
 ## Release Notes  
 
-Creating release notes process can be done by running releasenotes action, which can be run in two ways:
+Release notes are created automatically whenever nuget package is created, these notes consist of following:  
+```
+Package version - version number of the package that is being created  
+Latest commit hash value - hash number value for the latest commit of the webrtc-uwp-sdk repository  
+Latest commit title - title for that same commit  
+Latest commit URL - URL link for that commit  
+Date created - date when the package is created  
+Github tag link - link for the latest git tag of the webrtc-uwp-sdk repository  
+Commits - list of the commits of the webrtc-uwp-sdk repository that have been published in between the latest git tag and the tag before that one, commit titles need to have certain keywords in order to be displayed, these keywords can be selected inside userdef.py file by adding the keyword to the `commitKeywords` array  
+```
+You can add more information to the automatically created release notes in two different ways:
 1. By running the following command:
 >```python run.py -a releasenotes```
 2. Or by adding 'releasenotes' action into `actions` variable inside userdef.py and running the command: 
@@ -153,13 +163,14 @@ Creating release notes process can be done by running releasenotes action, which
 
 By following the instruction in the console you will be able to choose a way to insert the release notes, either by typing it directly in the cmd window or by selecting notes from a file (selecting from a file copies files contents and from them creates a release note.)
 
-Release notes are stored in **releases.txt** file inside root sdk directory
+These manually added release notes are stored in **releases.txt** file inside root sdk directory and are displayed underneath automatically created notes as `Additional information`
 
-Version of the release notes will be added automatically when running `publishnuget` action. It can also be set manually by adding in `--setservernoteversion` option. In that case it will take the latest published version of the nuget package and set it as a release note version in releases.txt.
+Version of the manually added release notes will be added automatically when running `publishnuget` action. It can also be set manually by adding in `--setservernoteversion` option. In that case it will take the latest published version of the nuget package and set it as a release note version in releases.txt.
 
 If the `releasenotes` action is called, and release.txt file already has a note that doesn't have a version set, newly created note will be appended to the top of the previous note that doesn't have a version set.
 
-When running `createnuget` action, release notes, that don't have a version set, are used as NuGet package release notes. Those notes are also copied to a .txt file and placed along side the created package.
+When running `createnuget` action, release notes, that don't have a version set, are added to the  NuGet package release notes as `Additional information`. 
+Every time NuGet package is created trough `createnuget` action notes that have been added to the package are also copied to a .txt file and placed along side the created package.
 
 ## Creating NuGet package  
 Creating NuGet package for WebRtc UWP can be done by running createnuget action.  
@@ -208,7 +219,11 @@ To create a NuGet package with a custom version number, use `manualNugetVersionN
 >manualNugetVersionNumber = '1.71.0.1-Alpha'
 This will override the automated process for finding the version number.
 
-To select a directory where the newly created NuGet packages will be placed, change the value of the `nugetFolderPath` variable inside userdef.py to a path of your choosing.
+To select a directory where the newly created NuGet packages will be placed, change the value of the `nugetFolderPath` variable inside userdef.py to a path of your choosing.  
+
+Whenever package for the `winuwp` platform is created, git tag is created alongside it. Git tag version number is taken from the created NuGet package version number, this tag is only created locally and is published when the package with the same version number is published trough `publishnuget` action.
+
+When `createnuget` action is called, a file with the release notes is created, these release notes are taken from nuget.org server for the package being created file name will have the following format `ReleaseNotes({name}).txt` where `{name}` is the name of the NuGet package or the ID of the package on nuget.org.  
 
 ## Update published sample
 
@@ -239,6 +254,8 @@ Publish NuGet package action can be run in two ways:
 >`python run.py -a publishnuget`
 2. By inserting 'publishnuget' into `actions` variable inside userdef.py file.
 If the publishnuget action is called alongside createnuget action, created NuGet package will be published automatically. In case the publishnuget is run like standalone action, it will be possible to choose the NuGet package to publish from the list of the created packages. List of the created NuGet packages is generated from the packages placed inside a path defined in `nugetFolderPath` variable of the userdef.py file.  
-If the key for the NuGet server has not been set, and the publishnuget action is run, package will not be published, and the instruction will be shown on how to set the key for the nuget.org server.
+If the key for the NuGet server has not been set, and the publishnuget action is run, package will not be published, and the instruction will be shown on how to set the key for the nuget.org server.  
 Key can be set by adding an option `-setnugetkey <key>` when run.py script is called. Example command: `python run.py -a publishnuget -setnugetkey <key>` where `<key>` is the key from acquired the server.
 Once the key is set for a particular server, it doesn't need to be set again on the machine where the script is being called from.
+
+When the NuGet package for `winuwp` platform is published, git tag with the same version number as that package is pushed to the github repository.
