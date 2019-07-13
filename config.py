@@ -34,6 +34,14 @@ NATIVE_LIB_SRC = './[TARGET]/windows/solutions/Build/Output/Org.[TARGET]/[CONFIG
 NATIVE_LIB_TARGET = 'runtimes\\win10-[CPU]\\native'
 SAMPLES_FOLDER_PATH = './common/windows/samples/'
 NUGET_EXECUTABLE_PATH = './webrtc/windows/nuget/nuget.exe'
+#.NET nuget package paths relative to root SDK path
+WIN_LIB_SRC = './[TARGET]/windows/solutions/Build/Output/Net/Org.WebRtc/[CONFIGURATION]/AnyCPU/netstandard2.0/[FILE]'
+WIN_LIB_DST = '/libraries/[TARGET]/[PLATFORM]/AnyCPU/netstandard2.0/'
+WIN_RUNTIMES_SRC = './[TARGET]/windows/solutions/Build/Output/Net/Org.WebRtc.WrapperC/[CONFIGURATION]/[CPU]/[FILE]'
+WRAPPERC_NAME  = 'libOrg.WebRtc.WrapperC'
+
+GITHUB_DOCS_LINK = 'https://webrtc-uwp.github.io/'
+ONEDRIVE_READ_LINK = 'https://1drv.ms/u/s!AtgCZyBqq2SY3MBCBUFoB0vW3VEMQg?e=TP4ErH'
 
 #Paths are relative to the webrtc root path
 GN_OUTPUT_PATH = './out'

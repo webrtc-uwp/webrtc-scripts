@@ -91,9 +91,11 @@ logLevel = 'DEBUG'
 #Select ninja environemnt variables whose values will be logged. Available values are 'LIB', 'PATHEXT', 'LIBPATH', 'PATH', 'SYSTEMROOT', 'INCLUDE'
 logNinjaEnvironmentFileVariables = ['INCLUDE', 'LIBPATH']
 
-#Log filename. If it is empty string, log will be shown in console. 
-#In other case, it will log to specified file in folder from where script is run.
-logToFile = ''
+#If true logs to file with generic filename (platform-cpu-configuration-date), or to file with name entered in logFileName.
+#If it is false, log will be shown in console. 
+logToFile = False
+#Log file name
+logFileName = 'Log.txt'
 #If true overwrite old log file, otherwise it will create a new log file with time suffix.
 overwriteLogFile = False
 
@@ -142,9 +144,9 @@ availableTargetsForBuilding = {
 nugetFolderPath = './nugetpackages'
 nugetVersionInfo = {
                       #Main version number of the NuGet package 
-                      'number': '71',
+                      'number': '75',
                       #Use '' if not prerelease, 'Default' is based on previous version, or use some other prerelease ('Alpha', 'Beta', ...)
-                      'prerelease': 'Default',
+                      'prerelease': 'Alpha',
                       #Initial version number format
                       'format': '1.[number].0.1[prerelease]'
                    }
@@ -153,6 +155,13 @@ manualNugetVersionNumber = ''
 
 #Path to a release notes file
 releaseNotePath = 'releases.txt'
+
+#Keywords for selecting commits that should be placed inside release notes (use ['*'] in order to use all commits)
+#(commits that have at least one of keywords will be placed inside release notes)
+commitKeywords = ['notes', 'merge']
+
+#Place where zipped backup(pdb) files will be uploaded inside onedrive folder for the uploadbackup action
+onedrivePath = 'Public Symbols/WebRTC'
 
 #Information about the sample to be updated
 updateSampleInfo = {
