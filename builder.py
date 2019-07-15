@@ -110,6 +110,8 @@ class Builder:
 
     #Get solution to build, for specified target and platform. Solution is obtained from config.TARGET_WRAPPER_SOLUTIONS
     solutionName = convertToPlatformPath(Utility.getValueForTargetAndPlatformDict(config.TARGET_WRAPPER_SOLUTIONS, target, platform))
+    if Settings.vsVersion == '2019':
+      solutionName = solutionName.replace('.sln','.' + Settings.vsVersion+'.sln')
 
     #If solution is not provided, return True like it was succefull
     if solutionName == '':

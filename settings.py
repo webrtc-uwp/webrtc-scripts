@@ -225,6 +225,11 @@ class Settings:
       cls.unitTestsToRun = list(unitTests)
 
     cls.unitTests = unitTests
+
+    if cls.inputArgs.vsVersion:
+      cls.vsVersion = cls.inputArgs.vsVersion
+    else:
+      cls.vsVersion = vsVersion
     
     if cls.inputArgs.logToFile:
       cls.logToFile = cls.inputArgs.logToFile
