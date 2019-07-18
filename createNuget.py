@@ -735,7 +735,7 @@ class CreateNuget:
         commitURL = repo + '/commit/' + commitHash
         commitTitle = Utility.getCommitTitle(commitHash)
         
-        latestTag = Utility.executeCommand('git describe --tags')
+        latestTag = Utility.executeCommand('git describe --tags --abbrev=0')
         tagLink = repo + '/releases/tag/' + latestTag
         now = datetime.datetime.now()
         date = now.strftime("%Y-%m-%d")
