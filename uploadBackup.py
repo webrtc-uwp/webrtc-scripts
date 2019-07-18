@@ -46,7 +46,7 @@ class UploadBackup:
             import requests
 
         init = ['onedrivecmd', 'init']
-        # call(init)
+        call(init)
 
     @classmethod
     def run(cls):
