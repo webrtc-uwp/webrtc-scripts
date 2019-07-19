@@ -564,10 +564,11 @@ class System:
             Settings.msvsPath = versionPath
             break
         if Settings.msvsPath != '':
+          toolSetVersion = config.SUPPORTED_VS_TOOLSETS[Settings.vsVersion]
+          
           Settings.msvcToolsPath = os.path.join(Settings.msvsPath,convertToPlatformPath(config.MSVC_TOOLS_PATH))
-          Settings.msvcToolsVersion = next(os.walk(Settings.msvcToolsPath))[1][0]
+          Settings.msvcToolsVersion = cls.getToolSetFolderName(Settings.msvcToolsPath,toolSetVersion)
           Settings.msvcToolsBinPath = os.path.join(Settings.msvcToolsPath,Settings.msvcToolsVersion,'bin','Host' + cls.hostCPU)
-          #Settings.vcvarsallPath = os.path.join(Settings.msvsPath,convertToPlatformPath(config.VCVARSALL_PATH))
 
           Settings.vcvarsallPath = os.path.join(Settings.msvsPath,convertToPlatformPath(config.VC_AUXILIARY_BUILD_PATH),'vcvarsall.bat')
           #Read Microsoft.VCToolsVersion.default.txt content to get current vc tools version
@@ -578,10 +579,28 @@ class System:
         cls.logger.error('Visual studio ' + Settings.vsVersion + ' is not found at ' + vsPath + '. Please specify another version of Visual studio or install it. If it is installed, set msvsPath variable in userdef.py to point to correct path.')
         cls.stopExecution(errors.ERROR_SYSTEM_FAILED_USERDEF_CREATION)
 
-
       cls.logger.info('Visual studio path is ' + Settings.msvsPath)
       cls.logger.debug('MSVC tools path is ' + Settings.msvcToolsPath)
       cls.logger.debug('MSVC tools bin path is ' + Settings.msvcToolsBinPath)
+
+  @classmethod
+  def getToolSetFolderName(cls, msvcToolsPath,toolSetVersion):
+    """
+      Returns folder name for specified toolset version.
+      :params msvcToolsPath: Msvc path.
+      :params toolSetVersion: Tool set version.
+      :return ret: Tool Set folder name.
+    """
+    ret = ''
+    folders = next(os.walk(Settings.msvcToolsPath))[1]
+    if len(folders) > 0:
+      folders.sort(reverse=True)
+      toolSetFolderPrefix = toolSetVersion[:2] + '.' + toolSetVersion[2:]
+      for folderName in folders:
+        if toolSetFolderPrefix in folderName:
+          ret = folderName
+          break
+    return ret
 
   @classmethod
   def downloadClangClIfMissing(cls):
