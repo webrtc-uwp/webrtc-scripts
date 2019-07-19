@@ -58,6 +58,11 @@ VISUAL_STUDIO_VERSIONS = [
                             'vs2019'
                           ]
 
+SUPPORTED_VS_TOOLSETS = { 
+                          '2017' : '141', 
+                          '2019' : '142'
+                        }
+
 #Comment that will be printed at the begining of userdef.py file
 USERDEF_DESCRIPTION_MESSAGE = 'This file is generated from defaults.py. Be free to change any variable listed below.'
 
