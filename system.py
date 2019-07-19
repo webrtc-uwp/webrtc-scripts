@@ -568,15 +568,15 @@ class System:
           
           Settings.msvcToolsPath = os.path.join(Settings.msvsPath,convertToPlatformPath(config.MSVC_TOOLS_PATH))
           Settings.msvcToolsVersion = cls.getToolSetFolderName(Settings.msvcToolsPath,toolSetVersion)
-          Settings.msvcToolsBinPath = os.path.join(Settings.msvcToolsPath,Settings.msvcToolsVersion,'bin','Host' + cls.hostCPU)
-
-          Settings.vcvarsallPath = os.path.join(Settings.msvsPath,convertToPlatformPath(config.VC_AUXILIARY_BUILD_PATH),'vcvarsall.bat')
+          if Settings.msvcToolsVersion != '': 
+            Settings.msvcToolsBinPath = os.path.join(Settings.msvcToolsPath,Settings.msvcToolsVersion,'bin','Host' + cls.hostCPU)
+            Settings.vcvarsallPath = os.path.join(Settings.msvsPath,convertToPlatformPath(config.VC_AUXILIARY_BUILD_PATH),'vcvarsall.bat')
           #Read Microsoft.VCToolsVersion.default.txt content to get current vc tools version
           #Settings.vcToolsVersionPath = os.path.join(Settings.msvsPath,convertToPlatformPath(config.VC_AUXILIARY_BUILD_PATH),'Microsoft.VCToolsVersion.default.txt')
        
       #Determine msvc tools and vcvarsall.bat path
-      if Settings.msvsPath == '':
-        cls.logger.error('Visual studio ' + Settings.vsVersion + ' is not found at ' + vsPath + '. Please specify another version of Visual studio or install it. If it is installed, set msvsPath variable in userdef.py to point to correct path.')
+      if Settings.msvsPath == '' or Settings.msvcToolsVersion == '':
+        cls.logger.error('Visual studio ' + Settings.vsVersion + ' or toolset ' + toolSetVersion + ' is not found at ' + vsPath + '. Please specify another version of Visual studio or install it. If it is installed, set msvsPath variable in userdef.py to point to correct path.')
         cls.stopExecution(errors.ERROR_SYSTEM_FAILED_USERDEF_CREATION)
 
       cls.logger.info('Visual studio path is ' + Settings.msvsPath)
