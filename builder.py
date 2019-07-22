@@ -229,7 +229,11 @@ class Builder:
           objFolders.append(folder)
       elif platform == 'win':
         if 'uwp' not in folder:
-          objFolders.append(folder)
+          if 'X_CPU' in folder:
+            objFolders.append(folder.replace('X_CPU',targetCPU))
+          else:
+            objFolders.append(folder)
+        
     #Get list of strings, with file paths total length less than 7000,,
     listOfObjesToCombine = Utility.getFilesWithExtensionsInFolder(targetCPU, objFolders, ('.obj','.o'), config.COMBINE_LIB_IGNORE_SUBFOLDERS)
 

@@ -236,11 +236,13 @@ TARGETS_TO_BUILD = {
                                             )
                               }
 
+#X_CPU will be replaced with target CPU name, for win32 build. It is not of interest for winuwp.
 COMBINE_LIB_FOLDERS = (
                         '/obj',
                         '/gen',
                         '/uwp_*', 
-                        '/win_clang_*'
+                        '/win_clang_*',
+                        '/X_CPU'
                       )
 
 COMBINE_LIB_IGNORE_SUBFOLDERS = (
