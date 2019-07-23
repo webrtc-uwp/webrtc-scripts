@@ -459,8 +459,8 @@ class CreateNuget:
             # Element is <file> element, ft is each file type
             for element, ft in itertools.product(files, f_type):
                 src_attrib = element.attrib.get('src')
-                # Check if <file> element has a src with given cpu, configuration and file type
-                if all(val in src_attrib for val in [cpu, configuration.capitalize(), ft]):
+                # Check if <file> element has a src with given configuration and file type
+                if all(val in src_attrib for val in [configuration.capitalize(), ft]):
                     file_name = f_name + '.' + target + ft
                     # New src path to the lib file with required cpu, configuration and file type
                     src_path = convertToPlatformPath(
@@ -735,7 +735,7 @@ class CreateNuget:
         commitURL = repo + '/commit/' + commitHash
         commitTitle = Utility.getCommitTitle(commitHash)
         
-        latestTag = Utility.executeCommand('git describe --tags')
+        latestTag = Utility.executeCommand('git describe --tags --abbrev=0')
         tagLink = repo + '/releases/tag/' + latestTag
         now = datetime.datetime.now()
         date = now.strftime("%Y-%m-%d")
