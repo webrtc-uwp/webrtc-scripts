@@ -6,6 +6,7 @@ import tempfile
 import shutil
 import glob
 import sys
+import ntpath
 from datetime import datetime
 from subprocess import Popen, PIPE, call
 
@@ -76,17 +77,9 @@ class UploadBackup:
         :return ret: NO_ERROR if zipp was successfull. Otherwise returns error code
         """
         ret = NO_ERROR
-        cls.zip_name = datetime.now().strftime('Backup_%Y-%m-%d_%H-%M-%S') + '.zip'
-        zipf = zipfile.ZipFile(cls.zip_name, 'w', zipfile.ZIP_DEFLATED)
-        count = 0
-        #Get number of files to be zipped in order to display percentage
-        for root, dirs, files in os.walk(path):
-            for file in files:
-                count += 1
-        file_no = 0
-        nugetPackage = False
-        Utility.pushd(Settings.rootSdkPath)
+        cls.zip_name = datetime.now().strftime('Backup_%Y-%m-%d_%H-%M-%S')
         #Get latest nuget package created
+        nugetPackage = False
         has_package = False
         for fname in os.listdir(Settings.nugetFolderPath):
             if fname.endswith('.nupkg') and '.NET' not in fname:
@@ -101,6 +94,18 @@ class UploadBackup:
                     files.append(join(Settings.nugetFolderPath, f))
             #Latest nuget package created
             nugetPackage = max(files, key=os.path.getctime)
+            #Add nuget package version number to the zip file name if backup is created with nuget
+            cls.zip_name += '(' + ntpath.basename(nugetPackage) + ')'
+        cls.zip_name += '.zip'
+        zipf = zipfile.ZipFile(cls.zip_name, 'w', zipfile.ZIP_DEFLATED)
+        count = 0
+        #Get number of files to be zipped in order to display percentage
+        for root, dirs, files in os.walk(path):
+            for file in files:
+                count += 1
+        file_no = 0
+        Utility.pushd(Settings.rootSdkPath)
+        #Add nuget package to zip if it exists
         if nugetPackage is not False:
             zipf.write(nugetPackage, os.path.basename(nugetPackage))
             cls.logger.debug('Zipping nuget package: ' + convertToPlatformPath(nugetPackage))
