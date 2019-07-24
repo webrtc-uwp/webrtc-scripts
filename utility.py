@@ -351,8 +351,6 @@ class Utility:
         except Exception as error:
           ret = False
           cls.logger.error(str(error))
-      else:
-        cls.logger.warning(file + ' file doesn\'t exist')
     
     return ret
 
