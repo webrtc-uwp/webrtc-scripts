@@ -74,7 +74,7 @@ def actionPrepare():
         if System.checkIfCPUIsSupportedForPlatform(cpu,platform):
           for configuration in Settings.targetConfigurations:
             Logger.printStartActionMessage('Prepare ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration,ColoredFormatter.YELLOW)
-            result = Preparation.run(target, platform, cpu, configuration)
+            result = Preparation.run(target, platform, cpu, configuration.lower())
             Summary.addSummary(ACTION_PREPARE, target, platform, cpu, configuration, result, Preparation.executionTime)
             if result != NO_ERROR:
               Logger.printEndActionMessage('Failed preparing ' + target + ' ' + platform + ' ' + cpu + ' ' + configuration,ColoredFormatter.RED)
