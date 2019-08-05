@@ -105,7 +105,7 @@ class CreateNuget:
                 if 'winuwp' in platform:
                     ret = cls.copy_files(target, platform, configuration, cpu)
                 else:
-                    ret = cls.copy_files(target, platform, configuration, cpu, src_path=config.WIN_LIB_SRC, dst_path=config.WIN_LIB_DST, f_type=['.dll'])
+                    ret = cls.copy_files(target, platform, configuration, cpu, src_path=config.WIN_LIB_SRC, dst_path=config.WIN_LIB_DST, f_type=['.dll', '.pdb'])
                     ret = cls.copy_files(target, platform, configuration, cpu, src_path=config.WIN_RUNTIMES_SRC, f_type=['.dll'], f_name=config.WRAPPERC_NAME)
                 
                 # go to specified nuget folder
@@ -687,8 +687,11 @@ class CreateNuget:
 
                         # Add a correct .targets file to .nuspec
                         elif '.targets' in line:
-                            destination.write('\t\t<file src="{}.{}.targets" target="build\\native\{}.{}.targets" />\n'
-                                                .format(target,platform,target,platform))
+                            if 'winuwp' in platform:
+                                targetsFileElement = '\t\t<file src="{}.{}.targets" target="build\\native\{}.{}.targets" />\n'
+                            else:
+                                targetsFileElement = '\t\t<file src="{}.{}.targets" target="build\\{}.{}.targets" />\n'
+                            destination.write(targetsFileElement.format(target,platform,target,platform))
                         else:
                             destination.write(line)
             cls.logger.debug('Nuspec file created successfuly!')
