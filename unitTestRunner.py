@@ -155,40 +155,42 @@ class UnitTestRunner:
     if not Utility.deleteFiles([outputRecoveryFile]):
       return errors.ERROR_UNIT_TESTS_FAILED_TO_DELETE_OLD_LOG
 
-    with open(unitTestLogFile, 'r') as fileToParse:
-      fileContent = fileToParse.read()
+    try:
+      with open(unitTestLogFile, 'r') as fileToParse:
+        fileContent = fileToParse.read()
 
-    executedUnitTests = fileContent.split(config.UNIT_TESTS_LOG_SEPARATOR)
+      executedUnitTests = fileContent.split(config.UNIT_TESTS_LOG_SEPARATOR)
 
-    cls.unitTestSummaryLogFile.write(unitTestName)
-    cls.unitTestSummaryLogFile.write('\n' + config.UNIT_TEST_SUMMARY_SEPARATOR + '\n')
+      cls.unitTestSummaryLogFile.write(unitTestName)
+      cls.unitTestSummaryLogFile.write('\n' + config.UNIT_TEST_SUMMARY_SEPARATOR + '\n')
 
-    for unitTest in executedUnitTests:
-      testResults = unitTest.split(config.UNIT_TEST_RESULTS_SEPARATOR)
-      testResult = testResults[-1]
-      
-      for line in testResult.split('\n'):
-        if config.UNIT_TEST_RESULTS_TOTAL_NUMBER_SEPARATOR in line:
-          listForNumberOfTests = line.split(' ')
-          if len(listForNumberOfTests) > 1:
-            numberOfTests = listForNumberOfTests[1]
-            numberOfUnitTests += int(numberOfTests)
-        if config.UNIT_TEST_RESULTS_FAILED_SEPARATOR in line and 'listed below' not in line:
-          testName = helper.remove_prefix(line, config.UNIT_TEST_RESULTS_FAILED_SEPARATOR + ' ')
-          testName = testName.split(',')[0]
-          testName = helper.remove_carriage_return(testName)
-          cmdLine = unitTestName + ' ' + cls.filter + testName
-          recoveryTestCounter = 0
-          testPassed = False
-          while recoveryTestCounter < config.UNIT_TEST_RETRY_NUMBER_FALIED_TESTS and not testPassed:
-            ret = cls.runUnitTestSubprocess(cmdLine, outputRecoveryFile, True)
-            recoveryTestCounter += 1
-            if ret == NO_ERROR:
-              testPassed = True
-          if not testPassed:
-            unitTestFailures += 1
-            cls.unitTestSummaryLogFile.write(line + '\n')
-          
+      for unitTest in executedUnitTests:
+        testResults = unitTest.split(config.UNIT_TEST_RESULTS_SEPARATOR)
+        testResult = testResults[-1]
+        
+        for line in testResult.split('\n'):
+          if config.UNIT_TEST_RESULTS_TOTAL_NUMBER_SEPARATOR in line:
+            listForNumberOfTests = line.split(' ')
+            if len(listForNumberOfTests) > 1:
+              numberOfTests = listForNumberOfTests[1]
+              numberOfUnitTests += int(numberOfTests)
+          if config.UNIT_TEST_RESULTS_FAILED_SEPARATOR in line and 'listed below' not in line:
+            testName = helper.remove_prefix(line, config.UNIT_TEST_RESULTS_FAILED_SEPARATOR + ' ')
+            testName = testName.split(',')[0]
+            testName = helper.remove_carriage_return(testName)
+            cmdLine = unitTestName + ' ' + cls.filter + testName
+            recoveryTestCounter = 0
+            testPassed = False
+            while recoveryTestCounter < config.UNIT_TEST_RETRY_NUMBER_FALIED_TESTS and not testPassed:
+              ret = cls.runUnitTestSubprocess(cmdLine, outputRecoveryFile, True)
+              recoveryTestCounter += 1
+              if ret == NO_ERROR:
+                testPassed = True
+            if not testPassed:
+              unitTestFailures += 1
+              cls.unitTestSummaryLogFile.write(line + '\n')
+    except Exception as error:
+      cls.logger.error(str(error))      
 
     cls.totalNumberOfTests += numberOfUnitTests
     cls.failedTestsCounter += unitTestFailures

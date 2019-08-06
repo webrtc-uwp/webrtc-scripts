@@ -282,7 +282,7 @@ class Preparation:
     if Utility.checkIfFolderContainsFiles(destinatioPath, config.RUNTIME_STORE_DLLS[configuration]):
       return True
 
-    listOfFilesToSearch = config.RUNTIME_STORE_DLLS[configuration]
+    listOfFilesToSearch = list(config.RUNTIME_STORE_DLLS[configuration])
     programFilesPath = os.environ['ProgramFiles']
     windowsAppPath = os.path.join(programFilesPath, 'WindowsApps\\')
     mainVersionNumber = Settings.msvcToolsVersion.split('.')[0]
