@@ -556,6 +556,8 @@ class System:
       #Create expected VS path
       vsPath = os.path.join(vsPath,convertToPlatformPath(config.MSVS_FOLDER_NAME + Settings.vsVersion))
 
+      toolSetVersion = config.SUPPORTED_VS_TOOLSETS[Settings.vsVersion]
+
       #Indetify installed VS version 
       if os.path.exists(vsPath):
         for version in config.MSVS_VERSIONS:
@@ -564,8 +566,6 @@ class System:
             Settings.msvsPath = versionPath
             break
         if Settings.msvsPath != '':
-          toolSetVersion = config.SUPPORTED_VS_TOOLSETS[Settings.vsVersion]
-          
           Settings.msvcToolsPath = os.path.join(Settings.msvsPath,convertToPlatformPath(config.MSVC_TOOLS_PATH))
           Settings.msvcToolsVersion = cls.getToolSetFolderName(Settings.msvcToolsPath,toolSetVersion)
           if Settings.msvcToolsVersion != '': 
