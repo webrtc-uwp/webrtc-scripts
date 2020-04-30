@@ -56,6 +56,9 @@ buildWrapper = True
 #Flag if rtc_include_tests should be defined. If False, native tests aren't built
 includeTests = False
 
+#Flag if rtc_enable_protobuf should be defined. If False, protobuf is not used
+enableProtoBuf = False
+
 #=========== cleanupOptions
 #'actions' : ['cleanOutput', 'cleanIdls', 'cleanUserDef','cleanPrepare'],
 #'targets' :  If [], it will use values from targets variable above. 

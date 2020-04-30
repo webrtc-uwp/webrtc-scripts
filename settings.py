@@ -144,6 +144,12 @@ class Settings:
     else:
       cls.includeTests = includeTests
 
+    #If configurations are passed like input arguments use them, instead of one loaded from template
+    if cls.inputArgs.enableProtoBuf:
+      cls.enableProtoBuf = True
+    else:
+      cls.enableProtoBuf = enableProtoBuf
+
     cls.stopExecutionOnError = stopExecutionOnError
     cls.showTraceOnError = showTraceOnError
     cls.showSettingsValuesOnError = showSettingsValuesOnError

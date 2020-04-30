@@ -178,6 +178,7 @@ class Preparation:
         newArgs=newArgs.replace('-is_clang-',bool_to_str(Settings.buildWithClang).lower())
         newArgs=newArgs.replace('-std_cpp17-',bool_to_str(Settings.buildWithCpp17).lower())
         newArgs=newArgs.replace('-is_include_tests-', bool_to_str(Settings.includeTests).lower())
+        newArgs=newArgs.replace('-is_enable_protobuf-', bool_to_str(Settings.enableProtoBuf).lower())
       with open(argsPath, 'w') as argsFile:
         argsFile.write(newArgs)
     except Exception as error:
